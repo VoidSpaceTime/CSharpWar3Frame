@@ -1,10 +1,9 @@
-﻿using Microsoft.Extensions.Hosting;
-using Serilog;
+﻿using Serilog;
 
 // 或者
 using System.CommandLine;
 using War3FrameBuild;
-using War3FrameBuild.CommandManager; // 某些版本下扩展方法在此命名空间
+using War3FrameBuild.CommandManager;
 
 namespace CSharpWar3FrameConsole
 {
@@ -81,10 +80,8 @@ namespace CSharpWar3FrameConsole
                 // 查找哪个模式选项被指定（如果用户指定多个模式，视为错误）
                 var modeResults = new[]
                 {
-                new { Name = BuildModeEnum.Local,  Option = optLocal },
                 new { Name = BuildModeEnum.Test,  Option = optDebug },
                 new { Name = BuildModeEnum.Build,  Option = optBuild },
-                new { Name =BuildModeEnum.Dist,   Option = optDist },
                 new { Name = BuildModeEnum.Release,Option = optProd }
             }
                 .Select(m => new
@@ -93,13 +90,6 @@ namespace CSharpWar3FrameConsole
                     Result = parseResult.GetResult(m.Option),
                 })
                 .Where(x => x.Result != null)
-                /*        .Select(m => new
-                        {
-                            m.Name,
-                            m.Result,
-                            isCache = m.Result.ToString().Contains("~"),
-                            isSemi = m.Result.ToString().Contains("!"),
-                        })*/
                 .ToArray();
 
                 BuildModeEnum selectedMode;
@@ -108,7 +98,7 @@ namespace CSharpWar3FrameConsole
                 if (modeResults.Length == 0)
                 {
                     // 默认本地模式
-                    selectedMode = BuildModeEnum.Local;
+                    selectedMode = BuildModeEnum.Test;
                 }
                 else if (modeResults.Length > 1)
                 {

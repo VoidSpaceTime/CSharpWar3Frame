@@ -4,15 +4,15 @@ war3: "D:/Game/war3/war3Dev"
 
 # 项目根目录（设置空则自动定为exe工具执行所在目录）
 # Framework root directory (set empty to automatically specify the directory where the exe tool is executed)
-pwd: "D:/CSharp/War3Frame"
+pwd: "G:/CSharp/CSharpWar3Frame"
 
 # WE工具目录
 # WE tool catalogue
-we: "./War3Frame/vendor/WE"
+we: "G:/CSharp/CSharpWar3Frame/Vendor/WE"
 
 # w3x2lni工具目录
 # w3x2lni tools directory
-w3x2lni: "./War3Frame/vendor/w3x2lni"
+w3x2lni: "G:/CSharp/CSharpWar3Frame/Vendor/w3x2lni"
 
 # assets资源目录
 # assets resource directory

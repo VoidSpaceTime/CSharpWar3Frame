@@ -1,3 +1,8 @@
 <Solution>
+  <Folder Name="/Projects/">
+    <Project Path="Projects/demo/demo.csproj" Id="4194040a-9a22-43f3-ade0-9dcee3225eaf" />
+  </Folder>
   <Project Path="CSharpWar3Frame/CSharpWar3FrameConsole.csproj" />
+  <Project Path="FrameBuild/War3FrameBuild.csproj" Id="f6a68a3d-602b-4229-b268-4ca0821bb6d3" />
+  <Project Path="War3Frame/War3Frame.csproj" Id="a394ca00-b153-492d-886c-50b16367da9f" />
 </Solution>
