@@ -16,6 +16,13 @@ namespace War3FrameBuild.Extension
                 Directory.CreateDirectory(targetDir);
             }
 
+            // 递归复制所有子文件夹
+            foreach (var dir in Directory.GetDirectories(sourceDir))
+            {
+                string dirName = Path.GetFileName(dir);
+                string destSubDir = Path.Combine(targetDir, dirName);
+                CopyDir(dir, destSubDir);
+            }
             // 复制所有文件
             foreach (var file in Directory.GetFiles(sourceDir))
             {
@@ -24,13 +31,6 @@ namespace War3FrameBuild.Extension
                 File.Copy(file, destFile, true);
             }
 
-            // 递归复制所有子文件夹
-            foreach (var dir in Directory.GetDirectories(sourceDir))
-            {
-                string dirName = Path.GetFileName(dir);
-                string destSubDir = Path.Combine(targetDir, dirName);
-                CopyDir(dir, destSubDir);
-            }
         }
 
     }

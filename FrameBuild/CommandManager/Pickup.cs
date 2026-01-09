@@ -14,10 +14,11 @@ namespace War3FrameBuild.CommandManager
             {
                 Directory.CreateDirectory(Path.Combine(w3xDir, "table"));
             }
+            // 复制project的w3x文件
             if (Directory.Exists(tempDir) is false)
             {
-                DirectoryExtensions.CopyDir(Path.Combine(w3xDir, "map"), Path.Combine(tempDir, "map"));
-                Log.Debug("构建临时区[w3x(map)->map]");
+                //DirectoryExtensions.CopyDir(Path.Combine(w3xDir, "map"), Path.Combine(tempDir, "map"));
+                //Log.Debug("构建临时区[w3x(map)->map]");
                 DirectoryExtensions.CopyDir(Path.Combine(w3xDir, "table"), Path.Combine(tempDir, "table"));
                 Log.Debug("构建临时区[w3x(table)->table]");
                 DirectoryExtensions.CopyDir(Path.Combine(Template, "lni", "w3x2lni"), Path.Combine(tempDir, "w3x2lni"));
@@ -25,11 +26,13 @@ namespace War3FrameBuild.CommandManager
                 File.Copy(Path.Combine(Template, "lni", "x.w3x"), Path.Combine(tempDir, "x.w3x"));
                 Log.Debug("构建临时区[lni(.w3x)->.w3x]");
             }
-            Directory.Delete(Path.Combine(tempDir, "map"),true);
+            if (Directory.Exists(Path.Combine(tempDir, "map")))
+                Directory.Delete(Path.Combine(tempDir, "map"), true);
             DirectoryExtensions.CopyDir(Path.Combine(w3xDir, "map"), Path.Combine(tempDir, "map"));
             // map
             var war3mapMap = Path.Combine(Config.Pwd, "w3x", "war3mapMap.blp");
-            File.Delete(Path.Combine(tempDir, "map", "war3mapMap.blp"));
+            if (File.Exists(Path.Combine(tempDir, "map", "war3mapMap.blp")))
+                File.Delete(Path.Combine(tempDir, "map", "war3mapMap.blp"));
             // 物编ini判定
             var tableDir = Path.Combine(w3xDir, "table");
             Log.Information("覆盖同步[w3x(map)->map]");

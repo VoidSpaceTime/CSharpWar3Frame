@@ -9,11 +9,13 @@ namespace War3FrameBuild.CommandManager
     {
         public async Task WE()
         {
+            var weExe = new string[] { "KKWE.exe", "WE.exe" }.Where(p=>File.Exists(Path.Combine(Config.We, p))).FirstOrDefault();
+           
             if (ProjectName == string.Empty)
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = Path.Combine(Config.We, "WE.exe"),
+                    FileName = weExe,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -46,9 +48,9 @@ namespace War3FrameBuild.CommandManager
             var timeW3x = File.GetLastWriteTime(tempW3xFile); // 获取w3x文件修改时间
             var timeWE = File.GetLastWriteTime(tempWEFlie); // 获取标记文件修改时间
             var terrain = "";
+            // 如果地图文件比we打开时新（说明有额外保存过）把保存后的文件拆包并同步
             if (timeW3x > timeWE)
             {
-                // 如果地图文件比we打开时新（说明有额外保存过）把保存后的文件拆包并同步
                 var w2lProc = new ProcessStartInfo
                 {
                     FileName = Path.Combine(Config.W3x2lni, "w2l.exe"),
@@ -65,7 +67,7 @@ namespace War3FrameBuild.CommandManager
             // 删除旧的标记文件
             File.Delete(tempWEFlie);
 
-            // 拾取项目文件
+            // 打包文件
             Pickup();
 
             // 加载项目地形贴图

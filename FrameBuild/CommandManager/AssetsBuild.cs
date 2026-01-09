@@ -186,7 +186,6 @@ namespace War3FrameBuild.CommandManager
                                 }
                                 break;
                             }
-
                         case "AddPreview":
                             {
                                 var file = arguments[0].ToString();

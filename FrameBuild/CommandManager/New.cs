@@ -33,8 +33,9 @@ namespace War3FrameBuild.CommandManager
             else
             {
                 Directory.CreateDirectory(projectPath);
+                DirectoryExtensions.CopyDir(Path.Combine(Projects, "demo"), projectPath);
+                File.Move(Path.Combine(projectPath, "demo.csproj"), Path.Combine(projectPath, $"{ProjectName}.csproj"));
             }
-            DirectoryExtensions.CopyDir(Path.Combine(Vendor, "Template"), projectPath);
             // 生成备份w3x目录
 
             Log.Information($"项目 {ProjectName} 创建成功!");
