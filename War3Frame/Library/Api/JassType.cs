@@ -4,666 +4,669 @@ using System.Text;
 
 namespace War3Frame.Library.Api
 {
-    public class jhandle
-    {
-        public IntPtr handle { get; protected set; }
+    //using JCode = System.Action;
+    public delegate void JCode();
 
-        public jhandle()
+    public class JHandle
+    {
+        public IntPtr Handle { get; protected set; }
+
+        public JHandle()
         {
-            handle = IntPtr.Zero;
+            Handle = IntPtr.Zero;
         }
 
-        public jhandle(IntPtr handle)
+        public JHandle(IntPtr JHandle)
         {
-            this.handle = handle;
+            Handle = JHandle;
         }
 
-        public jhandle(int handle)
+        public JHandle(int JHandle)
         {
-            this.handle = new IntPtr(handle);
+            Handle = new IntPtr(JHandle);
         }
 
-        public static explicit operator bool(jhandle h)
+        public static explicit operator bool(JHandle h)
         {
-            return h?.handle != IntPtr.Zero;
+            return h?.Handle != IntPtr.Zero;
         }
     }
 
-    public class jagent : jhandle
+    public class JAgent : JHandle
     {
-        public jagent() : base() { }
-        public jagent(IntPtr handle) : base(handle) { }
-        public jagent(int handle) : base(handle) { }
+        public JAgent() : base() { }
+        public JAgent(IntPtr JHandle) : base(JHandle) { }
+        public JAgent(int JHandle) : base(JHandle) { }
     }
 
-    public class jevent : jagent
+    public class JEvent : JAgent
     {
-        public jevent() : base() { }
-        public jevent(IntPtr handle) : base(handle) { }
-        public jevent(int handle) : base(handle) { }
+        public JEvent() : base() { }
+        public JEvent(IntPtr JHandle) : base(JHandle) { }
+        public JEvent(int JHandle) : base(JHandle) { }
     }
 
-    public class jplayer : jagent
+    public class JPlayer : JAgent
     {
-        public jplayer() : base() { }
-        public jplayer(IntPtr handle) : base(handle) { }
-        public jplayer(int handle) : base(handle) { }
+        public JPlayer() : base() { }
+        public JPlayer(IntPtr JHandle) : base(JHandle) { }
+        public JPlayer(int JHandle) : base(JHandle) { }
     }
 
-    public class jwidget : jagent
+    public class JWidget : JAgent
     {
-        public jwidget() : base() { }
-        public jwidget(IntPtr handle) : base(handle) { }
-        public jwidget(int handle) : base(handle) { }
+        public JWidget() : base() { }
+        public JWidget(IntPtr JHandle) : base(JHandle) { }
+        public JWidget(int JHandle) : base(JHandle) { }
     }
 
-    public class junit : jwidget
+    public class JUnit : JWidget
     {
-        public junit() : base() { }
-        public junit(IntPtr handle) : base(handle) { }
-        public junit(int handle) : base(handle) { }
+        public JUnit() : base() { }
+        public JUnit(IntPtr JHandle) : base(JHandle) { }
+        public JUnit(int JHandle) : base(JHandle) { }
     }
 
-    public class jdestructable : jwidget
+    public class JDestructable : JWidget
     {
-        public jdestructable() : base() { }
-        public jdestructable(IntPtr handle) : base(handle) { }
-        public jdestructable(int handle) : base(handle) { }
+        public JDestructable() : base() { }
+        public JDestructable(IntPtr JHandle) : base(JHandle) { }
+        public JDestructable(int JHandle) : base(JHandle) { }
     }
 
-    public class jitem : jwidget
+    public class JItem : JWidget
     {
-        public jitem() : base() { }
-        public jitem(IntPtr handle) : base(handle) { }
-        public jitem(int handle) : base(handle) { }
+        public JItem() : base() { }
+        public JItem(IntPtr JHandle) : base(JHandle) { }
+        public JItem(int JHandle) : base(JHandle) { }
     }
 
-    public class jability : jagent
+    public class JAbility : JAgent
     {
-        public jability() : base() { }
-        public jability(IntPtr handle) : base(handle) { }
-        public jability(int handle) : base(handle) { }
+        public JAbility() : base() { }
+        public JAbility(IntPtr JHandle) : base(JHandle) { }
+        public JAbility(int JHandle) : base(JHandle) { }
     }
 
-    public class jbuff : jability
+    public class JBuff : JAbility
     {
-        public jbuff() : base() { }
-        public jbuff(IntPtr handle) : base(handle) { }
-        public jbuff(int handle) : base(handle) { }
+        public JBuff() : base() { }
+        public JBuff(IntPtr JHandle) : base(JHandle) { }
+        public JBuff(int JHandle) : base(JHandle) { }
     }
 
-    public class jforce : jagent
+    public class JForce : JAgent
     {
-        public jforce() : base() { }
-        public jforce(IntPtr handle) : base(handle) { }
-        public jforce(int handle) : base(handle) { }
+        public JForce() : base() { }
+        public JForce(IntPtr JHandle) : base(JHandle) { }
+        public JForce(int JHandle) : base(JHandle) { }
     }
 
-    public class jgroup : jagent
+    public class JGroup : JAgent
     {
-        public jgroup() : base() { }
-        public jgroup(IntPtr handle) : base(handle) { }
-        public jgroup(int handle) : base(handle) { }
+        public JGroup() : base() { }
+        public JGroup(IntPtr JHandle) : base(JHandle) { }
+        public JGroup(int JHandle) : base(JHandle) { }
     }
 
-    public class jtrigger : jagent
+    public class JTrigger : JAgent
     {
-        public jtrigger() : base() { }
-        public jtrigger(IntPtr handle) : base(handle) { }
-        public jtrigger(int handle) : base(handle) { }
+        public JTrigger() : base() { }
+        public JTrigger(IntPtr JHandle) : base(JHandle) { }
+        public JTrigger(int JHandle) : base(JHandle) { }
     }
 
-    public class jtriggercondition : jagent
+    public class JTriggerCondition : JAgent
     {
-        public jtriggercondition() : base() { }
-        public jtriggercondition(IntPtr handle) : base(handle) { }
-        public jtriggercondition(int handle) : base(handle) { }
+        public JTriggerCondition() : base() { }
+        public JTriggerCondition(IntPtr JHandle) : base(JHandle) { }
+        public JTriggerCondition(int JHandle) : base(JHandle) { }
     }
 
-    public class jtriggeraction : jhandle
+    public class JTriggerAction : JHandle
     {
-        public jtriggeraction() : base() { }
-        public jtriggeraction(IntPtr handle) : base(handle) { }
-        public jtriggeraction(int handle) : base(handle) { }
+        public JTriggerAction() : base() { }
+        public JTriggerAction(IntPtr JHandle) : base(JHandle) { }
+        public JTriggerAction(int JHandle) : base(JHandle) { }
     }
 
-    public class jtimer : jagent
+    public class JTimer : JAgent
     {
-        public jtimer() : base() { }
-        public jtimer(IntPtr handle) : base(handle) { }
-        public jtimer(int handle) : base(handle) { }
+        public JTimer() : base() { }
+        public JTimer(IntPtr JHandle) : base(JHandle) { }
+        public JTimer(int JHandle) : base(JHandle) { }
     }
 
-    public class jlocation : jagent
+    public class JLocation : JAgent
     {
-        public jlocation() : base() { }
-        public jlocation(IntPtr handle) : base(handle) { }
-        public jlocation(int handle) : base(handle) { }
+        public JLocation() : base() { }
+        public JLocation(IntPtr JHandle) : base(JHandle) { }
+        public JLocation(int JHandle) : base(JHandle) { }
     }
 
-    public class jregion : jagent
+    public class JRegion : JAgent
     {
-        public jregion() : base() { }
-        public jregion(IntPtr handle) : base(handle) { }
-        public jregion(int handle) : base(handle) { }
+        public JRegion() : base() { }
+        public JRegion(IntPtr JHandle) : base(JHandle) { }
+        public JRegion(int JHandle) : base(JHandle) { }
     }
 
-    public class jrect : jagent
+    public class JRect : JAgent
     {
-        public jrect() : base() { }
-        public jrect(IntPtr handle) : base(handle) { }
-        public jrect(int handle) : base(handle) { }
+        public JRect() : base() { }
+        public JRect(IntPtr JHandle) : base(JHandle) { }
+        public JRect(int JHandle) : base(JHandle) { }
     }
 
-    public class jboolexpr : jagent
+    public class JBoolExpr : JAgent
     {
-        public jboolexpr() : base() { }
-        public jboolexpr(IntPtr handle) : base(handle) { }
-        public jboolexpr(int handle) : base(handle) { }
+        public JBoolExpr() : base() { }
+        public JBoolExpr(IntPtr JHandle) : base(JHandle) { }
+        public JBoolExpr(int JHandle) : base(JHandle) { }
     }
 
-    public class jsound : jagent
+    public class JSound : JAgent
     {
-        public jsound() : base() { }
-        public jsound(IntPtr handle) : base(handle) { }
-        public jsound(int handle) : base(handle) { }
+        public JSound() : base() { }
+        public JSound(IntPtr JHandle) : base(JHandle) { }
+        public JSound(int JHandle) : base(JHandle) { }
     }
 
-    public class jconditionfunc : jboolexpr
+    public class JConditionFunc : JBoolExpr
     {
-        public jconditionfunc() : base() { }
-        public jconditionfunc(IntPtr handle) : base(handle) { }
-        public jconditionfunc(int handle) : base(handle) { }
+        public JConditionFunc() : base() { }
+        public JConditionFunc(IntPtr JHandle) : base(JHandle) { }
+        public JConditionFunc(int JHandle) : base(JHandle) { }
     }
 
-    public class jfilterfunc : jboolexpr
+    public class JFilterFunc : JBoolExpr
     {
-        public jfilterfunc() : base() { }
-        public jfilterfunc(IntPtr handle) : base(handle) { }
-        public jfilterfunc(int handle) : base(handle) { }
+        public JFilterFunc() : base() { }
+        public JFilterFunc(IntPtr JHandle) : base(JHandle) { }
+        public JFilterFunc(int JHandle) : base(JHandle) { }
     }
 
-    public class junitpool : jhandle
+    public class JUnitPool : JHandle
     {
-        public junitpool() : base() { }
-        public junitpool(IntPtr handle) : base(handle) { }
-        public junitpool(int handle) : base(handle) { }
+        public JUnitPool() : base() { }
+        public JUnitPool(IntPtr JHandle) : base(JHandle) { }
+        public JUnitPool(int JHandle) : base(JHandle) { }
     }
 
-    public class jitempool : jhandle
+    public class JItemPool : JHandle
     {
-        public jitempool() : base() { }
-        public jitempool(IntPtr handle) : base(handle) { }
-        public jitempool(int handle) : base(handle) { }
+        public JItemPool() : base() { }
+        public JItemPool(IntPtr JHandle) : base(JHandle) { }
+        public JItemPool(int JHandle) : base(JHandle) { }
     }
 
-    public class jrace : jhandle
+    public class JRace : JHandle
     {
-        public jrace() : base() { }
-        public jrace(IntPtr handle) : base(handle) { }
-        public jrace(int handle) : base(handle) { }
+        public JRace() : base() { }
+        public JRace(IntPtr JHandle) : base(JHandle) { }
+        public JRace(int JHandle) : base(JHandle) { }
     }
 
-    public class jalliancetype : jhandle
+    public class JAllianceType : JHandle
     {
-        public jalliancetype() : base() { }
-        public jalliancetype(IntPtr handle) : base(handle) { }
-        public jalliancetype(int handle) : base(handle) { }
+        public JAllianceType() : base() { }
+        public JAllianceType(IntPtr JHandle) : base(JHandle) { }
+        public JAllianceType(int JHandle) : base(JHandle) { }
     }
 
-    public class jracepreference : jhandle
+    public class JRacePreference : JHandle
     {
-        public jracepreference() : base() { }
-        public jracepreference(IntPtr handle) : base(handle) { }
-        public jracepreference(int handle) : base(handle) { }
+        public JRacePreference() : base() { }
+        public JRacePreference(IntPtr JHandle) : base(JHandle) { }
+        public JRacePreference(int JHandle) : base(JHandle) { }
     }
 
-    public class jgamestate : jhandle
+    public class JGameState : JHandle
     {
-        public jgamestate() : base() { }
-        public jgamestate(IntPtr handle) : base(handle) { }
-        public jgamestate(int handle) : base(handle) { }
+        public JGameState() : base() { }
+        public JGameState(IntPtr JHandle) : base(JHandle) { }
+        public JGameState(int JHandle) : base(JHandle) { }
     }
 
-    public class jigamestate : jgamestate
+    public class JIGameState : JGameState
     {
-        public jigamestate() : base() { }
-        public jigamestate(IntPtr handle) : base(handle) { }
-        public jigamestate(int handle) : base(handle) { }
+        public JIGameState() : base() { }
+        public JIGameState(IntPtr JHandle) : base(JHandle) { }
+        public JIGameState(int JHandle) : base(JHandle) { }
     }
 
-    public class jfgamestate : jgamestate
+    public class JFGameState : JGameState
     {
-        public jfgamestate() : base() { }
-        public jfgamestate(IntPtr handle) : base(handle) { }
-        public jfgamestate(int handle) : base(handle) { }
+        public JFGameState() : base() { }
+        public JFGameState(IntPtr JHandle) : base(JHandle) { }
+        public JFGameState(int JHandle) : base(JHandle) { }
     }
 
-    public class jplayerstate : jhandle
+    public class JPlayerState : JHandle
     {
-        public jplayerstate() : base() { }
-        public jplayerstate(IntPtr handle) : base(handle) { }
-        public jplayerstate(int handle) : base(handle) { }
+        public JPlayerState() : base() { }
+        public JPlayerState(IntPtr JHandle) : base(JHandle) { }
+        public JPlayerState(int JHandle) : base(JHandle) { }
     }
 
-    public class jplayerscore : jhandle
+    public class JPlayerScore : JHandle
     {
-        public jplayerscore() : base() { }
-        public jplayerscore(IntPtr handle) : base(handle) { }
-        public jplayerscore(int handle) : base(handle) { }
+        public JPlayerScore() : base() { }
+        public JPlayerScore(IntPtr JHandle) : base(JHandle) { }
+        public JPlayerScore(int JHandle) : base(JHandle) { }
     }
 
-    public class jplayergameresult : jhandle
+    public class JPlayerGameResult : JHandle
     {
-        public jplayergameresult() : base() { }
-        public jplayergameresult(IntPtr handle) : base(handle) { }
-        public jplayergameresult(int handle) : base(handle) { }
+        public JPlayerGameResult() : base() { }
+        public JPlayerGameResult(IntPtr JHandle) : base(JHandle) { }
+        public JPlayerGameResult(int JHandle) : base(JHandle) { }
     }
 
-    public class junitstate : jhandle
+    public class JUnitState : JHandle
     {
-        public junitstate() : base() { }
-        public junitstate(IntPtr handle) : base(handle) { }
-        public junitstate(int handle) : base(handle) { }
+        public JUnitState() : base() { }
+        public JUnitState(IntPtr JHandle) : base(JHandle) { }
+        public JUnitState(int JHandle) : base(JHandle) { }
     }
 
-    public class jaidifficulty : jhandle
+    public class JAiDifficulty : JHandle
     {
-        public jaidifficulty() : base() { }
-        public jaidifficulty(IntPtr handle) : base(handle) { }
-        public jaidifficulty(int handle) : base(handle) { }
+        public JAiDifficulty() : base() { }
+        public JAiDifficulty(IntPtr JHandle) : base(JHandle) { }
+        public JAiDifficulty(int JHandle) : base(JHandle) { }
     }
 
-    public class jeventid : jhandle
+    public class JEventId : JHandle
     {
-        public jeventid() : base() { }
-        public jeventid(IntPtr handle) : base(handle) { }
-        public jeventid(int handle) : base(handle) { }
+        public JEventId() : base() { }
+        public JEventId(IntPtr JHandle) : base(JHandle) { }
+        public JEventId(int JHandle) : base(JHandle) { }
     }
 
-    public class jgameevent : jeventid
+    public class JGameEvent : JEventId
     {
-        public jgameevent() : base() { }
-        public jgameevent(IntPtr handle) : base(handle) { }
-        public jgameevent(int handle) : base(handle) { }
+        public JGameEvent() : base() { }
+        public JGameEvent(IntPtr JHandle) : base(JHandle) { }
+        public JGameEvent(int JHandle) : base(JHandle) { }
     }
 
-    public class jplayerevent : jeventid
+    public class JPlayerEvent : JEventId
     {
-        public jplayerevent() : base() { }
-        public jplayerevent(IntPtr handle) : base(handle) { }
-        public jplayerevent(int handle) : base(handle) { }
+        public JPlayerEvent() : base() { }
+        public JPlayerEvent(IntPtr JHandle) : base(JHandle) { }
+        public JPlayerEvent(int JHandle) : base(JHandle) { }
     }
 
-    public class jplayerunitevent : jeventid
+    public class JPlayerUnitEvent : JEventId
     {
-        public jplayerunitevent() : base() { }
-        public jplayerunitevent(IntPtr handle) : base(handle) { }
-        public jplayerunitevent(int handle) : base(handle) { }
+        public JPlayerUnitEvent() : base() { }
+        public JPlayerUnitEvent(IntPtr JHandle) : base(JHandle) { }
+        public JPlayerUnitEvent(int JHandle) : base(JHandle) { }
     }
 
-    public class junitevent : jeventid
+    public class JUnitEvent : JEventId
     {
-        public junitevent() : base() { }
-        public junitevent(IntPtr handle) : base(handle) { }
-        public junitevent(int handle) : base(handle) { }
+        public JUnitEvent() : base() { }
+        public JUnitEvent(IntPtr JHandle) : base(JHandle) { }
+        public JUnitEvent(int JHandle) : base(JHandle) { }
     }
 
-    public class jlimitop : jeventid
+    public class JLimitOp : JEventId
     {
-        public jlimitop() : base() { }
-        public jlimitop(IntPtr handle) : base(handle) { }
-        public jlimitop(int handle) : base(handle) { }
+        public JLimitOp() : base() { }
+        public JLimitOp(IntPtr JHandle) : base(JHandle) { }
+        public JLimitOp(int JHandle) : base(JHandle) { }
     }
 
-    public class jwidgetevent : jeventid
+    public class JWidgetEvent : JEventId
     {
-        public jwidgetevent() : base() { }
-        public jwidgetevent(IntPtr handle) : base(handle) { }
-        public jwidgetevent(int handle) : base(handle) { }
+        public JWidgetEvent() : base() { }
+        public JWidgetEvent(IntPtr JHandle) : base(JHandle) { }
+        public JWidgetEvent(int JHandle) : base(JHandle) { }
     }
 
-    public class jdialogevent : jeventid
+    public class JDialogEvent : JEventId
     {
-        public jdialogevent() : base() { }
-        public jdialogevent(IntPtr handle) : base(handle) { }
-        public jdialogevent(int handle) : base(handle) { }
+        public JDialogEvent() : base() { }
+        public JDialogEvent(IntPtr JHandle) : base(JHandle) { }
+        public JDialogEvent(int JHandle) : base(JHandle) { }
     }
 
-    public class junittype : jhandle
+    public class JUnitType : JHandle
     {
-        public junittype() : base() { }
-        public junittype(IntPtr handle) : base(handle) { }
-        public junittype(int handle) : base(handle) { }
+        public JUnitType() : base() { }
+        public JUnitType(IntPtr JHandle) : base(JHandle) { }
+        public JUnitType(int JHandle) : base(JHandle) { }
     }
 
-    public class jgamespeed : jhandle
+    public class JGameSpeed : JHandle
     {
-        public jgamespeed() : base() { }
-        public jgamespeed(IntPtr handle) : base(handle) { }
-        public jgamespeed(int handle) : base(handle) { }
+        public JGameSpeed() : base() { }
+        public JGameSpeed(IntPtr JHandle) : base(JHandle) { }
+        public JGameSpeed(int JHandle) : base(JHandle) { }
     }
 
-    public class jgamedifficulty : jhandle
+    public class JGameDifficulty : JHandle
     {
-        public jgamedifficulty() : base() { }
-        public jgamedifficulty(IntPtr handle) : base(handle) { }
-        public jgamedifficulty(int handle) : base(handle) { }
+        public JGameDifficulty() : base() { }
+        public JGameDifficulty(IntPtr JHandle) : base(JHandle) { }
+        public JGameDifficulty(int JHandle) : base(JHandle) { }
     }
 
-    public class jgametype : jhandle
+    public class JGameType : JHandle
     {
-        public jgametype() : base() { }
-        public jgametype(IntPtr handle) : base(handle) { }
-        public jgametype(int handle) : base(handle) { }
+        public JGameType() : base() { }
+        public JGameType(IntPtr JHandle) : base(JHandle) { }
+        public JGameType(int JHandle) : base(JHandle) { }
     }
 
-    public class jmapflag : jhandle
+    public class JMapFlag : JHandle
     {
-        public jmapflag() : base() { }
-        public jmapflag(IntPtr handle) : base(handle) { }
-        public jmapflag(int handle) : base(handle) { }
+        public JMapFlag() : base() { }
+        public JMapFlag(IntPtr JHandle) : base(JHandle) { }
+        public JMapFlag(int JHandle) : base(JHandle) { }
     }
 
-    public class jmapvisibility : jhandle
+    public class JMapVisibility : JHandle
     {
-        public jmapvisibility() : base() { }
-        public jmapvisibility(IntPtr handle) : base(handle) { }
-        public jmapvisibility(int handle) : base(handle) { }
+        public JMapVisibility() : base() { }
+        public JMapVisibility(IntPtr JHandle) : base(JHandle) { }
+        public JMapVisibility(int JHandle) : base(JHandle) { }
     }
 
-    public class jmapsetting : jhandle
+    public class JMapSetting : JHandle
     {
-        public jmapsetting() : base() { }
-        public jmapsetting(IntPtr handle) : base(handle) { }
-        public jmapsetting(int handle) : base(handle) { }
+        public JMapSetting() : base() { }
+        public JMapSetting(IntPtr JHandle) : base(JHandle) { }
+        public JMapSetting(int JHandle) : base(JHandle) { }
     }
 
-    public class jmapdensity : jhandle
+    public class JMapDensity : JHandle
     {
-        public jmapdensity() : base() { }
-        public jmapdensity(IntPtr handle) : base(handle) { }
-        public jmapdensity(int handle) : base(handle) { }
+        public JMapDensity() : base() { }
+        public JMapDensity(IntPtr JHandle) : base(JHandle) { }
+        public JMapDensity(int JHandle) : base(JHandle) { }
     }
 
-    public class jmapcontrol : jhandle
+    public class JMapControl : JHandle
     {
-        public jmapcontrol() : base() { }
-        public jmapcontrol(IntPtr handle) : base(handle) { }
-        public jmapcontrol(int handle) : base(handle) { }
+        public JMapControl() : base() { }
+        public JMapControl(IntPtr JHandle) : base(JHandle) { }
+        public JMapControl(int JHandle) : base(JHandle) { }
     }
 
-    public class jplayerslotstate : jhandle
+    public class JPlayerSlotState : JHandle
     {
-        public jplayerslotstate() : base() { }
-        public jplayerslotstate(IntPtr handle) : base(handle) { }
-        public jplayerslotstate(int handle) : base(handle) { }
+        public JPlayerSlotState() : base() { }
+        public JPlayerSlotState(IntPtr JHandle) : base(JHandle) { }
+        public JPlayerSlotState(int JHandle) : base(JHandle) { }
     }
 
-    public class jvolumegroup : jhandle
+    public class JVolumeGroup : JHandle
     {
-        public jvolumegroup() : base() { }
-        public jvolumegroup(IntPtr handle) : base(handle) { }
-        public jvolumegroup(int handle) : base(handle) { }
+        public JVolumeGroup() : base() { }
+        public JVolumeGroup(IntPtr JHandle) : base(JHandle) { }
+        public JVolumeGroup(int JHandle) : base(JHandle) { }
     }
 
-    public class jcamerafield : jhandle
+    public class JCameraField : JHandle
     {
-        public jcamerafield() : base() { }
-        public jcamerafield(IntPtr handle) : base(handle) { }
-        public jcamerafield(int handle) : base(handle) { }
+        public JCameraField() : base() { }
+        public JCameraField(IntPtr JHandle) : base(JHandle) { }
+        public JCameraField(int JHandle) : base(JHandle) { }
     }
 
-    public class jcamerasetup : jhandle
+    public class JCameraSetup : JHandle
     {
-        public jcamerasetup() : base() { }
-        public jcamerasetup(IntPtr handle) : base(handle) { }
-        public jcamerasetup(int handle) : base(handle) { }
+        public JCameraSetup() : base() { }
+        public JCameraSetup(IntPtr JHandle) : base(JHandle) { }
+        public JCameraSetup(int JHandle) : base(JHandle) { }
     }
 
-    public class jplayercolor : jhandle
+    public class JPlayerColor : JHandle
     {
-        public jplayercolor() : base() { }
-        public jplayercolor(IntPtr handle) : base(handle) { }
-        public jplayercolor(int handle) : base(handle) { }
+        public JPlayerColor() : base() { }
+        public JPlayerColor(IntPtr JHandle) : base(JHandle) { }
+        public JPlayerColor(int JHandle) : base(JHandle) { }
     }
 
-    public class jplacement : jhandle
+    public class JPlacement : JHandle
     {
-        public jplacement() : base() { }
-        public jplacement(IntPtr handle) : base(handle) { }
-        public jplacement(int handle) : base(handle) { }
+        public JPlacement() : base() { }
+        public JPlacement(IntPtr JHandle) : base(JHandle) { }
+        public JPlacement(int JHandle) : base(JHandle) { }
     }
 
-    public class jstartlocprio : jhandle
+    public class JStartLocPrio : JHandle
     {
-        public jstartlocprio() : base() { }
-        public jstartlocprio(IntPtr handle) : base(handle) { }
-        public jstartlocprio(int handle) : base(handle) { }
+        public JStartLocPrio() : base() { }
+        public JStartLocPrio(IntPtr JHandle) : base(JHandle) { }
+        public JStartLocPrio(int JHandle) : base(JHandle) { }
     }
 
-    public class jraritycontrol : jhandle
+    public class JRarityControl : JHandle
     {
-        public jraritycontrol() : base() { }
-        public jraritycontrol(IntPtr handle) : base(handle) { }
-        public jraritycontrol(int handle) : base(handle) { }
+        public JRarityControl() : base() { }
+        public JRarityControl(IntPtr JHandle) : base(JHandle) { }
+        public JRarityControl(int JHandle) : base(JHandle) { }
     }
 
-    public class jblendmode : jhandle
+    public class JBlendMode : JHandle
     {
-        public jblendmode() : base() { }
-        public jblendmode(IntPtr handle) : base(handle) { }
-        public jblendmode(int handle) : base(handle) { }
+        public JBlendMode() : base() { }
+        public JBlendMode(IntPtr JHandle) : base(JHandle) { }
+        public JBlendMode(int JHandle) : base(JHandle) { }
     }
 
-    public class jtexmapflags : jhandle
+    public class JTexMapFlags : JHandle
     {
-        public jtexmapflags() : base() { }
-        public jtexmapflags(IntPtr handle) : base(handle) { }
-        public jtexmapflags(int handle) : base(handle) { }
+        public JTexMapFlags() : base() { }
+        public JTexMapFlags(IntPtr JHandle) : base(JHandle) { }
+        public JTexMapFlags(int JHandle) : base(JHandle) { }
     }
 
-    public class jeffect : jagent
+    public class JEffect : JAgent
     {
-        public jeffect() : base() { }
-        public jeffect(IntPtr handle) : base(handle) { }
-        public jeffect(int handle) : base(handle) { }
+        public JEffect() : base() { }
+        public JEffect(IntPtr JHandle) : base(JHandle) { }
+        public JEffect(int JHandle) : base(JHandle) { }
     }
 
-    public class jeffecttype : jhandle
+    public class JEffectType : JHandle
     {
-        public jeffecttype() : base() { }
-        public jeffecttype(IntPtr handle) : base(handle) { }
-        public jeffecttype(int handle) : base(handle) { }
+        public JEffectType() : base() { }
+        public JEffectType(IntPtr JHandle) : base(JHandle) { }
+        public JEffectType(int JHandle) : base(JHandle) { }
     }
 
-    public class jweathereffect : jhandle
+    public class JWeatherEffect : JHandle
     {
-        public jweathereffect() : base() { }
-        public jweathereffect(IntPtr handle) : base(handle) { }
-        public jweathereffect(int handle) : base(handle) { }
+        public JWeatherEffect() : base() { }
+        public JWeatherEffect(IntPtr JHandle) : base(JHandle) { }
+        public JWeatherEffect(int JHandle) : base(JHandle) { }
     }
 
-    public class jterraindeformation : jhandle
+    public class JTerrainDeformation : JHandle
     {
-        public jterraindeformation() : base() { }
-        public jterraindeformation(IntPtr handle) : base(handle) { }
-        public jterraindeformation(int handle) : base(handle) { }
+        public JTerrainDeformation() : base() { }
+        public JTerrainDeformation(IntPtr JHandle) : base(JHandle) { }
+        public JTerrainDeformation(int JHandle) : base(JHandle) { }
     }
 
-    public class jfogstate : jhandle
+    public class JFogState : JHandle
     {
-        public jfogstate() : base() { }
-        public jfogstate(IntPtr handle) : base(handle) { }
-        public jfogstate(int handle) : base(handle) { }
+        public JFogState() : base() { }
+        public JFogState(IntPtr JHandle) : base(JHandle) { }
+        public JFogState(int JHandle) : base(JHandle) { }
     }
 
-    public class jfogmodifier : jagent
+    public class JFogModifier : JAgent
     {
-        public jfogmodifier() : base() { }
-        public jfogmodifier(IntPtr handle) : base(handle) { }
-        public jfogmodifier(int handle) : base(handle) { }
+        public JFogModifier() : base() { }
+        public JFogModifier(IntPtr JHandle) : base(JHandle) { }
+        public JFogModifier(int JHandle) : base(JHandle) { }
     }
 
-    public class jdialog : jagent
+    public class JDialog : JAgent
     {
-        public jdialog() : base() { }
-        public jdialog(IntPtr handle) : base(handle) { }
-        public jdialog(int handle) : base(handle) { }
+        public JDialog() : base() { }
+        public JDialog(IntPtr JHandle) : base(JHandle) { }
+        public JDialog(int JHandle) : base(JHandle) { }
     }
 
-    public class jbutton : jagent
+    public class JButton : JAgent
     {
-        public jbutton() : base() { }
-        public jbutton(IntPtr handle) : base(handle) { }
-        public jbutton(int handle) : base(handle) { }
+        public JButton() : base() { }
+        public JButton(IntPtr JHandle) : base(JHandle) { }
+        public JButton(int JHandle) : base(JHandle) { }
     }
 
-    public class jquest : jagent
+    public class JQuest : JAgent
     {
-        public jquest() : base() { }
-        public jquest(IntPtr handle) : base(handle) { }
-        public jquest(int handle) : base(handle) { }
+        public JQuest() : base() { }
+        public JQuest(IntPtr JHandle) : base(JHandle) { }
+        public JQuest(int JHandle) : base(JHandle) { }
     }
 
-    public class jquestitem : jagent
+    public class JQuestItem : JAgent
     {
-        public jquestitem() : base() { }
-        public jquestitem(IntPtr handle) : base(handle) { }
-        public jquestitem(int handle) : base(handle) { }
+        public JQuestItem() : base() { }
+        public JQuestItem(IntPtr JHandle) : base(JHandle) { }
+        public JQuestItem(int JHandle) : base(JHandle) { }
     }
 
-    public class jdefeatcondition : jagent
+    public class JDefeatCondition : JAgent
     {
-        public jdefeatcondition() : base() { }
-        public jdefeatcondition(IntPtr handle) : base(handle) { }
-        public jdefeatcondition(int handle) : base(handle) { }
+        public JDefeatCondition() : base() { }
+        public JDefeatCondition(IntPtr JHandle) : base(JHandle) { }
+        public JDefeatCondition(int JHandle) : base(JHandle) { }
     }
 
-    public class jtimerdialog : jagent
+    public class JTimerDialog : JAgent
     {
-        public jtimerdialog() : base() { }
-        public jtimerdialog(IntPtr handle) : base(handle) { }
-        public jtimerdialog(int handle) : base(handle) { }
+        public JTimerDialog() : base() { }
+        public JTimerDialog(IntPtr JHandle) : base(JHandle) { }
+        public JTimerDialog(int JHandle) : base(JHandle) { }
     }
 
-    public class jleaderboard : jagent
+    public class JLeaderboard : JAgent
     {
-        public jleaderboard() : base() { }
-        public jleaderboard(IntPtr handle) : base(handle) { }
-        public jleaderboard(int handle) : base(handle) { }
+        public JLeaderboard() : base() { }
+        public JLeaderboard(IntPtr JHandle) : base(JHandle) { }
+        public JLeaderboard(int JHandle) : base(JHandle) { }
     }
 
-    public class jmultiboard : jagent
+    public class JMultiboard : JAgent
     {
-        public jmultiboard() : base() { }
-        public jmultiboard(IntPtr handle) : base(handle) { }
-        public jmultiboard(int handle) : base(handle) { }
+        public JMultiboard() : base() { }
+        public JMultiboard(IntPtr JHandle) : base(JHandle) { }
+        public JMultiboard(int JHandle) : base(JHandle) { }
     }
 
-    public class jmultiboarditem : jagent
+    public class JMultiboardItem : JAgent
     {
-        public jmultiboarditem() : base() { }
-        public jmultiboarditem(IntPtr handle) : base(handle) { }
-        public jmultiboarditem(int handle) : base(handle) { }
+        public JMultiboardItem() : base() { }
+        public JMultiboardItem(IntPtr JHandle) : base(JHandle) { }
+        public JMultiboardItem(int JHandle) : base(JHandle) { }
     }
 
-    public class jtrackable : jagent
+    public class JTrackable : JAgent
     {
-        public jtrackable() : base() { }
-        public jtrackable(IntPtr handle) : base(handle) { }
-        public jtrackable(int handle) : base(handle) { }
+        public JTrackable() : base() { }
+        public JTrackable(IntPtr JHandle) : base(JHandle) { }
+        public JTrackable(int JHandle) : base(JHandle) { }
     }
 
-    public class jgamecache : jagent
+    public class JGameCache : JAgent
     {
-        public jgamecache() : base() { }
-        public jgamecache(IntPtr handle) : base(handle) { }
-        public jgamecache(int handle) : base(handle) { }
+        public JGameCache() : base() { }
+        public JGameCache(IntPtr JHandle) : base(JHandle) { }
+        public JGameCache(int JHandle) : base(JHandle) { }
     }
 
-    public class jversion : jhandle
+    public class JVersion : JHandle
     {
-        public jversion() : base() { }
-        public jversion(IntPtr handle) : base(handle) { }
-        public jversion(int handle) : base(handle) { }
+        public JVersion() : base() { }
+        public JVersion(IntPtr JHandle) : base(JHandle) { }
+        public JVersion(int JHandle) : base(JHandle) { }
     }
 
-    public class jitemtype : jhandle
+    public class JItemType : JHandle
     {
-        public jitemtype() : base() { }
-        public jitemtype(IntPtr handle) : base(handle) { }
-        public jitemtype(int handle) : base(handle) { }
+        public JItemType() : base() { }
+        public JItemType(IntPtr JHandle) : base(JHandle) { }
+        public JItemType(int JHandle) : base(JHandle) { }
     }
 
-    public class jtexttag : jhandle
+    public class JTextTag : JHandle
     {
-        public jtexttag() : base() { }
-        public jtexttag(IntPtr handle) : base(handle) { }
-        public jtexttag(int handle) : base(handle) { }
+        public JTextTag() : base() { }
+        public JTextTag(IntPtr JHandle) : base(JHandle) { }
+        public JTextTag(int JHandle) : base(JHandle) { }
     }
 
-    public class jattacktype : jhandle
+    public class JAttackType : JHandle
     {
-        public jattacktype() : base() { }
-        public jattacktype(IntPtr handle) : base(handle) { }
-        public jattacktype(int handle) : base(handle) { }
+        public JAttackType() : base() { }
+        public JAttackType(IntPtr JHandle) : base(JHandle) { }
+        public JAttackType(int JHandle) : base(JHandle) { }
     }
 
-    public class jdamagetype : jhandle
+    public class JDamageType : JHandle
     {
-        public jdamagetype() : base() { }
-        public jdamagetype(IntPtr handle) : base(handle) { }
-        public jdamagetype(int handle) : base(handle) { }
+        public JDamageType() : base() { }
+        public JDamageType(IntPtr JHandle) : base(JHandle) { }
+        public JDamageType(int JHandle) : base(JHandle) { }
     }
 
-    public class jweapontype : jhandle
+    public class JWeaponType : JHandle
     {
-        public jweapontype() : base() { }
-        public jweapontype(IntPtr handle) : base(handle) { }
-        public jweapontype(int handle) : base(handle) { }
+        public JWeaponType() : base() { }
+        public JWeaponType(IntPtr JHandle) : base(JHandle) { }
+        public JWeaponType(int JHandle) : base(JHandle) { }
     }
 
-    public class jsoundtype : jhandle
+    public class JSoundType : JHandle
     {
-        public jsoundtype() : base() { }
-        public jsoundtype(IntPtr handle) : base(handle) { }
-        public jsoundtype(int handle) : base(handle) { }
+        public JSoundType() : base() { }
+        public JSoundType(IntPtr JHandle) : base(JHandle) { }
+        public JSoundType(int JHandle) : base(JHandle) { }
     }
 
-    public class jlightning : jhandle
+    public class JLightning : JHandle
     {
-        public jlightning() : base() { }
-        public jlightning(IntPtr handle) : base(handle) { }
-        public jlightning(int handle) : base(handle) { }
+        public JLightning() : base() { }
+        public JLightning(IntPtr JHandle) : base(JHandle) { }
+        public JLightning(int JHandle) : base(JHandle) { }
     }
 
-    public class jpathingtype : jhandle
+    public class JPathingType : JHandle
     {
-        public jpathingtype() : base() { }
-        public jpathingtype(IntPtr handle) : base(handle) { }
-        public jpathingtype(int handle) : base(handle) { }
+        public JPathingType() : base() { }
+        public JPathingType(IntPtr JHandle) : base(JHandle) { }
+        public JPathingType(int JHandle) : base(JHandle) { }
     }
 
-    public class jimage : jhandle
+    public class JImage : JHandle
     {
-        public jimage() : base() { }
-        public jimage(IntPtr handle) : base(handle) { }
-        public jimage(int handle) : base(handle) { }
+        public JImage() : base() { }
+        public JImage(IntPtr JHandle) : base(JHandle) { }
+        public JImage(int JHandle) : base(JHandle) { }
     }
 
-    public class jubersplat : jhandle
+    public class JUbersplat : JHandle
     {
-        public jubersplat() : base() { }
-        public jubersplat(IntPtr handle) : base(handle) { }
-        public jubersplat(int handle) : base(handle) { }
+        public JUbersplat() : base() { }
+        public JUbersplat(IntPtr JHandle) : base(JHandle) { }
+        public JUbersplat(int JHandle) : base(JHandle) { }
     }
 
-    public class jhashtable : jagent
+    public class JHashtable : JAgent
     {
-        public jhashtable() : base() { }
-        public jhashtable(IntPtr handle) : base(handle) { }
-        public jhashtable(int handle) : base(handle) { }
+        public JHashtable() : base() { }
+        public JHashtable(IntPtr JHandle) : base(JHandle) { }
+        public JHashtable(int JHandle) : base(JHandle) { }
     }
 }
 
