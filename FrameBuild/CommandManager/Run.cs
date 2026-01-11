@@ -112,8 +112,14 @@ namespace War3FrameBuild.CommandManager
             {
                 var content = File.ReadAllText(callBackFile);
                 var patternPath = "string ModulePath = .*";
+                var patternName = "string ModuleName = .*";
                 var replacementPath = $"string ModulePath = \"{Path.Combine(Temp, ProjectName)}\"";
+                var replacementName = $"string ModuleName = \"CSharpWrapper.dll\"";
                 var res = Regex.Replace(content, patternPath, replacementPath);
+                res = Regex.Replace(res, patternName, replacementName);
+                // 需要调整测试/打包路径   打包的话丢map目录下,
+
+
                 File.WriteAllText(callBackFile, res);
             }
             else
@@ -122,12 +128,8 @@ namespace War3FrameBuild.CommandManager
                 return false;
             }
 
-
-
             Log.Verbose("构建地图完毕：" + BuildMode.ToString());
 
-            // 调整代码，以支持war3
-            //War3map(); 暂未实现
             var startTime = DateTime.Now;
             Log.Verbose($"资源及代码处理完成，耗时：{(DateTime.Now - startTime).TotalSeconds.ToString()}");
 
