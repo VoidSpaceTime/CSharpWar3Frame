@@ -1,0 +1,430 @@
+globals
+	string ModulePath = "G:\\CSharp\\War3Map\\.build\\Debug"
+	string ModuleName = "CSharpWrapper.dll"
+	integer Int
+	integer l__Int
+	code Code
+	code l__Code
+	string Str
+	string l__Str
+	boolean Bool
+	boolean l__Bool
+	integer Array
+	integer array l__Array
+	integer array Memory
+	integer pGameDll = 0
+	integer pJassEnvAddress = 0
+	integer pMergeUnits = 0
+	integer pVirtualAlloc = 0
+	integer pExportFromMpq = 0
+	integer pGetModuleHandleA = 0
+	integer pGetProcAddress = 0
+	integer pExecutableMemory = 0
+	integer pLoadLibraryA = 0
+	integer pFreeLibrary = 0
+	integer pCreateDirectoryA = 0
+	integer pGetCurrentProcessId = 0
+	integer pGetDllDirectoryA = 0
+	integer pSetDllDirectoryA = 0
+	string array Digits
+	boolean init_digits = false
+endglobals
+
+function setInt takes integer a returns nothing
+	set l__Int = a
+	return
+endfunction
+function setCode takes code a returns nothing
+	set l__Code = a
+	return
+endfunction
+function setStr takes string a returns nothing
+	set l__Str = a
+	return
+endfunction
+function setBool takes boolean a returns nothing
+	set l__Bool = a
+	return
+endfunction
+
+function Typecast1 takes nothing returns nothing
+	local code l__Int
+	local integer l__Code
+endfunction
+function I2C takes integer a returns code
+	call setInt(a)
+	loop
+		return l__Int
+	endloop
+	return null
+endfunction
+function C2I takes code a returns integer
+	call setCode(a)
+	loop
+		return l__Code
+	endloop
+	return 0
+endfunction
+
+function Typecast2 takes nothing returns nothing
+	local string l__Int
+	local integer l__Str
+endfunction
+function I2SH takes integer a returns string
+	call setInt(a)
+	loop
+		return l__Int
+	endloop
+	return null
+endfunction
+function SH2I takes string a returns integer
+	call setStr(a)
+	loop
+		return l__Str
+	endloop
+	return 0
+endfunction
+
+function Typecast3 takes nothing returns nothing
+	local boolean l__Int
+	local integer l__Bool
+endfunction
+function I2B takes integer a returns boolean
+	call setInt(a)
+	loop
+		return l__Int
+	endloop
+	return false
+endfunction
+function B2I takes boolean a returns integer
+	call setBool(a)
+	loop
+		return l__Bool
+	endloop
+	return 0
+endfunction
+
+function NewGlobal takes nothing returns integer
+	return - 0x005E0704
+	return 0x2700
+endfunction
+function SetGlobal takes nothing returns nothing
+	local integer i = 0x2114D008
+endfunction
+
+function InitArray takes integer a, integer b, integer c returns nothing
+	set l__Array[1000] = 0
+	set l__Array[0] = a
+	set l__Array[1] = - 1
+	set l__Array[2] = - 1
+	set l__Array[3] = 0
+	set l__Array[4] = 0x0C010900
+	set l__Array[5] = b
+	set l__Array[6] = 0x11010000
+	set l__Array[7] = c
+	set l__Array[8] = 0x0C010400
+	set l__Array[9] = 0x00000000
+	set l__Array[10] = 0x27000000
+	set l__Array[11] = 0x00000000
+endfunction
+function TypecastArray takes nothing returns nothing
+	local integer l__Array
+endfunction
+function GetArrayAddress takes nothing returns integer
+	loop
+		return l__Array
+	endloop
+	return 0
+endfunction
+
+function ReadMemory takes integer a returns integer
+	return Memory[a / 4]
+endfunction
+function WriteMemory takes integer a, integer b returns nothing
+	set Memory[a / 4] = b
+	return
+endfunction
+
+function GetCurrentJassVM takes nothing returns integer
+	local integer a = Memory[Memory[Memory[pJassEnvAddress] / 4 + 5] / 4 + 5]
+	if a <= 0 then
+		return 0
+	endif
+	return Memory[Memory[Memory[Memory[pJassEnvAddress] / 4 + 5] / 4 + 3] / 4 + a - 1]
+endfunction
+
+function GetStringAddress takes string a returns integer
+	return Memory[Memory[Memory[Memory[GetCurrentJassVM() / 4 + 2589] / 4 + 2] / 4 + SH2I(a) * 4 + 2] / 4 + 7]
+endfunction
+
+function GetJassNativeFuncPtr takes integer a returns integer
+	local integer c = Memory[Memory[Memory[pJassEnvAddress] / 4 + 5] / 4 + 8]
+	local integer d = c
+	loop
+		if Memory[d / 4 + 3] == a then
+			return d + 0x0C
+		endif
+		set d = Memory[d / 4]
+		if d == 0 or c == d then
+			return 0
+		endif
+	endloop
+	return 0
+endfunction
+
+function CallStdcallWith1Args takes integer a, integer b returns integer
+	local integer f
+	local integer g = 0
+	set Memory[pExecutableMemory / 4] = 0x082474FF
+	set Memory[pExecutableMemory / 4 + 1] = 0x082454FF
+	set Memory[pExecutableMemory / 4 + 2] = 0xCCCCCCC3
+	set f = GetJassNativeFuncPtr(pMergeUnits)
+	set Memory[f / 4] = pExecutableMemory
+	set g = B2I(MergeUnits(a, b, 0, 0))
+	set Memory[f / 4] = pMergeUnits
+	return g
+endfunction
+
+function CallStdcallWith2Args takes integer a, integer b, integer c returns integer
+	local integer f
+	local integer g = 0
+	set Memory[pExecutableMemory / 4] = 0x0C2474FF
+	set Memory[pExecutableMemory / 4 + 1] = 0x0C2474FF
+	set Memory[pExecutableMemory / 4 + 2] = 0x0C2454FF
+	set Memory[pExecutableMemory / 4 + 3] = 0xCCCCCCC3
+	set f = GetJassNativeFuncPtr(pMergeUnits)
+	set Memory[f / 4] = pExecutableMemory
+	set g = B2I(MergeUnits(a, b, c, 0))
+	set Memory[f / 4] = pMergeUnits
+	return g
+endfunction
+
+function CallStdcallWith4Args takes integer a, integer b, integer c, integer d, integer e returns integer
+	local integer f
+	local integer g = 0
+	set Memory[pExecutableMemory / 4] = 0x68001F0F
+	set Memory[pExecutableMemory / 4 + 1] = e
+	set Memory[pExecutableMemory / 4 + 2] = 0x142474FF
+	set Memory[pExecutableMemory / 4 + 3] = 0x142474FF
+	set Memory[pExecutableMemory / 4 + 4] = 0x142474FF
+	set Memory[pExecutableMemory / 4 + 5] = 0x142454FF
+	set Memory[pExecutableMemory / 4 + 6] = 0xCCCCCCC3
+	set f = GetJassNativeFuncPtr(pMergeUnits)
+	set Memory[f / 4] = pExecutableMemory
+	set g = B2I(MergeUnits(a, b, c, d))
+	set Memory[f / 4] = pMergeUnits
+	return g
+endfunction
+
+function CallCdeclWith4Args takes integer a, integer b, integer c, integer d, integer e returns integer
+	local integer f
+	local integer g = 0
+	set f = GetJassNativeFuncPtr(pMergeUnits)
+	set Memory[f / 4] = a
+	set g = B2I(MergeUnits(b, c, d, e))
+	set Memory[f / 4] = pMergeUnits
+	return g
+endfunction
+
+function CallFastCallWith2Args takes integer a, integer b, integer c returns integer
+	local integer f
+	local integer g = 0
+	set Memory[pExecutableMemory / 4] = 0x0C24548B
+	set Memory[pExecutableMemory / 4 + 1] = 0x08244C8B
+	set Memory[pExecutableMemory / 4 + 2] = 0x042464FF
+	set f = GetJassNativeFuncPtr(pMergeUnits)
+	set Memory[f / 4] = pExecutableMemory
+	set g = B2I(MergeUnits(a, b, c, 0))
+	set Memory[f / 4] = pMergeUnits
+	return g
+endfunction
+
+function AllocateExecutableMemory takes integer a returns integer
+	local integer b
+	local integer c = 0
+	if pVirtualAlloc != 0 then
+		if pExecutableMemory == 0 then
+			set b = GetJassNativeFuncPtr(pMergeUnits)
+			set Memory[b / 4] = pVirtualAlloc
+			set c = B2I(MergeUnits(0, a, 0x1000, 0x40))
+			set Memory[b / 4] = pMergeUnits
+			return c
+		else
+			return CallStdcallWith4Args(pVirtualAlloc, 0, a, 0x1000, 0x40)
+		endif
+	endif
+	return c
+endfunction
+
+function GetModuleHandleA takes integer lpModuleName returns integer
+	return CallStdcallWith1Args(pGetModuleHandleA, lpModuleName)
+endfunction
+
+function GetProcAddress takes integer hModule, integer lpProcName returns integer
+	return CallStdcallWith2Args(pGetProcAddress, hModule, lpProcName)
+endfunction
+
+function GetModuleProcAddress takes integer lpModuleName, integer lpProcName returns integer
+	return GetProcAddress(GetModuleHandleA(lpModuleName), lpProcName)
+endfunction
+
+function LoadLibraryA takes integer lpLibFileName returns integer
+	if pLoadLibraryA == 0 then
+		set pLoadLibraryA = GetModuleProcAddress(GetStringAddress("kernel32"), GetStringAddress("LoadLibraryA"))
+	endif
+	if pLoadLibraryA == 0 then
+		return 0
+	endif
+	return CallStdcallWith1Args(pLoadLibraryA, lpLibFileName)
+endfunction
+
+function CreateDirectoryA takes integer lpPathName, integer lpSecurityAttributes returns boolean
+	if pCreateDirectoryA == 0 then
+		set pCreateDirectoryA = GetModuleProcAddress(GetStringAddress("kernel32"), GetStringAddress("CreateDirectoryA"))
+	endif
+	if pCreateDirectoryA == 0 then
+		return false
+	endif
+	return CallStdcallWith2Args(pCreateDirectoryA, lpPathName, lpSecurityAttributes) != 0
+endfunction
+
+function GetCurrentProcessId takes nothing returns integer
+	if pGetCurrentProcessId == 0 then
+		set pGetCurrentProcessId = GetModuleProcAddress(GetStringAddress("kernel32"), GetStringAddress("GetCurrentProcessId"))
+	endif
+	if pGetCurrentProcessId == 0 then
+		return 0
+	endif
+	return CallCdeclWith4Args(pGetCurrentProcessId, 0, 0, 0, 0)
+endfunction
+
+function SetDllDirectoryA takes integer lpPathName returns boolean
+	if pSetDllDirectoryA == 0 then
+		set pSetDllDirectoryA = GetModuleProcAddress(GetStringAddress("kernel32"), GetStringAddress("SetDllDirectoryA"))
+	endif
+	if pSetDllDirectoryA == 0 then
+		return false
+	endif
+	return CallStdcallWith1Args(pSetDllDirectoryA, lpPathName) != 0
+endfunction
+
+function ExportFileFromMpq takes integer source, integer dest returns boolean
+	return CallFastCallWith2Args(pExportFromMpq, source, dest) != 0
+endfunction
+
+function InitDigitArray takes nothing returns nothing
+	if not init_digits then
+		set init_digits = true
+		set Digits[0] = "0"
+		set Digits[1] = "1"
+		set Digits[2] = "2"
+		set Digits[3] = "3"
+		set Digits[4] = "4"
+		set Digits[5] = "5"
+		set Digits[6] = "6"
+		set Digits[7] = "7"
+		set Digits[8] = "8"
+		set Digits[9] = "9"
+	endif
+endfunction
+
+function MyI2S takes integer i returns string
+	local string result = ""
+	local integer temp
+	local integer digit
+	local boolean negative = false
+	
+	call InitDigitArray()
+	
+	if i == 0 then
+		return Digits[0]
+	endif
+	if i < 0 then
+		set negative = true
+		set i = -i
+	endif
+
+	set temp = i
+	loop
+		exitwhen temp == 0
+		set digit = temp - (temp / 10) * 10
+		set result = Digits[digit] + result
+		set temp = temp / 10
+	endloop
+
+	if negative then
+		set result = "-" + result
+	endif
+	return result
+endfunction
+
+function UnlockMemory takes nothing returns nothing
+	local integer array i
+	local integer a
+	local integer b
+	call StartThread(I2C(C2I(function NewGlobal) + 0x2))
+	call StartThread(I2C(C2I(function SetGlobal) + 0x8))
+	call InitArray(0, 0, 0)
+	set a = i[GetArrayAddress() / 4]
+	call InitArray(a, i[GetArrayAddress() / 4 + 3], i[C2I(function ReadMemory) / 4 + 13])
+	call StartThread(I2C(i[GetArrayAddress() / 4 + 3] + 0x10))
+	set b = a - i[a / 4]
+	if b == 0x5084A8 then // 1.24E
+		// set pGameDll = a - 0x9631B8
+		// set pJassEnvAddress = (pGameDll + 0xAF16A8) / 4
+		// set pMergeUnits = pGameDll + 0x2DDE40
+		// set pVirtualAlloc = ReadMemory(pGameDll + 0x87F134)
+		// set pGetModuleHandleA = ReadMemory(pGameDll + 0x87F204)
+		// set pGetProcAddress = ReadMemory(pGameDll + 0x87F2BC)
+		// set pExportFromMpq = pGameDll + 0x7386A0
+	elseif b == 0x277890 then // 1.27A
+		set pGameDll = a - 0xA63B30
+		set pJassEnvAddress = (pGameDll + 0xBE3740) / 4
+		set pMergeUnits = pGameDll + 0x891F20
+		set pVirtualAlloc = ReadMemory(pGameDll + 0x94E270)
+		set pGetModuleHandleA = ReadMemory(pGameDll + 0x94E184)
+		set pGetProcAddress = ReadMemory(pGameDll + 0x94E168)
+		set pExportFromMpq = pGameDll + 0x702C50
+	endif
+endfunction
+
+function main takes nothing returns nothing
+	local string moduleName
+	local integer moduleHandle
+	local integer mainPtr
+
+	// 初始化RB系统
+	call StartThread(I2C(C2I(function UnlockMemory) + 0x08))
+	if pGameDll == 0 then
+		return
+	endif
+	
+	// 分配可执行内存提供给RB系统进行函数调用
+	set pExecutableMemory = AllocateExecutableMemory(0x1000)
+	if pExecutableMemory == 0 then
+		return
+	endif
+
+	// 不希望玩家重新加载地图来重加载内置，应该地图结束时就退出游戏！
+	// 导出war3map.dll到插件目录并且加载插�?
+	set moduleName = MyI2S(GetCurrentProcessId()) + ".dll"
+	set moduleName = "plugins\\" + moduleName
+	call CreateDirectoryA(GetStringAddress("plugins\\"), 0)
+	if ExportFileFromMpq(GetStringAddress("war3map.dll"), GetStringAddress(moduleName)) then
+		set moduleHandle = LoadLibraryA(GetStringAddress(moduleName))
+	else
+		call SetDllDirectoryA(GetStringAddress(ModulePath))
+		set moduleHandle = LoadLibraryA(GetStringAddress(ModuleName))
+		call SetDllDirectoryA(0)
+	endif
+	if moduleHandle == 0 then
+		return
+	endif
+
+	// 获取main函数地址并调用main函数
+	set mainPtr = GetProcAddress(moduleHandle, GetStringAddress("main"))
+	if mainPtr == 0 then
+		return
+	endif
+	call CallCdeclWith4Args(mainPtr, pExecutableMemory, 0, 0, 0)
+endfunction

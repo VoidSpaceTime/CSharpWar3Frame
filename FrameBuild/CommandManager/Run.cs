@@ -1,6 +1,7 @@
 ﻿using Serilog;
 using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 using War3FrameBuild.Extension;
 
 namespace War3FrameBuild.CommandManager
@@ -73,8 +74,6 @@ namespace War3FrameBuild.CommandManager
                 w2lProc.ArgumentList.Add("lni");
                 w2lProc.ArgumentList.Add(temProjectW3xFire);
 
-                var outputBuilder = new StringBuilder();
-                var errorBuilder = new StringBuilder();
 
                 using var w2l = new Process { StartInfo = w2lProc, EnableRaisingEvents = true };
 
@@ -101,16 +100,58 @@ namespace War3FrameBuild.CommandManager
             {
                 // 非release|dist采用非必要更替性覆盖（多余的资源文件将存留在.tmp中继续使用，除非有更新的同名文件覆盖它）
                 File.Delete(Path.Combine(BuildDstPath, ".we"));
-                Directory.Delete(Path.Combine(BuildDstPath, "map"));
+                Directory.Delete(Path.Combine(BuildDstPath, "map"), true);
                 File.Delete(Path.Combine(BuildDstPath, "table"));
             }
             DirectoryExtensions.CopyDir(temProjectDir, BuildDstPath);
+
+            // 需要增加对callback 的处理
+            // 调试模式下, 不进行打包, 发布模式调整为AOT编译dll
+            var callBackFile = Path.Combine(BuildDstPath, "map", "callback");
+            if (File.Exists(callBackFile))
+            {
+                var content = File.ReadAllText(callBackFile);
+                var patternPath = "string ModulePath = .*";
+                var replacementPath = $"string ModulePath = \"{Path.Combine(Temp, ProjectName)}\"";
+                var res = Regex.Replace(content, patternPath, replacementPath);
+                File.WriteAllText(callBackFile, res);
+            }
+            else
+            {
+                Log.Error("CallBack 文件丢失");
+                return false;
+            }
+
+
+
             Log.Verbose("构建地图完毕：" + BuildMode.ToString());
 
             // 调整代码，以支持war3
-            var startTime = DateTime.Now;
             //War3map(); 暂未实现
+            var startTime = DateTime.Now;
             Log.Verbose($"资源及代码处理完成，耗时：{(DateTime.Now - startTime).TotalSeconds.ToString()}");
+
+            // 打包地图
+            Log.Verbose("开始打包地图");
+            startTime = DateTime.Now;
+            var w2lProc2 = new ProcessStartInfo
+            {
+                FileName = Path.Combine(Config.W3x2lni, "w2l.exe"),
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            w2lProc2.ArgumentList.Add(modeLni);
+            w2lProc2.ArgumentList.Add(BuildDstPath);
+            w2lProc2.ArgumentList.Add(dstW3xFire);
+
+            using var w2l2 = new Process { StartInfo = w2lProc2, EnableRaisingEvents = true };
+
+            if (!w2l2.Start())
+            {
+                Log.Error($"w2l执行失败: {w2l2.StandardError.ReadToEnd()}");
+            }
+
 
             File.Delete(Path.Combine(Config.War3, "fwht.txt"));
             File.Delete(Path.Combine(Config.War3, "fwhc.txt"));
