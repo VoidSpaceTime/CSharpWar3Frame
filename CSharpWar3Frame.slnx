@@ -8,10 +8,10 @@
     <Project Path="../../Games/war3map/FastMDX-master/FastMDX/FastMDX.csproj" />
   </Folder>
   <Folder Name="/Projects/">
-    <Project Path="G:/CSharp/CSharpWar3Frame/Projects/demo/demo.csproj" Id="4194040a-9a22-43f3-ade0-9dcee3225eaf" />
+    <Project Path="Projects/demo/demo.csproj" Id="4194040a-9a22-43f3-ade0-9dcee3225eaf" />
   </Folder>
   <Project Path="CSharpWrapper/CSharpWrapper.vcxproj" Id="931bf1e7-02fc-4e41-ad03-89e8f2e4c87f" />
-  <Project Path="G:/CSharp/CSharpWar3Frame/CSharpWar3Frame/CSharpWar3FrameConsole.csproj" />
-  <Project Path="G:/CSharp/CSharpWar3Frame/FrameBuild/War3FrameBuild.csproj" Id="f6a68a3d-602b-4229-b268-4ca0821bb6d3" />
-  <Project Path="G:/CSharp/CSharpWar3Frame/War3Frame/War3Frame.csproj" Id="a394ca00-b153-492d-886c-50b16367da9f" />
+  <Project Path="CSharpWar3Frame/CSharpWar3FrameConsole.csproj" />
+  <Project Path="FrameBuild/War3FrameBuild.csproj" Id="f6a68a3d-602b-4229-b268-4ca0821bb6d3" />
+  <Project Path="War3Frame/War3Frame.csproj" Id="a394ca00-b153-492d-886c-50b16367da9f" />
 </Solution>
