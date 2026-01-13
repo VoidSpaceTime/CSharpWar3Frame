@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Games\war3map\FastMDX-master\FastMDX\FastMDX.csproj" />
+    <ProjectReference Include="..\FastMDX\FastMDX.csproj" />
     <ProjectReference Include="..\War3Frame\War3Frame.csproj" />
   </ItemGroup>
 
