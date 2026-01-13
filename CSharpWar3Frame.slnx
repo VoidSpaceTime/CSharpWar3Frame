@@ -5,7 +5,7 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/Common/">
-    <Project Path="../../Games/war3map/FastMDX-master/FastMDX/FastMDX.csproj" />
+    <Project Path="FastMDX/FastMDX.csproj" />
   </Folder>
   <Folder Name="/Projects/">
     <Project Path="Projects/demo/demo.csproj" Id="4194040a-9a22-43f3-ade0-9dcee3225eaf" />
