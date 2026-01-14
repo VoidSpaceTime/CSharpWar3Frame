@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using War3FrameBuild.Extension;
+using static War3Frame.Library.Assets;
 
 namespace War3FrameBuild.CommandManager
 {
@@ -47,9 +48,52 @@ namespace War3FrameBuild.CommandManager
                 RunTest(w3xFire, qty + 1);
             }
         }
+        private void PackupMap(string modeLni, string dstW3xFire)
+        {
+
+            Log.Verbose("构建地图完毕：" + BuildMode.ToString());
+
+            var startTime = DateTime.Now;
+            Log.Verbose($"资源及代码处理完成，耗时：{(DateTime.Now - startTime).TotalSeconds.ToString()}");
+
+            // 打包地图
+            Log.Verbose("开始打包地图");
+            startTime = DateTime.Now;
+            var w2lProc = new ProcessStartInfo
+            {
+                FileName = Path.Combine(Config.W3x2lni, "w2l.exe"),
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            w2lProc.ArgumentList.Add(modeLni);
+            w2lProc.ArgumentList.Add(BuildDstPath);
+            w2lProc.ArgumentList.Add(dstW3xFire);
+
+            using var w2l = new Process { StartInfo = w2lProc, EnableRaisingEvents = true };
+
+            if (!w2l.Start())
+            {
+                Log.Error($"w2l执行失败: {w2l.StandardError.ReadToEnd()}");
+            }
+
+        }
+        private void PublishProject(bool isNative, string projectsPath, string pubilshDir)
+        {
+            var aotCommand = isNative ? "-p:PublishAot=true -p:PublishSingleFile=true -p:PublishTrimmed=true" : "";
+            string command = @$"publish {projectsPath} -c Release --self-contained true {aotCommand} -o ""{pubilshDir}""";
+
+            //string command = @$"publish {projectsPath} -c Release -r win-x64 --self-contained true {aotCommand} -o ""{pubilshDir}""";
+            var psi = new ProcessStartInfo("dotnet", command)
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false
+            };
+            var p = Process.Start(psi);
+            p.WaitForExit();
+        }
         public bool Run(bool isCache, bool isSemi)
         {
-            var BuildDstPath = Path.Combine(Temp, BuildMode.ToString(), ProjectName);
             var dstW3xFire = Path.Combine(BuildDstPath, "pack.w3x");
             var modeLni = "slk";
             if (BuildMode is BuildModeEnum.Test)
@@ -99,9 +143,12 @@ namespace War3FrameBuild.CommandManager
             else
             {
                 // 非release|dist采用非必要更替性覆盖（多余的资源文件将存留在.tmp中继续使用，除非有更新的同名文件覆盖它）
-                File.Delete(Path.Combine(BuildDstPath, ".we"));
-                Directory.Delete(Path.Combine(BuildDstPath, "map"), true);
-                File.Delete(Path.Combine(BuildDstPath, "table"));
+                if (File.Exists(Path.Combine(BuildDstPath, ".we")))
+                    File.Delete(Path.Combine(BuildDstPath, ".we"));
+                if (Directory.Exists(Path.Combine(BuildDstPath, "map")))
+                    Directory.Delete(Path.Combine(BuildDstPath, "map"), true);
+                if (Directory.Exists(Path.Combine(BuildDstPath, "table")))
+                    Directory.Delete(Path.Combine(BuildDstPath, "table"), true);
             }
             DirectoryExtensions.CopyDir(temProjectDir, BuildDstPath);
 
@@ -113,7 +160,7 @@ namespace War3FrameBuild.CommandManager
                 var content = File.ReadAllText(callBackFile);
                 var patternPath = "string ModulePath = .*";
                 var patternName = "string ModuleName = .*";
-                var replacementPath = $"string ModulePath = \"{Path.Combine(Temp, ProjectName)}\"";
+                var replacementPath = $"string ModulePath = \"{Path.Combine(BuildDstPath, "map")}\"";
                 var replacementName = $"string ModuleName = \"CSharpWrapper.dll\"";
                 var res = Regex.Replace(content, patternPath, replacementPath);
                 res = Regex.Replace(res, patternName, replacementName);
@@ -127,38 +174,20 @@ namespace War3FrameBuild.CommandManager
                 Log.Error("CallBack 文件丢失");
                 return false;
             }
+            var projectsPath = Path.Combine(Projects, ProjectName, $"{ProjectName}.csproj");
+            var pubilshDir = Path.Combine(BuildDstPath, "map");
+            // 打包dll->
+            PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir);
+            PackupMap(modeLni, dstW3xFire);
 
-            Log.Verbose("构建地图完毕：" + BuildMode.ToString());
-
-            var startTime = DateTime.Now;
-            Log.Verbose($"资源及代码处理完成，耗时：{(DateTime.Now - startTime).TotalSeconds.ToString()}");
-
-            // 打包地图
-            Log.Verbose("开始打包地图");
-            startTime = DateTime.Now;
-            var w2lProc2 = new ProcessStartInfo
-            {
-                FileName = Path.Combine(Config.W3x2lni, "w2l.exe"),
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-            w2lProc2.ArgumentList.Add(modeLni);
-            w2lProc2.ArgumentList.Add(BuildDstPath);
-            w2lProc2.ArgumentList.Add(dstW3xFire);
-
-            using var w2l2 = new Process { StartInfo = w2lProc2, EnableRaisingEvents = true };
-
-            if (!w2l2.Start())
-            {
-                Log.Error($"w2l执行失败: {w2l2.StandardError.ReadToEnd()}");
-            }
-
-
-            File.Delete(Path.Combine(Config.War3, "fwht.txt"));
-            File.Delete(Path.Combine(Config.War3, "fwhc.txt"));
-            File.Delete(Path.Combine(Config.War3, "dz_w3_plugin.dll"));
-            File.Delete(Path.Combine(Config.War3, "version.dll"));
+            if (File.Exists(Path.Combine(Config.War3, "fwht.txt")))
+                File.Delete(Path.Combine(Config.War3, "fwht.txt"));
+            if (File.Exists(Path.Combine(Config.War3, "fwhc.txt")))
+                File.Delete(Path.Combine(Config.War3, "fwhc.txt"));
+            if (File.Exists(Path.Combine(Config.War3, "dz_w3_plugin.dll")))
+                File.Delete(Path.Combine(Config.War3, "dz_w3_plugin.dll"));
+            if (File.Exists(Path.Combine(Config.War3, "version.dll")))
+                File.Delete(Path.Combine(Config.War3, "version.dll"));
             var mtPath = Path.Combine(Config.War3, "Maps", "Test");
             if (Directory.Exists(mtPath) is false)
             {
@@ -176,6 +205,8 @@ namespace War3FrameBuild.CommandManager
             RunTest(dstW3xFire, 0);
             return true;
         }
+
+
     }
 
 }

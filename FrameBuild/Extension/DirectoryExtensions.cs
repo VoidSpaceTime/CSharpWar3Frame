@@ -10,28 +10,44 @@ namespace War3FrameBuild.Extension
     {
         public static void CopyDir(string sourceDir, string targetDir)
         {
-            // 创建目标文件夹
-            if (!Directory.Exists(sourceDir))
+
+            try
             {
-                Directory.CreateDirectory(targetDir);
+                // 检查目标目录是否以目录分割字符结束如果不是则添加
+                if (targetDir[targetDir.Length - 1] != Path.DirectorySeparatorChar)
+                {
+                    targetDir += Path.DirectorySeparatorChar;
+                }
+                // 判断目标目录是否存在如果不存在则新建
+                if (!Directory.Exists(targetDir))
+                {
+                    Directory.CreateDirectory(targetDir);
+                }
+                // 得到源目录的文件列表，该里面是包含文件以及目录路径的一个数组
+                // 如果你指向copy目标文件下面的文件而不包含目录请使用下面的方法
+                // string[] fileList = Directory.GetFiles（srcPath）；
+                string[] fileList = Directory.GetFileSystemEntries(sourceDir);
+                // 遍历所有的文件和目录
+                foreach (string file in fileList)
+                {
+                    // 先当作目录处理如果存在这个目录就递归Copy该目录下面的文件
+                    if (Directory.Exists(file))
+                    {
+                        CopyDir(file, targetDir + Path.GetFileName(file));
+                    }
+                    // 否则直接Copy文件
+                    else
+                    {
+                        File.Copy(file, targetDir + Path.GetFileName(file), true);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                throw;
             }
 
-            // 递归复制所有子文件夹
-            foreach (var dir in Directory.GetDirectories(sourceDir))
-            {
-                string dirName = Path.GetFileName(dir);
-                string destSubDir = Path.Combine(targetDir, dirName);
-                CopyDir(dir, destSubDir);
-            }
-            // 复制所有文件
-            foreach (var file in Directory.GetFiles(sourceDir))
-            {
-                string fileName = Path.GetFileName(file);
-                string destFile = Path.Combine(targetDir, fileName);
-                File.Copy(file, destFile, true);
-            }
 
         }
-
     }
 }

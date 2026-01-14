@@ -30,7 +30,7 @@ namespace War3FrameBuild.CommandManager
                 Directory.Delete(Path.Combine(tempDir, "map"), true);
             DirectoryExtensions.CopyDir(Path.Combine(w3xDir, "map"), Path.Combine(tempDir, "map"));
             // map
-            var war3mapMap = Path.Combine(Config.Pwd, "w3x", "war3mapMap.blp");
+            var war3mapMap = Path.Combine(PwdProject, "w3x", "war3mapMap.blp");
             if (File.Exists(Path.Combine(tempDir, "map", "war3mapMap.blp")))
                 File.Delete(Path.Combine(tempDir, "map", "war3mapMap.blp"));
             // 物编ini判定
@@ -43,14 +43,15 @@ namespace War3FrameBuild.CommandManager
                 Log.Information("更新同步[w3x(table)->table]");
             }
             // 资源判定
-            Directory.Delete(Path.Combine(tempDir, "resource"), true);
+            if (Directory.Exists(Path.Combine(tempDir, "resource")))
+                Directory.Delete(Path.Combine(tempDir, "resource"), true);
             DirectoryExtensions.CopyDir(Path.Combine(Template, "lni", "resource"), Path.Combine(tempDir, "resource"));
             Log.Information("覆盖同步[lni(resource)->resource]");
             // 小地图判定
             if (File.GetLastWriteTime(war3mapMap) > File.GetLastWriteTime(Path.Combine(tempDir, "resource", "war3mapMap.blp")))
             {
-                File.Delete(war3mapMap);
-                File.Copy(Path.Combine(tempDir, "resource", "war3mapMap.blp"), war3mapMap);
+                File.Delete(Path.Combine(tempDir, "resource", "war3mapMap.blp"));
+                File.Copy(war3mapMap, Path.Combine(tempDir, "resource", "war3mapMap.blp"));
                 Log.Information("更新同步[.tmp(war3mapMap)->w3x/war3mapMap]");
             }
         }

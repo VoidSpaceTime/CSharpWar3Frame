@@ -1,4 +1,9 @@
+
+#using <War3Frame.dll>
+extern "C" __declspec(dllexport)
+using namespace War3Frame;
+
 extern "C" __declspec(dllexport)
 int main() {
-	return War3Frame::Program::MainCLR();
+	return Program::MainCLR();
 }

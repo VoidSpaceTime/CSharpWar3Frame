@@ -21,7 +21,7 @@ namespace CSharpWar3FrameConsole
                 return;
             }
             PathConfig = pathConfig;
-
+            CommandManager = new CommandManager(PathConfig, args[1]); // 项目名后续传入
             // 命令注册
             CommendRegister(args);
 
@@ -35,7 +35,6 @@ namespace CSharpWar3FrameConsole
             NewCommand(rootCommand);
             RunCommand(rootCommand);
             WECommand(rootCommand);
-
             rootCommand.Parse(args).Invoke();
         }
         private static void NewCommand(RootCommand rootCommand)
@@ -47,6 +46,7 @@ namespace CSharpWar3FrameConsole
             newCommand.SetAction(parseResult =>
             {
                 var demo = parseResult.GetValue(projectArg);
+
                 CommandManager.New();
                 //Log.Verbose($"新建项目: {demo}");
             });
@@ -76,20 +76,19 @@ namespace CSharpWar3FrameConsole
             run.SetAction(parseResult =>
             {
                 var project = parseResult.GetValue(projectArg);
-                CommandManager = new CommandManager(PathConfig, project); // 项目名后续传入
                 // 查找哪个模式选项被指定（如果用户指定多个模式，视为错误）
                 var modeResults = new[]
                 {
                 new { Name = BuildModeEnum.Test,  Option = optDebug },
                 new { Name = BuildModeEnum.Build,  Option = optBuild },
                 new { Name = BuildModeEnum.Release,Option = optProd }
-            }
+                }
                 .Select(m => new
                 {
                     m.Name,
                     Result = parseResult.GetResult(m.Option),
                 })
-                .Where(x => x.Result != null)
+                .Where(x => x.Result.IdentifierToken != null)
                 .ToArray();
 
                 BuildModeEnum selectedMode;
@@ -100,25 +99,28 @@ namespace CSharpWar3FrameConsole
                     // 默认本地模式
                     selectedMode = BuildModeEnum.Test;
                 }
-                else if (modeResults.Length > 1)
-                {
-                    Log.Error("错误：不能同时指定多个模式（例如 -l 与 -t 等不能一起使用）。");
-                    return;
-                }
                 else
                 {
-                    selectedMode = modeResults[0].Name;
+                    selectedMode = modeResults.First().Name;
                     // 读取实际使用的 token 来判断是否带 ~ 或 !
-                    var tokens = modeResults[0].Result.Tokens;
+                    var tokens = modeResults.First().Result.Tokens;
                     if (tokens != null && tokens.Count > 0)
                     {
                         var tokenValue = tokens[0].Value; // 例如 "-l~"
                         if (tokenValue.TrimEnd().EndsWith("~")) isCache = true;
                         else if (tokenValue.TrimEnd().EndsWith("!")) isSemi = true;
                     }
-                    CommandManager.BuildMode = selectedMode;
-                    CommandManager.Run(isCache, isSemi);
                 }
+
+                if (modeResults.Length > 1)
+                {
+                    Log.Error("错误：不能同时指定多个模式（例如 -l 与 -t 等不能一起使用）。");
+                    return;
+                }
+
+                CommandManager.BuildMode = selectedMode;
+                CommandManager.Run(isCache, isSemi);
+
 
 
                 Console.WriteLine($"运行项目: {project}");
@@ -133,7 +135,6 @@ namespace CSharpWar3FrameConsole
             weCommand.SetAction(async parseResult =>
             {
                 var demo = parseResult.GetValue(projectArg);
-                CommandManager = new CommandManager(PathConfig, demo); // 项目名后续传入
                 await CommandManager.WE();
 
             });

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CSharpWar3FrameConsole": {
+      "commandName": "Project",
+      "commandLineArgs": "run demo"
+    }
+  }
+}

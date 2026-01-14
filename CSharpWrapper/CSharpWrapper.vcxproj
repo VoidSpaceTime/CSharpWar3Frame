@@ -61,8 +61,8 @@
     <ClCompile Include="CSharpWrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\War3Map\War3Map.csproj">
-      <Project>{0e190eed-371c-a6a5-0308-dd815c3e18c7}</Project>
+    <ProjectReference Include="..\War3Frame\War3Frame.csproj">
+      <Project>{a394ca00-b153-492d-886c-50b16367da9f}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

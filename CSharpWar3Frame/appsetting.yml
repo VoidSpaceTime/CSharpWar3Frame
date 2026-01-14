@@ -16,4 +16,4 @@ w3x2lni: "G:/CSharp/CSharpWar3Frame/Vendor/w3x2lni"
 
 # assets资源目录
 # assets resource directory
-assets: "./War3Frame/assets"
+assets: "G:/Games/war3map/xlik/assets"
