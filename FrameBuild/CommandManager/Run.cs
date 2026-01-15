@@ -14,7 +14,7 @@ namespace War3FrameBuild.CommandManager
             Log.Information("启动魔兽争霸III");
             var psi = new ProcessStartInfo
             {
-                FileName = Path.Combine(Config.We, "bin", "WEConfig.exe"),
+                FileName = Path.Combine(Config.We, "bin", "YDWEConfig.exe"),
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -22,8 +22,13 @@ namespace War3FrameBuild.CommandManager
             psi.ArgumentList.Add("-launchwar3");
             psi.ArgumentList.Add("-loadfile");
             psi.ArgumentList.Add(w3xFire);
+            var bo1 = File.Exists(Path.Combine(Config.We, "bin", "YDWEConfig.exe"));
+            var bo2 = File.Exists(w3xFire);
+            //var bo3 = File.Exists(Path.Combine(Config.We, "bin", "WEConfig.exe"));
 
             var war3Psi = Process.Start(psi);
+            Task.Delay(1000).Wait();
+
             // 精确（不区分大小写）
             var war3Count = Process.GetProcesses()
                                     .Count(p => string.Equals(p.ProcessName, "war3", StringComparison.OrdinalIgnoreCase));
@@ -44,7 +49,6 @@ namespace War3FrameBuild.CommandManager
                     return;
                 }
                 Log.Warning($"未检测到魔兽争霸III运行，等待1秒后重试启动（第{qty}次尝试）");
-                Task.Delay(1000).Wait();
                 RunTest(w3xFire, qty + 1);
             }
         }
@@ -82,6 +86,12 @@ namespace War3FrameBuild.CommandManager
         {
             var aotCommand = isNative ? "-p:PublishAot=true -p:PublishSingleFile=true -p:PublishTrimmed=true" : "";
             string command = @$"publish {projectsPath} -c Release --self-contained true {aotCommand} -o ""{pubilshDir}""";
+
+            var warpper = Path.Combine(Template, "CSharpWrapper.dll");
+            if (File.Exists(warpper))
+            {
+                File.Copy(warpper, Path.Combine(pubilshDir, "CSharpWrapper.dll"));
+            }
 
             //string command = @$"publish {projectsPath} -c Release -r win-x64 --self-contained true {aotCommand} -o ""{pubilshDir}""";
             var psi = new ProcessStartInfo("dotnet", command)
@@ -177,8 +187,8 @@ namespace War3FrameBuild.CommandManager
             var projectsPath = Path.Combine(Projects, ProjectName, $"{ProjectName}.csproj");
             var pubilshDir = Path.Combine(BuildDstPath, "map");
             // 打包dll->
-            PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir);
             PackupMap(modeLni, dstW3xFire);
+            PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir);
 
             if (File.Exists(Path.Combine(Config.War3, "fwht.txt")))
                 File.Delete(Path.Combine(Config.War3, "fwht.txt"));
@@ -193,6 +203,7 @@ namespace War3FrameBuild.CommandManager
             {
                 Directory.CreateDirectory(mtPath);
             }
+
             Log.Information("即将准备地图测试");
             // 精确（不区分大小写）
             var war3Count = Process.GetProcesses()

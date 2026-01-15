@@ -13,11 +13,7 @@ namespace War3Frame
         {
 
 
-            string dllPath = Path.Combine(AppContext.BaseDirectory, "Project.dll");
-            var asm = AssemblyLoadContext.Default.LoadFromAssemblyPath(dllPath);
-            Type type = asm.GetType("War3Frame.Game");
-            MethodInfo staticM = type.GetMethod("StaticFunc");
-            object r = staticM.Invoke(null, new object[] { 123 });
+
 
 
             return 0;
@@ -29,6 +25,12 @@ namespace War3Frame
         public static int MainCLR()
         {
             War3.EnableConsole();
+
+            string dllPath = Path.Combine(AppContext.BaseDirectory, "demo.dll");
+            var asm = AssemblyLoadContext.Default.LoadFromAssemblyPath(dllPath);
+            Type type = asm.GetType("War3Frame.Game");
+            MethodInfo staticM = type.GetMethod("StaticFunc");
+            object r = staticM.Invoke(null, new object[] { 123 });
 
 
             return Main(false);

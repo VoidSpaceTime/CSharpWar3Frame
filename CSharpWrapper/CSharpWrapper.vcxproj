@@ -13,7 +13,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
     <EnableManagedPackageReferenceSupport>true</EnableManagedPackageReferenceSupport>
-    <ProjectGuid>{A04265A0-EB2F-F78E-75A1-D0EB581D48D3}</ProjectGuid>
+    <ProjectGuid>{F60F6206-2A32-4E4B-981E-0265DF0D1FE8}</ProjectGuid>
     <Keyword>NetCoreCProj</Keyword>
     <RootNamespace>CSharpWrapper</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
@@ -59,11 +59,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CSharpWrapper.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\War3Frame\War3Frame.csproj">
-      <Project>{a394ca00-b153-492d-886c-50b16367da9f}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

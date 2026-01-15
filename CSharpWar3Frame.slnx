@@ -11,9 +11,7 @@
     <Project Path="Projects/demo/demo.csproj" Id="4194040a-9a22-43f3-ade0-9dcee3225eaf" />
   </Folder>
   <Project Path="CSharpWar3Frame/CSharpWar3FrameConsole.csproj" />
-  <Project Path="CSharpWrapper/CSharpWrapper.vcxproj">
-    <Platform Project="Win32" />
-  </Project>
+  <Project Path="CSharpWrapper/CSharpWrapper.vcxproj" Id="f60f6206-2a32-4e4b-981e-0265df0d1fe8" />
   <Project Path="FrameBuild/War3FrameBuild.csproj" Id="f6a68a3d-602b-4229-b268-4ca0821bb6d3" />
   <Project Path="War3Frame/War3Frame.csproj" Id="a394ca00-b153-492d-886c-50b16367da9f" />
 </Solution>
