@@ -1,0 +1,19 @@
+﻿# 魔兽争霸3客户端文件路径
+# Warcraft 3 client file path
+war3: "D:/Game/war3/war3Dev"
+
+# 项目根目录（设置空则自动定为exe工具执行所在目录）
+# Framework root directory (set empty to automatically specify the directory where the exe tool is executed)
+pwd: "G:/CSharp/CSharpWar3Frame"
+
+# WE工具目录
+# WE tool catalogue
+we: "G:/Games/war3map/kkwe"
+
+# w3x2lni工具目录
+# w3x2lni tools directory
+w3x2lni: "G:/CSharp/CSharpWar3Frame/Vendor/w3x2lni"
+
+# assets资源目录
+# assets resource directory
+assets: "G:/Games/war3map/xlik/assets"

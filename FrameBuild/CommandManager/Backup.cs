@@ -16,7 +16,7 @@ namespace War3FrameBuild.CommandManager
                 DirectoryExtensions.CopyDir(Path.Combine(tempDir, "map"), w3xDir);
                 Log.Information("备份完成[.tmp(地图备份)->w3x/map]");
             }
-            var war3mapMap = Path.Combine(Config.Pwd, "w3x", "war3mapMap.blp");
+            var war3mapMap = Path.Combine(PwdProject, "w3x", "war3mapMap.blp");
             if (File.Exists(war3mapMap) is false)
             {
                 File.Copy(Path.Combine(Template, "w3x", "war3mapMap.blp"), war3mapMap);

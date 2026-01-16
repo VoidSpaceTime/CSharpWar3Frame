@@ -59,21 +59,21 @@ namespace CSharpWar3FrameConsole
             var run = new Command("run", "运行指定项目");
             var projectArg = new Argument<string>("project") { Description = "要运行的项目名" };
             // 为每个模式创建 Option<bool>，注册三种别名：-x, -x~, -x!
-            var optLocal = new Option<bool>(aliases: new[] { "-l", "-l~", "-l!" }, name: "本地模式");
+            //var optLocal = new Option<bool>(aliases: new[] { "-l", "-l~", "-l!" }, name: "本地模式");
             var optDebug = new Option<bool>(aliases: new[] { "-t", "-t~", "-t!" }, name: "调试模式");
             var optBuild = new Option<bool>(aliases: new[] { "-b", "-b~", "-b!" }, name: "构建模式");
-            var optDist = new Option<bool>(aliases: new[] { "-d", "-d~", "-d!" }, name: "发行模式");
+            //var optDist = new Option<bool>(aliases: new[] { "-d", "-d~", "-d!" }, name: "发行模式");
             var optProd = new Option<bool>(aliases: new[] { "-r", "-r~", "-r!" }, name: "成品模式");
 
             run.Add(projectArg);
             rootCommand.Subcommands.Add(run);
-            run.Options.Add(optLocal);
+            //run.Options.Add(optLocal);
             run.Options.Add(optDebug);
             run.Options.Add(optBuild);
-            run.Options.Add(optDist);
+            //run.Options.Add(optDist);
             run.Options.Add(optProd);
             // 设置处理函数
-            run.SetAction(parseResult =>
+            run.SetAction(async parseResult =>
             {
                 var project = parseResult.GetValue(projectArg);
                 // 查找哪个模式选项被指定（如果用户指定多个模式，视为错误）
@@ -117,9 +117,9 @@ namespace CSharpWar3FrameConsole
                     Log.Error("错误：不能同时指定多个模式（例如 -l 与 -t 等不能一起使用）。");
                     return;
                 }
-
                 CommandManager.BuildMode = selectedMode;
-                CommandManager.Run(isCache, isSemi);
+                CommandManager.BuildDstPath = Path.Combine(CommandManager.Temp, selectedMode.ToString(), project);
+                await CommandManager.Run(isCache, isSemi);
 
 
 

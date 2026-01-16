@@ -30,7 +30,6 @@ endfunction
 //***************************************************************************
 function initializePlugin takes nothing returns nothing
 	call StartCampaignAI(Player(PLAYER_NEUTRAL_AGGRESSIVE), "callback")
-    call test_jass_hook()
 endfunction
 function InitCustomPlayerSlots takes nothing returns nothing
     // Player 0

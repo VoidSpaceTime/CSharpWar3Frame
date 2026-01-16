@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using War3FrameBuild.Extension;
 using static War3Frame.Library.Assets;
 
@@ -26,7 +27,7 @@ namespace War3FrameBuild.CommandManager
             var bo2 = File.Exists(w3xFire);
             //var bo3 = File.Exists(Path.Combine(Config.We, "bin", "WEConfig.exe"));
 
-            var war3Psi = Process.Start(psi);
+            using var war3Psi = Process.Start(psi);
             Task.Delay(1000).Wait();
 
             // 精确（不区分大小写）
@@ -52,13 +53,16 @@ namespace War3FrameBuild.CommandManager
                 RunTest(w3xFire, qty + 1);
             }
         }
-        private void PackupMap(string modeLni, string dstW3xFire)
+        private Task PackupMap(string modeLni, string dstW3xFire)
         {
 
             Log.Verbose("构建地图完毕：" + BuildMode.ToString());
 
             var startTime = DateTime.Now;
             Log.Verbose($"资源及代码处理完成，耗时：{(DateTime.Now - startTime).TotalSeconds.ToString()}");
+
+            if (File.Exists(dstW3xFire))
+                File.Delete(dstW3xFire);
 
             // 打包地图
             Log.Verbose("开始打包地图");
@@ -80,29 +84,37 @@ namespace War3FrameBuild.CommandManager
             {
                 Log.Error($"w2l执行失败: {w2l.StandardError.ReadToEnd()}");
             }
+            w2l.WaitForExitAsync();
+            Log.Verbose($"打包地图，耗时：{(DateTime.Now - startTime).TotalSeconds.ToString()}");
+            Log.Debug($"打包地图，路径：{dstW3xFire}");
+            return Task.CompletedTask;
 
         }
-        private void PublishProject(bool isNative, string projectsPath, string pubilshDir)
+        private Task PublishProject(bool isNative, string projectsPath, string pubilshDir)
         {
-            var aotCommand = isNative ? "-p:PublishAot=true -p:PublishSingleFile=true -p:PublishTrimmed=true" : "";
-            string command = @$"publish {projectsPath} -c Release --self-contained true {aotCommand} -o ""{pubilshDir}""";
-
-            var warpper = Path.Combine(Template, "CSharpWrapper.dll");
-            if (File.Exists(warpper))
-            {
-                File.Copy(warpper, Path.Combine(pubilshDir, "CSharpWrapper.dll"));
-            }
-
-            //string command = @$"publish {projectsPath} -c Release -r win-x64 --self-contained true {aotCommand} -o ""{pubilshDir}""";
+            // 目前只会aot打包
+            isNative = true;
+            var aotCommand = isNative ? "-p:PublishAot=true -p:PublishTrimmed=true -r win-x86  -p:DebugType=None -p:DebugSymbols=false " : "";
+            //aotCommand += BuildMode is BuildModeEnum.Release ? " -p:DebugType=None -p:DebugSymbols=false " : "";
+            string command = @$"publish {projectsPath} -c Release --self-contained true {aotCommand}  -o {pubilshDir}";
+            //  dotnet publish .\demo.csproj -c Release --self-contained true -p:PublishAot=true -r win-x86 -o G:\CSharp\CSharpWar3Frame\.build\test
             var psi = new ProcessStartInfo("dotnet", command)
             {
                 RedirectStandardOutput = true,
                 UseShellExecute = false
             };
-            var p = Process.Start(psi);
-            p.WaitForExit();
+            using var w2l = Process.Start(psi);
+
+            if (!w2l.Start())
+            {
+                Log.Error($"w2l执行失败: {w2l.StandardError.ReadToEnd()}");
+            }
+            w2l.WaitForExitAsync();
+            Log.Debug($"打包DLL，：{w2l}");
+            return Task.CompletedTask;
+
         }
-        public bool Run(bool isCache, bool isSemi)
+        public async Task<bool> Run(bool isCache, bool isSemi)
         {
             var dstW3xFire = Path.Combine(BuildDstPath, "pack.w3x");
             var modeLni = "slk";
@@ -135,6 +147,7 @@ namespace War3FrameBuild.CommandManager
                 {
                     Log.Error($"w2l执行失败: {w2l.StandardError.ReadToEnd()}");
                 }
+                w2l.WaitForExit();
                 File.Delete(buoyFire);
                 File.Copy(Path.Combine(Template, "lni", "x.we"), buoyFire);
                 Backup();
@@ -170,12 +183,26 @@ namespace War3FrameBuild.CommandManager
                 var content = File.ReadAllText(callBackFile);
                 var patternPath = "string ModulePath = .*";
                 var patternName = "string ModuleName = .*";
-                var replacementPath = $"string ModulePath = \"{Path.Combine(BuildDstPath, "map")}\"";
-                var replacementName = $"string ModuleName = \"CSharpWrapper.dll\"";
+                var replacementPath = $"string ModulePath = \"{Path.Combine(BuildDstPath, "map").Replace("\\", "/").Replace("/", "\\\\")}\"";
+                var replacementName = $"string ModuleName = \"{ProjectName}.dll\"";
                 var res = Regex.Replace(content, patternPath, replacementPath);
                 res = Regex.Replace(res, patternName, replacementName);
                 // 需要调整测试/打包路径   打包的话丢map目录下,
 
+                File.WriteAllText(callBackFile, res);
+
+            }
+            else if (File.Exists(Path.Combine(Template, "callback")))
+            {
+                callBackFile = Path.Combine(Template, "callback");
+                var content = File.ReadAllText(callBackFile);
+                var patternPath = "string ModulePath = .*";
+                var patternName = "string ModuleName = .*";
+                var replacementPath = $"string ModulePath = \"{Path.Combine(BuildDstPath, "map").Replace("\\", "/").Replace("/", "\\\\")}\"";
+                var replacementName = $"string ModuleName = \"{ProjectName}.dll\"";
+                var res = Regex.Replace(content, patternPath, replacementPath);
+                res = Regex.Replace(res, patternName, replacementName);
+                // 需要调整测试/打包路径   打包的话丢map目录下,
 
                 File.WriteAllText(callBackFile, res);
             }
@@ -184,11 +211,12 @@ namespace War3FrameBuild.CommandManager
                 Log.Error("CallBack 文件丢失");
                 return false;
             }
+
             var projectsPath = Path.Combine(Projects, ProjectName, $"{ProjectName}.csproj");
             var pubilshDir = Path.Combine(BuildDstPath, "map");
             // 打包dll->
-            PackupMap(modeLni, dstW3xFire);
-            PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir);
+            await PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir);
+            await PackupMap(modeLni, dstW3xFire);
 
             if (File.Exists(Path.Combine(Config.War3, "fwht.txt")))
                 File.Delete(Path.Combine(Config.War3, "fwht.txt"));
@@ -198,11 +226,6 @@ namespace War3FrameBuild.CommandManager
                 File.Delete(Path.Combine(Config.War3, "dz_w3_plugin.dll"));
             if (File.Exists(Path.Combine(Config.War3, "version.dll")))
                 File.Delete(Path.Combine(Config.War3, "version.dll"));
-            var mtPath = Path.Combine(Config.War3, "Maps", "Test");
-            if (Directory.Exists(mtPath) is false)
-            {
-                Directory.CreateDirectory(mtPath);
-            }
 
             Log.Information("即将准备地图测试");
             // 精确（不区分大小写）
@@ -213,6 +236,7 @@ namespace War3FrameBuild.CommandManager
                 Log.Warning(">>> 请先关闭当前war3!!! <<<");
             }
 
+            Task.WaitAll();
             RunTest(dstW3xFire, 0);
             return true;
         }

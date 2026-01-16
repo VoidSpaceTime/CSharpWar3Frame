@@ -28,6 +28,9 @@ endfunction
 //*  Players
 //*
 //***************************************************************************
+function initializePlugin takes nothing returns nothing
+	call StartCampaignAI(Player(PLAYER_NEUTRAL_AGGRESSIVE), "callback")
+endfunction
 function InitCustomPlayerSlots takes nothing returns nothing
     // Player 0
     call SetPlayerStartLocation(Player(0), 0)
@@ -47,6 +50,7 @@ endfunction
 //***************************************************************************
 //===========================================================================
 function main takes nothing returns nothing
+    call initializePlugin()
     call SetCameraBounds(- 3328.0 + GetCameraMargin(CAMERA_MARGIN_LEFT), - 3584.0 + GetCameraMargin(CAMERA_MARGIN_BOTTOM), 3328.0 - GetCameraMargin(CAMERA_MARGIN_RIGHT), 3072.0 - GetCameraMargin(CAMERA_MARGIN_TOP), - 3328.0 + GetCameraMargin(CAMERA_MARGIN_LEFT), 3072.0 - GetCameraMargin(CAMERA_MARGIN_TOP), 3328.0 - GetCameraMargin(CAMERA_MARGIN_RIGHT), - 3584.0 + GetCameraMargin(CAMERA_MARGIN_BOTTOM))
     call SetDayNightModels("Environment\\DNC\\DNCLordaeron\\DNCLordaeronTerrain\\DNCLordaeronTerrain.mdl", "Environment\\DNC\\DNCLordaeron\\DNCLordaeronUnit\\DNCLordaeronUnit.mdl")
     call NewSoundEnvironment("Default")
