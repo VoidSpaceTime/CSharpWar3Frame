@@ -21,6 +21,7 @@ namespace War3FrameBuild.CommandManager
         public string PwdProject { get; set; }
         public BuildModeEnum BuildMode { get; set; }
 
+        public War3Sounds War3SoundsYaml { get; set; }
         /// <summary>
         /// 构建项目目录 Temp->Mode->Project
         /// </summary>
@@ -41,6 +42,17 @@ namespace War3FrameBuild.CommandManager
             BuildMode = buildMode;
             BuildDstPath = Path.Combine(Temp, BuildMode.ToString(), ProjectName);
             IsSkip = false;
+        }
+
+        public class War3Sounds
+        {
+            public List<SoundItem> sounds { get; set; }
+        }
+
+        public class SoundItem
+        {
+            public string path { get; set; }
+            public int duration { get; set; }
         }
     }
 }

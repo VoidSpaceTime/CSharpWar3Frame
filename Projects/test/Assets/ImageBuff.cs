@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,9 +11,8 @@ namespace War3Frame
         public static void ImageBuffInit(Library.Assets assets)
         {
 
-            assets.AddImage
-                ("icon/ability/Invulnerable");
-            assets.AddImage("icon/ability/SigntDay", "别名");
+            assets.AddImage("icon/ability/SigntDay",null,"icon\\ability\\SigntDay");
+            assets.AddImage("icon/ability/Invulnerable",null,"icon\\ability\\Invulnerable");
 
         }
     }

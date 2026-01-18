@@ -1,4 +1,4 @@
-﻿namespace War3Frame
+namespace War3Frame
 {
     public static partial class AssetsInit
     {

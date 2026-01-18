@@ -25,7 +25,7 @@ namespace War3FrameBuild.CommandManager
             {
                 Log.Error("不允许存在空名称项目"); return false;
             }
-            var projectPath = Path.Combine(Projects, ProjectName);
+            var projectPath =PwdProject;
             var damoDir = Path.Combine(Projects, "demo");
             if (Directory.Exists(projectPath))
             {

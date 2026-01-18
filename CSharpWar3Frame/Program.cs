@@ -58,12 +58,12 @@ namespace CSharpWar3FrameConsole
             // run 子命令
             var run = new Command("run", "运行指定项目");
             var projectArg = new Argument<string>("project") { Description = "要运行的项目名" };
-            // 为每个模式创建 Option<bool>，注册三种别名：-x, -x~, -x!
-            //var optLocal = new Option<bool>(aliases: new[] { "-l", "-l~", "-l!" }, name: "本地模式");
-            var optDebug = new Option<bool>(aliases: new[] { "-t", "-t~", "-t!" }, name: "调试模式");
-            var optBuild = new Option<bool>(aliases: new[] { "-b", "-b~", "-b!" }, name: "构建模式");
-            //var optDist = new Option<bool>(aliases: new[] { "-d", "-d~", "-d!" }, name: "发行模式");
-            var optProd = new Option<bool>(aliases: new[] { "-r", "-r~", "-r!" }, name: "成品模式");
+            // 为每个模式创建 Option<bool>，注册三种别名：-x, -x`, -x!
+            //var optLocal = new Option<bool>(aliases: new[] { "-l", "-l`", "-l!" }, name: "本地模式");
+            var optDebug = new Option<bool>(aliases: new[] { "-t", "-t`", "-t!" }, name: "调试模式");
+            var optBuild = new Option<bool>(aliases: new[] { "-b", "-b`", "-b!" }, name: "构建模式");
+            //var optDist = new Option<bool>(aliases: new[] { "-d", "-d`", "-d!" }, name: "发行模式");
+            var optProd = new Option<bool>(aliases: new[] { "-r", "-r`", "-r!" }, name: "成品模式");
 
             run.Add(projectArg);
             rootCommand.Subcommands.Add(run);
@@ -103,12 +103,12 @@ namespace CSharpWar3FrameConsole
                 {
                     selectedMode = modeResults.First().Name;
                     // 读取实际使用的 token 来判断是否带 ~ 或 !
-                    var tokens = modeResults.First().Result.Tokens;
-                    if (tokens != null && tokens.Count > 0)
+                    var tokens = modeResults.First().Result.IdentifierToken.Value;
+                    if (modeResults.Length > 0)
                     {
-                        var tokenValue = tokens[0].Value; // 例如 "-l~"
-                        if (tokenValue.TrimEnd().EndsWith("~")) isCache = true;
-                        else if (tokenValue.TrimEnd().EndsWith("!")) isSemi = true;
+
+                        if (tokens.TrimEnd().Contains("`")) isCache = true;
+                        if (tokens.TrimEnd().Contains("!")) isSemi = true;
                     }
                 }
 

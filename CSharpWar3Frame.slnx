@@ -9,6 +9,7 @@
   </Folder>
   <Folder Name="/Projects/">
     <Project Path="Projects/demo/demo.csproj" Id="4194040a-9a22-43f3-ade0-9dcee3225eaf" />
+    <Project Path="Projects/test/test.csproj" />
   </Folder>
   <Folder Name="/War3Builder/">
     <Project Path="CSharpWar3Frame/CSharpWar3FrameConsole.csproj" />

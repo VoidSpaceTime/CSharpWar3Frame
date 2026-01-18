@@ -1366,7 +1366,7 @@
             assets.AddModel("buildings\\other\\HornOfCenarius\\HornOfCenarius.mdl", "HornOfCenarius");
 
             //金矿
-            assets.AddModel("buildings\\\\other\\\\GoldMine\\\\GoldMine.mdl", "GoldMine");
+            assets.AddModel("buildings\\other\\GoldMine\\GoldMine.mdl", "GoldMine");
             //地精商店
             assets.AddModel("buildings\\other\\Merchant\\Merchant.mdl", "Merchant");
             //生命之泉
