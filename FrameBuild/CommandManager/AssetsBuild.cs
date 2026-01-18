@@ -74,7 +74,7 @@ namespace War3FrameBuild.CommandManager
                                     if (Directory.Exists(absDir))
                                     {
                                         DirectoryExtensions.CopyDir(absDir, Path.Combine(commandManager.BuildDstPath, "resource", "ReplaceableTextures", "Selection"));
-                                        Log.Information($"【选择圈】引入：{arguments[0].ToString()}");
+                                        GetArgumentString(arguments[0]);
                                         flag = true;
                                     }
                                     else
@@ -232,7 +232,7 @@ namespace War3FrameBuild.CommandManager
                                 }
                             case "AddImage":
                                 {
-                                    var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("image", arguments[0].ToString().Replace("\"", ""), commandManager.IsSkip);
+                                    var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("image", GetArgumentString(arguments[0]), commandManager.IsSkip);
                                     newArguments.Add(arguments[0].Expression);
                                     if (status is true && arguments.Count < 3)
                                     {
@@ -253,13 +253,13 @@ namespace War3FrameBuild.CommandManager
                                 }
                             case "AddModel":
                                 {
-                                    var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("model", arguments[0].ToString().Replace("\"", ""), commandManager.IsSkip);
-                                    Path.ChangeExtension(pickPath, ".mdl");
+                                    var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("model", GetArgumentString(arguments[0]), commandManager.IsSkip);
+                                    pickPath = Path.ChangeExtension(pickPath, ".mdl");
                                     newArguments.Add(arguments[0].Expression);
                                     if (status is true && arguments.Count < 3)
                                     {
                                         // 如果第二个参数为空字符串，则替换为 null
-                                        if (arguments[1].ToString() is "")
+                                        if (GetArgumentString(arguments[1]) is "")
                                         {
                                             newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression));
                                         }
@@ -278,7 +278,7 @@ namespace War3FrameBuild.CommandManager
                                 }
                             case "AddBGM":
                                 {
-                                    var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("bgm", arguments[0].ToString().Replace("\"", ""), commandManager.IsSkip);
+                                    var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("bgm", GetArgumentString(arguments[0]).Replace("\"", ""), commandManager.IsSkip);
                                     newArguments.Add(arguments[0].Expression);
                                     if (status is true && arguments.Count < 5)
                                     {
@@ -293,7 +293,7 @@ namespace War3FrameBuild.CommandManager
 
                                         }
                                         // 如果第二个参数为空字符串，则替换为 null
-                                        if (arguments.Count > 1 && arguments[1].ToString() is "")
+                                        if (arguments.Count > 1 && GetArgumentString(arguments[1]) is "")
                                         {
                                             newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression));
                                         }
@@ -328,7 +328,7 @@ namespace War3FrameBuild.CommandManager
 
                                         }
                                         // 如果第二个参数为空字符串，则替换为 null
-                                        if (arguments.Count > 1 && arguments[1].ToString() is "")
+                                        if (arguments.Count > 1 && GetArgumentString(arguments[1]) is "")
                                         {
                                             newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression));
                                         }
@@ -348,7 +348,7 @@ namespace War3FrameBuild.CommandManager
                                 }
                             case "AddV3D":
                                 {
-                                    var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("v3d", arguments[0].ToString().Replace("\"", ""), commandManager.IsSkip);
+                                    var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("v3d", GetArgumentString(arguments[0]).Replace("\"", ""), commandManager.IsSkip);
                                     newArguments.Add(arguments[0].Expression);
                                     if (status is true && arguments.Count < 5)
                                     {
@@ -363,7 +363,7 @@ namespace War3FrameBuild.CommandManager
 
                                         }
                                         // 如果第二个参数为空字符串，则替换为 null
-                                        if (arguments[1].ToString() is "" && arguments.Count > 1)
+                                        if (GetArgumentString(arguments[1]) is "" && arguments.Count > 1)
                                         {
                                             newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression));
                                         }
@@ -387,7 +387,7 @@ namespace War3FrameBuild.CommandManager
                                 }
                             case "AddVWP":
                                 {
-                                    var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("vwp", arguments[0].ToString().Replace("\"", ""), commandManager.IsSkip);
+                                    var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("vwp", GetArgumentString(arguments[0]).Replace("\"", ""), commandManager.IsSkip);
 
                                     newArguments.Add(arguments[0].Expression);
                                     // 如果使用原生资源
@@ -457,7 +457,7 @@ namespace War3FrameBuild.CommandManager
                             case "AddUI":
                                 {
                                     var uiPath = Path.Combine(commandManager.Config.Assets, "war3mapUI");
-                                    var folder = arguments[0].ToString().Replace("\"", "");
+                                    var folder = GetArgumentString(arguments[0]).Replace("\"", "");
                                     newArguments.Add(arguments[0].Expression);
 
                                     if (Directory.Exists(Path.Combine(uiPath, folder)))
@@ -480,7 +480,7 @@ namespace War3FrameBuild.CommandManager
                                                 var destFile = Path.Combine(commandManager.BuildDstPath, "resource", folder, file);
                                                 if (Path.GetExtension(file).ToLower() == ".mdx")
                                                 {
-                                                    Path.ChangeExtension(destFile, ".mdl");
+                                                    destFile = Path.ChangeExtension(destFile, ".mdl");
                                                 }
                                                 File.Copy(file, destFile, true);
                                             });

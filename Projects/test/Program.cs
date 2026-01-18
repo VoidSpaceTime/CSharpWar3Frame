@@ -23,7 +23,8 @@ namespace War3Frame
             var i = 0;
             func = War3.GetNativeFunction("TimerStart");
             var p = JassApi.Player(0);
-            JassApi.CreateUnitByName(p, "hmpr", -435.2f, 435.0f, 63.734f);
+            //JassApi.CreateUnitByName(p, "hmpr", 0f, 0f, 0f);
+  
             War3.CallNative<int>(func, t, 1.0f, true, () =>
             {
                 Console.WriteLine($"{t} {i++}");

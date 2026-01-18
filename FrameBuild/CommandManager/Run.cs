@@ -53,7 +53,7 @@ namespace War3FrameBuild.CommandManager
                 RunTest(w3xFire, qty + 1);
             }
         }
-        private Task PackupMap(string modeLni, string dstW3xFire)
+        private async Task PackupMap(string modeLni, string dstW3xFire)
         {
 
 
@@ -81,10 +81,9 @@ namespace War3FrameBuild.CommandManager
             {
                 Log.Error($"w2l执行失败: {w2l.StandardError.ReadToEnd()}");
             }
-            w2l.WaitForExitAsync();
-            Log.Verbose($"打包地图，耗时：{(DateTime.Now - startTime).TotalSeconds.ToString()}");
+            await w2l.WaitForExitAsync();
             Log.Debug($"打包地图，路径：{dstW3xFire}");
-            return Task.CompletedTask;
+            Log.Verbose($"打包地图，耗时：{(DateTime.Now - startTime).TotalSeconds.ToString()}");
 
         }
         private async Task<bool> BuildMap(bool isCache, bool isSemi)
@@ -111,12 +110,10 @@ namespace War3FrameBuild.CommandManager
 
 
                 using var w2l = new Process { StartInfo = w2lProc, EnableRaisingEvents = true };
-
                 if (!w2l.Start())
                 {
                     Log.Error($"w2l执行失败: {w2l.StandardError.ReadToEnd()}");
                 }
-                w2l.WaitForExit();
                 File.Delete(buoyFire);
                 File.Copy(Path.Combine(Template, "lni", "x.we"), buoyFire);
                 Backup();
@@ -145,6 +142,8 @@ namespace War3FrameBuild.CommandManager
                         Directory.Delete(Path.Combine(BuildDstPath, "table"), true);
                 }
                 DirectoryExtensions.CopyDir(temProjectDir, BuildDstPath);
+                DirectoryExtensions.CopyDir(Path.Combine(Template, "lni", "assets", "UI"), Path.Combine(BuildDstPath, "map", "UI"));
+
 
                 // 需要增加对callback 的处理
                 // 调试模式下, 不进行打包, 发布模式调整为AOT编译dll
@@ -214,12 +213,12 @@ namespace War3FrameBuild.CommandManager
             {
                 Log.Error($"w2l执行失败: {w2l.StandardError.ReadToEnd()}");
             }
-            w2l.WaitForExitAsync();
             return Task.CompletedTask;
 
         }
         public async Task<bool> Run(bool isCache, bool isSemi)
         {
+            var startTIme = DateTime.Now;
             var dstW3xFire = Path.Combine(BuildDstPath, "pack.w3x");
             var modeLni = "slk";
             if (BuildMode is BuildModeEnum.Test)
@@ -236,6 +235,7 @@ namespace War3FrameBuild.CommandManager
                 // 打包dll->
                 await PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir);
             }
+            Task.WaitAll();
             await PackupMap(modeLni, dstW3xFire);
 
 
@@ -261,9 +261,10 @@ namespace War3FrameBuild.CommandManager
             {
                 Log.Warning(">>> 请先关闭当前war3!!! <<<");
             }
+            //Task.Delay(200).Wait();
 
-            Task.WaitAll();
             RunTest(dstW3xFire, 0);
+            Log.Information($"本次执行时间: {(DateTime.Now - startTIme).TotalSeconds.ToString()}");
             return true;
         }
     }
