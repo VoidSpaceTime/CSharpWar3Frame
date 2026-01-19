@@ -247,6 +247,9 @@ namespace War3Frame
                             case int v:
                                 values[i] = v;
                                 break;
+                            case nint v :
+                                values[i] = Convert.ToInt32(v);
+                                break;
                             case float v:
                                 floats[i] = v;
                                 values[i] = (int)(floatPtr + i);

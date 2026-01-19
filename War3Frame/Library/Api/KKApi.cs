@@ -1574,7 +1574,8 @@ namespace War3Frame.Library.Api
         /// title = "当前选择的单位(异步)"        /// description = "获取主控单位"        /// comment = "获取的单位是异步的，请谨慎操作"
         public static JUnit DzGetSelectedLeaderUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("DzGetSelectedLeaderUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetSelectedLeaderUnit"));
+            return new(handle);
         }
 
 
@@ -1754,7 +1755,8 @@ namespace War3Frame.Library.Api
 
         public static JAbility DzGetItemAbility(JItem whichEffect, int index)
         {
-            return War3.CallNative<JAbility>(War3.GetNativeFunction("DzGetItemAbility"), whichEffect.Handle, index);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetItemAbility"), whichEffect.Handle, index);
+            return new(handle);
         }
 
 
@@ -1794,7 +1796,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit DzGetActivePatron(JUnit store, JPlayer p)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("DzGetActivePatron"), store.Handle, p.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetActivePatron"), store.Handle, p.Handle);
+            return new(handle);
         }
 
 
@@ -1814,7 +1817,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit DzGetLocalSelectUnit(int index)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("DzGetLocalSelectUnit"), index);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetLocalSelectUnit"), index);
+            return new(handle);
         }
 
 
@@ -2032,7 +2036,7 @@ namespace War3Frame.Library.Api
         /// description = "监听建筑选位置"
         /// comment = ""
 
-        public static void DzRegisterOnBuildLocal(JCode func)
+        public static void DzRegisterOnBuildLocal(Action func)
         {
             War3.CallNative(War3.GetNativeFunction("DzRegisterOnBuildLocal"), func);
         }
@@ -2064,7 +2068,8 @@ namespace War3Frame.Library.Api
 
         public static JWidget DzGetOnBuildAgent()
         {
-            return War3.CallNative<JWidget>(War3.GetNativeFunction("DzGetOnBuildAgent"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetOnBuildAgent"));
+            return new(handle);
         }
 
 
@@ -2072,7 +2077,7 @@ namespace War3Frame.Library.Api
         /// description = "监听技能预选目标"
         /// comment = ""
 
-        public static void DzRegisterOnTargetLocal(JCode func)
+        public static void DzRegisterOnTargetLocal(Action func)
         {
             War3.CallNative(War3.GetNativeFunction("DzRegisterOnTargetLocal"), func);
         }
@@ -2114,7 +2119,8 @@ namespace War3Frame.Library.Api
 
         public static JWidget DzGetOnTargetAgent()
         {
-            return War3.CallNative<JWidget>(War3.GetNativeFunction("DzGetOnTargetAgent"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetOnTargetAgent"));
+            return new(handle);
         }
 
 
@@ -2124,7 +2130,8 @@ namespace War3Frame.Library.Api
 
         public static JWidget DzGetOnTargetInstantTarget()
         {
-            return War3.CallNative<JWidget>(War3.GetNativeFunction("DzGetOnTargetInstantTarget"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetOnTargetInstantTarget"));
+            return new(handle);
         }
 
 
@@ -2254,7 +2261,8 @@ namespace War3Frame.Library.Api
 
         public static JAbility DzGetAttackAbility(JUnit whichUnit)
         {
-            return War3.CallNative<JAbility>(War3.GetNativeFunction("DzGetAttackAbility"), whichUnit.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetAttackAbility"), whichUnit.Handle);
+            return new(handle);
         }
 
 
@@ -2586,7 +2594,8 @@ namespace War3Frame.Library.Api
 
         public static JAbility DzUnitFindAbility(JUnit whichUnit, int abilcode)
         {
-            return War3.CallNative<JAbility>(War3.GetNativeFunction("DzUnitFindAbility"), whichUnit.Handle, abilcode);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzUnitFindAbility"), whichUnit.Handle, abilcode);
+            return new(handle);
         }
 
 
@@ -2804,7 +2813,7 @@ namespace War3Frame.Library.Api
         /// description = "血条刷新事件"
         /// comment = ""
 
-        public static void DzFrameHookHpBar(JCode func)
+        public static void DzFrameHookHpBar(Action func)
         {
             War3.CallNative(War3.GetNativeFunction("DzFrameHookHpBar"), func);
         }
@@ -2816,7 +2825,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit DzFrameGetTriggerHpBarUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("DzFrameGetTriggerHpBarUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetTriggerHpBarUnit"));
+            return new(handle);
         }
 
 
@@ -3130,7 +3140,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit DzGroupGetUnitAt(JGroup g, int index)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("DzGroupGetUnitAt"), g.Handle, index);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGroupGetUnitAt"), g.Handle, index);
+            return new(handle);
         }
 
 
@@ -3140,7 +3151,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit DzUnitCreateIllusion(JPlayer p, int unitId, float x, float y, float face)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("DzUnitCreateIllusion"), p.Handle, unitId, x, y, face);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzUnitCreateIllusion"), p.Handle, unitId, x, y, face);
+            return new(handle);
         }
 
 
@@ -3150,7 +3162,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit DzUnitCreateIllusionFromUnit(JUnit u)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("DzUnitCreateIllusionFromUnit"), u.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzUnitCreateIllusionFromUnit"), u.Handle);
+            return new(handle);
         }
 
 
@@ -4105,7 +4118,8 @@ namespace War3Frame.Library.Api
 
         public static JItem DzGetLastSelectedItem()
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("DzGetLastSelectedItem"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetLastSelectedItem"));
+            return new(handle);
         }
 
         public static void DzSetPariticle2Size(JAgent Widget, float scale)
@@ -4595,7 +4609,8 @@ namespace War3Frame.Library.Api
 
         public static JItem DzGetPlayerLastSelectedItem(JPlayer p)
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("DzGetPlayerLastSelectedItem"), p.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetPlayerLastSelectedItem"), p.Handle);
+            return new(handle);
         }
 
 

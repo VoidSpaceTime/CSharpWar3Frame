@@ -106,7 +106,7 @@ namespace War3Frame.Library.Api
             War3.CallNative(War3.GetNativeFunction("DzTriggerRegisterMouseEvent"), trig.Handle, btn, status, sync, func);
         }
 
-        public static void DzTriggerRegisterMouseEventByCode(JTrigger trig, int btn, int status, bool sync, JCode funcHandle)
+        public static void DzTriggerRegisterMouseEventByCode(JTrigger trig, int btn, int status, bool sync, Action funcHandle)
         {
             War3.CallNative(War3.GetNativeFunction("DzTriggerRegisterMouseEventByCode"), trig.Handle, btn, status, sync, funcHandle);
         }
@@ -116,7 +116,7 @@ namespace War3Frame.Library.Api
             War3.CallNative(War3.GetNativeFunction("DzTriggerRegisterKeyEvent"), trig.Handle, key, status, sync, func);
         }
 
-        public static void DzTriggerRegisterKeyEventByCode(JTrigger trig, int key, int status, bool sync, JCode funcHandle)
+        public static void DzTriggerRegisterKeyEventByCode(JTrigger trig, int key, int status, bool sync, Action funcHandle)
         {
             War3.CallNative(War3.GetNativeFunction("DzTriggerRegisterKeyEventByCode"), trig.Handle, key, status, sync, funcHandle);
         }
@@ -126,7 +126,7 @@ namespace War3Frame.Library.Api
             War3.CallNative(War3.GetNativeFunction("DzTriggerRegisterMouseWheelEvent"), trig.Handle, sync, func);
         }
 
-        public static void DzTriggerRegisterMouseWheelEventByCode(JTrigger trig, bool sync, JCode funcHandle)
+        public static void DzTriggerRegisterMouseWheelEventByCode(JTrigger trig, bool sync, Action funcHandle)
         {
             War3.CallNative(War3.GetNativeFunction("DzTriggerRegisterMouseWheelEventByCode"), trig.Handle, sync, funcHandle);
         }
@@ -136,7 +136,7 @@ namespace War3Frame.Library.Api
             War3.CallNative(War3.GetNativeFunction("DzTriggerRegisterMouseMoveEvent"), trig.Handle, sync, func);
         }
 
-        public static void DzTriggerRegisterMouseMoveEventByCode(JTrigger trig, bool sync, JCode funcHandle)
+        public static void DzTriggerRegisterMouseMoveEventByCode(JTrigger trig, bool sync, Action funcHandle)
         {
             War3.CallNative(War3.GetNativeFunction("DzTriggerRegisterMouseMoveEventByCode"), trig.Handle, sync, funcHandle);
         }
@@ -178,7 +178,8 @@ namespace War3Frame.Library.Api
 
         public static JPlayer DzGetTriggerKeyPlayer()
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("DzGetTriggerKeyPlayer"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetTriggerKeyPlayer"));
+            return new JPlayer(handle);
         }
 
 
@@ -226,7 +227,7 @@ namespace War3Frame.Library.Api
             War3.CallNative(War3.GetNativeFunction("DzTriggerRegisterWindowResizeEvent"), trig.Handle, sync, func);
         }
 
-        public static void DzTriggerRegisterWindowResizeEventByCode(JTrigger trig, bool sync, JCode funcHandle)
+        public static void DzTriggerRegisterWindowResizeEventByCode(JTrigger trig, bool sync, Action funcHandle)
         {
             War3.CallNative(War3.GetNativeFunction("DzTriggerRegisterWindowResizeEventByCode"), trig.Handle, sync, funcHandle);
         }
@@ -278,7 +279,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit DzGetUnitUnderMouse()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("DzGetUnitUnderMouse"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetUnitUnderMouse"));
+            return new JUnit(handle);
         }
 
 
@@ -398,7 +400,8 @@ namespace War3Frame.Library.Api
 
         public static JPlayer DzGetTriggerSyncPlayer()
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("DzGetTriggerSyncPlayer"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetTriggerSyncPlayer"));
+            return new JPlayer(handle);
         }
 
 
@@ -586,7 +589,7 @@ namespace War3Frame.Library.Api
             War3.CallNative(War3.GetNativeFunction("DzFrameSetUpdateCallback"), func);
         }
 
-        public static void DzFrameSetUpdateCallbackByCode(JCode funcHandle)
+        public static void DzFrameSetUpdateCallbackByCode(Action funcHandle)
         {
             War3.CallNative(War3.GetNativeFunction("DzFrameSetUpdateCallbackByCode"), funcHandle);
         }
@@ -691,7 +694,7 @@ namespace War3Frame.Library.Api
         /// description = "注册 ${frame} 的 ${事件类型} 事件 运行:${code handle} 是否同步:${sync}"
         /// comment = "运行触发器时需要打开同步：执行会阻止它原本的功能继续响应"
 
-        public static void DzFrameSetScriptByCode(int frame, int eventId, JCode funcHandle, bool sync)
+        public static void DzFrameSetScriptByCode(int frame, int eventId, Action funcHandle, bool sync)
         {
             War3.CallNative(War3.GetNativeFunction("DzFrameSetScriptByCode"), frame, eventId, funcHandle, sync);
         }
@@ -701,7 +704,7 @@ namespace War3Frame.Library.Api
         /// description = "注册 ${frame} 的 ${事件类型} 事件 运行:${code handle} 是否同步:${sync}"
         /// comment = "注册UI事件回调-异步，可以在游戏、录像、观战等所有模式响应"
 
-        public static void DzFrameSetScriptBlock(int frame, int eventId, JCode funcHandle, bool sync)
+        public static void DzFrameSetScriptBlock(int frame, int eventId, Action funcHandle, bool sync)
         {
             War3.CallNative(War3.GetNativeFunction("DzFrameSetScriptBlock"), frame, eventId, funcHandle, sync);
         }
@@ -721,7 +724,7 @@ namespace War3Frame.Library.Api
         /// description = "注册 ${frame} 的 ${事件类型} 事件 运行:${code handle}"
         /// comment = "注册UI事件回调-异步，可以在游戏、录像、观战等所有模式响应"
 
-        public static void DzFrameSetScriptByCodeAsync(int frame, int eventId, JCode func)
+        public static void DzFrameSetScriptByCodeAsync(int frame, int eventId, Action func)
         {
             War3.CallNative(War3.GetNativeFunction("DzFrameSetScriptByCodeAsync"), frame, eventId, func);
         }
@@ -731,7 +734,7 @@ namespace War3Frame.Library.Api
         /// description = "注册 ${frame} 的 ${事件类型} 事件 运行:${code handle}"
         /// comment = "注册UI事件回调-异步，可以在游戏、录像、观战等所有模式响应，该函数执行会阻止它原本的功能继续响应"
 
-        public static void DzFrameSetScriptBlockAsync(int frame, int eventId, JCode func)
+        public static void DzFrameSetScriptBlockAsync(int frame, int eventId, Action func)
         {
             War3.CallNative(War3.GetNativeFunction("DzFrameSetScriptBlockAsync"), frame, eventId, func);
         }
@@ -743,7 +746,8 @@ namespace War3Frame.Library.Api
 
         public static JPlayer DzGetTriggerUIEventPlayer()
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("DzGetTriggerUIEventPlayer"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetTriggerUIEventPlayer"));
+            return new JPlayer(handle);
         }
 
 
@@ -1311,7 +1315,7 @@ namespace War3Frame.Library.Api
         /// description = "转换地图坐标（ ${x}，${Y}，${z}）为屏幕坐标执行动作"
         /// comment = "动作里用“转换后的屏幕X坐标”和“转换后的屏幕Y坐标”去读取"
 
-        public static bool DzConvertWorldPosition(float x, float y, float z, JCode callback)
+        public static bool DzConvertWorldPosition(float x, float y, float z, Action callback)
         {
             return War3.CallNative<bool>(War3.GetNativeFunction("DzConvertWorldPosition"), x, y, z, callback);
         }

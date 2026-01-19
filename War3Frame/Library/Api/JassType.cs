@@ -4,9 +4,6 @@ using System.Text;
 
 namespace War3Frame.Library.Api
 {
-    //using JCode = System.Action;
-    public delegate void JCode();
-
     public class JHandle
     {
         public IntPtr Handle { get; protected set; }

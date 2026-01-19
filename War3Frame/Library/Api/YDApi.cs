@@ -19,12 +19,14 @@ namespace War3Frame.Library.Api
     {
         public static JAbility EXGetUnitAbility(JUnit u, int abilcode)
         {
-            return War3.CallNative<JAbility>(War3.GetNativeFunction("EXGetUnitAbility"), u, abilcode);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("EXGetUnitAbility"), u, abilcode);
+            return new JAbility(handle);
         }
 
         public static JAbility EXGetUnitAbilityByIndex(JUnit u, int index)
         {
-            return War3.CallNative<JAbility>(War3.GetNativeFunction("EXGetUnitAbilityByIndex"), u, index);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("EXGetUnitAbilityByIndex"), u, index);
+            return new JAbility(handle);
         }
 
         public static int EXGetAbilityId(JAbility abil)

@@ -19,222 +19,266 @@ namespace War3Frame.Library.Api
     {
         public static JRace ConvertRace(int i)
         {
-            return War3.CallNative<JRace>(War3.GetNativeFunction("ConvertRace"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertRace"), i);
+            return new JRace(handle);
         }
 
         public static JAllianceType ConvertAllianceType(int i)
         {
-            return War3.CallNative<JAllianceType>(War3.GetNativeFunction("ConvertAllianceType"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertAllianceType"), i);
+            return new JAllianceType(handle);
         }
 
         public static JRacePreference ConvertRacePref(int i)
         {
-            return War3.CallNative<JRacePreference>(War3.GetNativeFunction("ConvertRacePref"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertRacePref"), i);
+            return new JRacePreference(handle);
         }
 
         public static JIGameState ConvertIGameState(int i)
         {
-            return War3.CallNative<JIGameState>(War3.GetNativeFunction("ConvertIGameState"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertIGameState"), i);
+            return new JIGameState(handle);
         }
 
         public static JFGameState ConvertFGameState(int i)
         {
-            return War3.CallNative<JFGameState>(War3.GetNativeFunction("ConvertFGameState"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertFGameState"), i);
+            return new JFGameState(handle);
         }
 
         public static JPlayerState ConvertPlayerState(int i)
         {
-            return War3.CallNative<JPlayerState>(War3.GetNativeFunction("ConvertPlayerState"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertPlayerState"), i);
+            return new JPlayerState(handle);
         }
 
         public static JPlayerScore ConvertPlayerScore(int i)
         {
-            return War3.CallNative<JPlayerScore>(War3.GetNativeFunction("ConvertPlayerScore"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertPlayerScore"), i);
+            return new JPlayerScore(handle);
         }
 
         public static JPlayerGameResult ConvertPlayerGameResult(int i)
         {
-            return War3.CallNative<JPlayerGameResult>(War3.GetNativeFunction("ConvertPlayerGameResult"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertPlayerGameResult"), i);
+            return new JPlayerGameResult(handle);
         }
 
         public static JUnitState ConvertUnitState(int i)
         {
-            return War3.CallNative<JUnitState>(War3.GetNativeFunction("ConvertUnitState"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertUnitState"), i);
+            return new JUnitState(handle);
         }
 
         public static JAiDifficulty ConvertAIDifficulty(int i)
         {
-            return War3.CallNative<JAiDifficulty>(War3.GetNativeFunction("ConvertAIDifficulty"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertAIDifficulty"), i);
+            return new JAiDifficulty(handle);
         }
 
         public static JGameEvent ConvertGameEvent(int i)
         {
-            return War3.CallNative<JGameEvent>(War3.GetNativeFunction("ConvertGameEvent"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertGameEvent"), i);
+            return new JGameEvent(handle);
         }
 
         public static JPlayerEvent ConvertPlayerEvent(int i)
         {
-            return War3.CallNative<JPlayerEvent>(War3.GetNativeFunction("ConvertPlayerEvent"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertPlayerEvent"), i);
+            return new JPlayerEvent(handle);
         }
 
         public static JPlayerUnitEvent ConvertPlayerUnitEvent(int i)
         {
-            return War3.CallNative<JPlayerUnitEvent>(War3.GetNativeFunction("ConvertPlayerUnitEvent"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertPlayerUnitEvent"), i);
+            return new JPlayerUnitEvent(handle);
         }
 
         public static JWidgetEvent ConvertWidgetEvent(int i)
         {
-            return War3.CallNative<JWidgetEvent>(War3.GetNativeFunction("ConvertWidgetEvent"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertWidgetEvent"), i);
+            return new JWidgetEvent(handle);
         }
 
         public static JDialogEvent ConvertDialogEvent(int i)
         {
-            return War3.CallNative<JDialogEvent>(War3.GetNativeFunction("ConvertDialogEvent"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertDialogEvent"), i);
+            return new JDialogEvent(handle);
         }
 
         public static JUnitEvent ConvertUnitEvent(int i)
         {
-            return War3.CallNative<JUnitEvent>(War3.GetNativeFunction("ConvertUnitEvent"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertUnitEvent"), i);
+            return new JUnitEvent(handle);
         }
 
         public static JLimitOp ConvertLimitOp(int i)
         {
-            return War3.CallNative<JLimitOp>(War3.GetNativeFunction("ConvertLimitOp"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertLimitOp"), i);
+            return new JLimitOp(handle);
         }
 
         public static JUnitType ConvertUnitType(int i)
         {
-            return War3.CallNative<JUnitType>(War3.GetNativeFunction("ConvertUnitType"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertUnitType"), i);
+            return new JUnitType(handle);
         }
 
         public static JGameSpeed ConvertGameSpeed(int i)
         {
-            return War3.CallNative<JGameSpeed>(War3.GetNativeFunction("ConvertGameSpeed"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertGameSpeed"), i);
+            return new JGameSpeed(handle);
         }
 
         public static JPlacement ConvertPlacement(int i)
         {
-            return War3.CallNative<JPlacement>(War3.GetNativeFunction("ConvertPlacement"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertPlacement"), i);
+            return new JPlacement(handle);
         }
 
         public static JStartLocPrio ConvertStartLocPrio(int i)
         {
-            return War3.CallNative<JStartLocPrio>(War3.GetNativeFunction("ConvertStartLocPrio"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertStartLocPrio"), i);
+            return new JStartLocPrio(handle);
         }
 
         public static JGameDifficulty ConvertGameDifficulty(int i)
         {
-            return War3.CallNative<JGameDifficulty>(War3.GetNativeFunction("ConvertGameDifficulty"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertGameDifficulty"), i);
+            return new JGameDifficulty(handle);
         }
 
         public static JGameType ConvertGameType(int i)
         {
-            return War3.CallNative<JGameType>(War3.GetNativeFunction("ConvertGameType"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertGameType"), i);
+            return new JGameType(handle);
         }
 
         public static JMapFlag ConvertMapFlag(int i)
         {
-            return War3.CallNative<JMapFlag>(War3.GetNativeFunction("ConvertMapFlag"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertMapFlag"), i);
+            return new JMapFlag(handle);
         }
 
         public static JMapVisibility ConvertMapVisibility(int i)
         {
-            return War3.CallNative<JMapVisibility>(War3.GetNativeFunction("ConvertMapVisibility"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertMapVisibility"), i);
+            return new JMapVisibility(handle);
         }
 
         public static JMapSetting ConvertMapSetting(int i)
         {
-            return War3.CallNative<JMapSetting>(War3.GetNativeFunction("ConvertMapSetting"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertMapSetting"), i);
+            return new JMapSetting(handle);
         }
 
         public static JMapDensity ConvertMapDensity(int i)
         {
-            return War3.CallNative<JMapDensity>(War3.GetNativeFunction("ConvertMapDensity"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertMapDensity"), i);
+            return new JMapDensity(handle);
         }
 
         public static JMapControl ConvertMapControl(int i)
         {
-            return War3.CallNative<JMapControl>(War3.GetNativeFunction("ConvertMapControl"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertMapControl"), i);
+            return new JMapControl(handle);
         }
 
         public static JPlayerColor ConvertPlayerColor(int i)
         {
-            return War3.CallNative<JPlayerColor>(War3.GetNativeFunction("ConvertPlayerColor"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertPlayerColor"), i);
+            return new JPlayerColor(handle);
         }
 
         public static JPlayerSlotState ConvertPlayerSlotState(int i)
         {
-            return War3.CallNative<JPlayerSlotState>(War3.GetNativeFunction("ConvertPlayerSlotState"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertPlayerSlotState"), i);
+            return new JPlayerSlotState(handle);
         }
 
         public static JVolumeGroup ConvertVolumeGroup(int i)
         {
-            return War3.CallNative<JVolumeGroup>(War3.GetNativeFunction("ConvertVolumeGroup"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertVolumeGroup"), i);
+            return new JVolumeGroup(handle);
         }
 
         public static JCameraField ConvertCameraField(int i)
         {
-            return War3.CallNative<JCameraField>(War3.GetNativeFunction("ConvertCameraField"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertCameraField"), i);
+            return new JCameraField(handle);
         }
 
         public static JBlendMode ConvertBlendMode(int i)
         {
-            return War3.CallNative<JBlendMode>(War3.GetNativeFunction("ConvertBlendMode"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertBlendMode"), i);
+            return new JBlendMode(handle);
         }
 
         public static JRarityControl ConvertRarityControl(int i)
         {
-            return War3.CallNative<JRarityControl>(War3.GetNativeFunction("ConvertRarityControl"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertRarityControl"), i);
+            return new JRarityControl(handle);
         }
 
         public static JTexMapFlags ConvertTexMapFlags(int i)
         {
-            return War3.CallNative<JTexMapFlags>(War3.GetNativeFunction("ConvertTexMapFlags"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertTexMapFlags"), i);
+            return new JTexMapFlags(handle);
         }
 
         public static JFogState ConvertFogState(int i)
         {
-            return War3.CallNative<JFogState>(War3.GetNativeFunction("ConvertFogState"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertFogState"), i);
+            return new JFogState(handle);
         }
 
         public static JEffectType ConvertEffectType(int i)
         {
-            return War3.CallNative<JEffectType>(War3.GetNativeFunction("ConvertEffectType"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertEffectType"), i);
+            return new JEffectType(handle);
         }
 
         public static JVersion ConvertVersion(int i)
         {
-            return War3.CallNative<JVersion>(War3.GetNativeFunction("ConvertVersion"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertVersion"), i);
+            return new JVersion(handle);
         }
 
         public static JItemType ConvertItemType(int i)
         {
-            return War3.CallNative<JItemType>(War3.GetNativeFunction("ConvertItemType"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertItemType"), i);
+            return new JItemType(handle);
         }
 
         public static JAttackType ConvertAttackType(int i)
         {
-            return War3.CallNative<JAttackType>(War3.GetNativeFunction("ConvertAttackType"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertAttackType"), i);
+            return new JAttackType(handle);
         }
 
         public static JDamageType ConvertDamageType(int i)
         {
-            return War3.CallNative<JDamageType>(War3.GetNativeFunction("ConvertDamageType"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertDamageType"), i);
+            return new JDamageType(handle);
         }
 
         public static JWeaponType ConvertWeaponType(int i)
         {
-            return War3.CallNative<JWeaponType>(War3.GetNativeFunction("ConvertWeaponType"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertWeaponType"), i);
+            return new JWeaponType(handle);
         }
 
         public static JSoundType ConvertSoundType(int i)
         {
-            return War3.CallNative<JSoundType>(War3.GetNativeFunction("ConvertSoundType"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertSoundType"), i);
+            return new JSoundType(handle);
         }
 
         public static JPathingType ConvertPathingType(int i)
         {
-            return War3.CallNative<JPathingType>(War3.GetNativeFunction("ConvertPathingType"), i);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("ConvertPathingType"), i);
+            return new JPathingType(handle);
         }
 
         public static int OrderId(string orderIdString)
@@ -574,7 +618,8 @@ namespace War3Frame.Library.Api
 
         public static JStartLocPrio GetStartLocPrio(int whichStartLoc, int prioSlotIndex)
         {
-            return War3.CallNative<JStartLocPrio>(War3.GetNativeFunction("GetStartLocPrio"), whichStartLoc, prioSlotIndex);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetStartLocPrio"), whichStartLoc, prioSlotIndex);
+            return new JStartLocPrio(handle);
         }
 
         public static void SetGameTypeSupported(JGameType whichGameType, bool value)
@@ -654,7 +699,8 @@ namespace War3Frame.Library.Api
 
         public static JGameType GetGameTypeSelected()
         {
-            return War3.CallNative<JGameType>(War3.GetNativeFunction("GetGameTypeSelected"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetGameTypeSelected"));
+            return new JGameType(handle);
         }
 
 
@@ -669,7 +715,8 @@ namespace War3Frame.Library.Api
 
         public static JPlacement GetGamePlacement()
         {
-            return War3.CallNative<JPlacement>(War3.GetNativeFunction("GetGamePlacement"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetGamePlacement"));
+            return new JPlacement(handle);
         }
 
 
@@ -679,7 +726,8 @@ namespace War3Frame.Library.Api
 
         public static JGameSpeed GetGameSpeed()
         {
-            return War3.CallNative<JGameSpeed>(War3.GetNativeFunction("GetGameSpeed"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetGameSpeed"));
+            return new JGameSpeed(handle);
         }
 
 
@@ -689,17 +737,20 @@ namespace War3Frame.Library.Api
 
         public static JGameDifficulty GetGameDifficulty()
         {
-            return War3.CallNative<JGameDifficulty>(War3.GetNativeFunction("GetGameDifficulty"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetGameDifficulty"));
+            return new JGameDifficulty(handle);
         }
 
         public static JMapDensity GetResourceDensity()
         {
-            return War3.CallNative<JMapDensity>(War3.GetNativeFunction("GetResourceDensity"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetResourceDensity"));
+            return new JMapDensity(handle);
         }
 
         public static JMapDensity GetCreatureDensity()
         {
-            return War3.CallNative<JMapDensity>(War3.GetNativeFunction("GetCreatureDensity"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetCreatureDensity"));
+            return new JMapDensity(handle);
         }
 
         public static float GetStartLocationX(int whichStartLocation)
@@ -714,7 +765,8 @@ namespace War3Frame.Library.Api
 
         public static JLocation GetStartLocationLoc(int whichStartLocation)
         {
-            return War3.CallNative<JLocation>(War3.GetNativeFunction("GetStartLocationLoc"), whichStartLocation);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetStartLocationLoc"), whichStartLocation);
+            return new JLocation(handle);
         }
 
 
@@ -824,7 +876,8 @@ namespace War3Frame.Library.Api
 
         public static JPlayerColor GetPlayerColor(JPlayer whichPlayer)
         {
-            return War3.CallNative<JPlayerColor>(War3.GetNativeFunction("GetPlayerColor"), whichPlayer.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetPlayerColor"), whichPlayer.Handle);
+            return new JPlayerColor(handle);
         }
 
         public static bool GetPlayerSelectable(JPlayer whichPlayer)
@@ -839,7 +892,8 @@ namespace War3Frame.Library.Api
 
         public static JMapControl GetPlayerController(JPlayer whichPlayer)
         {
-            return War3.CallNative<JMapControl>(War3.GetNativeFunction("GetPlayerController"), whichPlayer.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetPlayerController"), whichPlayer.Handle);
+            return new JMapControl(handle);
         }
 
 
@@ -849,7 +903,8 @@ namespace War3Frame.Library.Api
 
         public static JPlayerSlotState GetPlayerSlotState(JPlayer whichPlayer)
         {
-            return War3.CallNative<JPlayerSlotState>(War3.GetNativeFunction("GetPlayerSlotState"), whichPlayer.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetPlayerSlotState"), whichPlayer.Handle);
+            return new JPlayerSlotState(handle);
         }
 
 
@@ -889,7 +944,8 @@ namespace War3Frame.Library.Api
 
         public static JTimer CreateTimer()
         {
-            return War3.CallNative<JTimer>(War3.GetNativeFunction("CreateTimer"));
+            var timerHandle = War3.CallNative<int>(War3.GetNativeFunction("CreateTimer"));
+            return new JTimer(timerHandle);
         }
 
 
@@ -907,9 +963,9 @@ namespace War3Frame.Library.Api
         /// description = "运行 ${计时器}，周期: ${时间} 秒，模式: ${模式}，运行函数: ${函数}"
         /// comment = "等同于TimerStart"
 
-        public static void TimerStart(JTimer whichTimer, float timeout, bool periodic, JCode handlerFunc)
+        public static int TimerStart(JTimer whichTimer, float timeout, bool periodic, Action handlerFunc)
         {
-            War3.CallNative(War3.GetNativeFunction("TimerStart"), whichTimer.Handle, timeout, periodic, handlerFunc);
+            return War3.CallNative<int>(War3.GetNativeFunction("TimerStart"), whichTimer.Handle, timeout, periodic, handlerFunc);
         }
 
 
@@ -969,7 +1025,8 @@ namespace War3Frame.Library.Api
 
         public static JTimer GetExpiredTimer()
         {
-            return War3.CallNative<JTimer>(War3.GetNativeFunction("GetExpiredTimer"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetExpiredTimer"));
+            return new JTimer(handle);
         }
 
 
@@ -979,7 +1036,8 @@ namespace War3Frame.Library.Api
 
         public static JGroup CreateGroup()
         {
-            return War3.CallNative<JGroup>(War3.GetNativeFunction("CreateGroup"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateGroup"));
+            return new JGroup(handle);
         }
 
 
@@ -1177,7 +1235,7 @@ namespace War3Frame.Library.Api
         /// description = "选取 ${单位组} 内所有单位 ${做动作}"
         /// comment = "使用'选取单位'来取代相应的单位. 对于单位组内每个单位都会运行一次动作(包括死亡的,不包括隐藏的). 等待不能在组动作中运行."
 
-        public static void ForGroup(JGroup whichGroup, JCode callback)
+        public static void ForGroup(JGroup whichGroup, Action callback)
         {
             War3.CallNative(War3.GetNativeFunction("ForGroup"), whichGroup.Handle, callback);
         }
@@ -1188,7 +1246,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit FirstOfGroup(JGroup whichGroup)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("FirstOfGroup"), whichGroup.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("FirstOfGroup"), whichGroup.Handle);
+            return new JUnit(handle);
         }
 
 
@@ -1198,7 +1257,8 @@ namespace War3Frame.Library.Api
 
         public static JForce CreateForce()
         {
-            return War3.CallNative<JForce>(War3.GetNativeFunction("CreateForce"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateForce"));
+            return new JForce(handle);
         }
 
 
@@ -1266,7 +1326,7 @@ namespace War3Frame.Library.Api
         /// description = "选取 ${玩家组} 内所有玩家 ${做动作}"
         /// comment = "玩家组动作中可使用'选取玩家'来获取对应的玩家. 等待不能在组动作中运行."
 
-        public static void ForForce(JForce whichForce, JCode callback)
+        public static void ForForce(JForce whichForce, Action callback)
         {
             War3.CallNative(War3.GetNativeFunction("ForForce"), whichForce.Handle, callback);
         }
@@ -1278,7 +1338,8 @@ namespace War3Frame.Library.Api
 
         public static JRect Rect(float minx, float miny, float maxx, float maxy)
         {
-            return War3.CallNative<JRect>(War3.GetNativeFunction("Rect"), minx, miny, maxx, maxy);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("Rect"), minx, miny, maxx, maxy);
+            return new JRect(handle);
         }
 
 
@@ -1288,7 +1349,8 @@ namespace War3Frame.Library.Api
 
         public static JRect RectFromLoc(JLocation min, JLocation max)
         {
-            return War3.CallNative<JRect>(War3.GetNativeFunction("RectFromLoc"), min.Handle, max.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("RectFromLoc"), min.Handle, max.Handle);
+            return new JRect(handle);
         }
 
 
@@ -1408,7 +1470,8 @@ namespace War3Frame.Library.Api
 
         public static JRegion CreateRegion()
         {
-            return War3.CallNative<JRegion>(War3.GetNativeFunction("CreateRegion"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateRegion"));
+            return new JRegion(handle);
         }
 
 
@@ -1488,7 +1551,8 @@ namespace War3Frame.Library.Api
 
         public static JLocation Location(float x, float y)
         {
-            return War3.CallNative<JLocation>(War3.GetNativeFunction("Location"), x, y);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("Location"), x, y);
+            return new JLocation(handle);
         }
 
 
@@ -1573,7 +1637,8 @@ namespace War3Frame.Library.Api
 
         public static JRect GetWorldBounds()
         {
-            return War3.CallNative<JRect>(War3.GetNativeFunction("GetWorldBounds"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetWorldBounds"));
+            return new JRect(handle);
         }
 
 
@@ -1583,7 +1648,8 @@ namespace War3Frame.Library.Api
 
         public static JTrigger CreateTrigger()
         {
-            return War3.CallNative<JTrigger>(War3.GetNativeFunction("CreateTrigger"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateTrigger"));
+            return new JTrigger(handle);
         }
 
 
@@ -1648,7 +1714,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetFilterUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetFilterUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetFilterUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -1658,7 +1725,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetEnumUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetEnumUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetEnumUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -1668,7 +1736,8 @@ namespace War3Frame.Library.Api
 
         public static JDestructable GetFilterDestructable()
         {
-            return War3.CallNative<JDestructable>(War3.GetNativeFunction("GetFilterDestructable"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetFilterDestructable"));
+            return new JDestructable(handle);
         }
 
 
@@ -1678,7 +1747,8 @@ namespace War3Frame.Library.Api
 
         public static JDestructable GetEnumDestructable()
         {
-            return War3.CallNative<JDestructable>(War3.GetNativeFunction("GetEnumDestructable"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetEnumDestructable"));
+            return new JDestructable(handle);
         }
 
 
@@ -1688,7 +1758,8 @@ namespace War3Frame.Library.Api
 
         public static JItem GetFilterItem()
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("GetFilterItem"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetFilterItem"));
+            return new JItem(handle);
         }
 
 
@@ -1698,7 +1769,8 @@ namespace War3Frame.Library.Api
 
         public static JItem GetEnumItem()
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("GetEnumItem"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetEnumItem"));
+            return new JItem(handle);
         }
 
 
@@ -1708,7 +1780,8 @@ namespace War3Frame.Library.Api
 
         public static JPlayer GetFilterPlayer()
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("GetFilterPlayer"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetFilterPlayer"));
+            return new JPlayer(handle);
         }
 
 
@@ -1718,7 +1791,8 @@ namespace War3Frame.Library.Api
 
         public static JPlayer GetEnumPlayer()
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("GetEnumPlayer"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetEnumPlayer"));
+            return new JPlayer(handle);
         }
 
 
@@ -1728,12 +1802,14 @@ namespace War3Frame.Library.Api
 
         public static JTrigger GetTriggeringTrigger()
         {
-            return War3.CallNative<JTrigger>(War3.GetNativeFunction("GetTriggeringTrigger"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetTriggeringTrigger"));
+            return new JTrigger(handle);
         }
 
         public static JEventId GetTriggerEventId()
         {
-            return War3.CallNative<JEventId>(War3.GetNativeFunction("GetTriggerEventId"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetTriggerEventId"));
+            return new JEventId(handle);
         }
 
 
@@ -1768,22 +1844,26 @@ namespace War3Frame.Library.Api
 
         public static JBoolExpr And(JBoolExpr operandA, JBoolExpr operandB)
         {
-            return War3.CallNative<JBoolExpr>(War3.GetNativeFunction("And"), operandA.Handle, operandB.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("And"), operandA.Handle, operandB.Handle);
+            return new JBoolExpr(handle);
         }
 
         public static JBoolExpr Or(JBoolExpr operandA, JBoolExpr operandB)
         {
-            return War3.CallNative<JBoolExpr>(War3.GetNativeFunction("Or"), operandA.Handle, operandB.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("Or"), operandA.Handle, operandB.Handle);
+            return new JBoolExpr(handle);
         }
 
         public static JBoolExpr Not(JBoolExpr operand)
         {
-            return War3.CallNative<JBoolExpr>(War3.GetNativeFunction("Not"), operand.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("Not"), operand.Handle);
+            return new JBoolExpr(handle);
         }
 
-        public static JConditionFunc Condition(JCode func)
+        public static JConditionFunc Condition(Action func)
         {
-            return War3.CallNative<JConditionFunc>(War3.GetNativeFunction("Condition"), func);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("Condition"), func);
+            return new JConditionFunc(handle);
         }
 
         public static void DestroyCondition(JConditionFunc c)
@@ -1791,9 +1871,10 @@ namespace War3Frame.Library.Api
             War3.CallNative(War3.GetNativeFunction("DestroyCondition"), c.Handle);
         }
 
-        public static JFilterFunc Filter(JCode func)
+        public static JFilterFunc Filter(Action func)
         {
-            return War3.CallNative<JFilterFunc>(War3.GetNativeFunction("Filter"), func);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("Filter"), func);
+            return new JFilterFunc(handle);
         }
 
         public static void DestroyFilter(JFilterFunc f)
@@ -1813,27 +1894,32 @@ namespace War3Frame.Library.Api
 
         public static JEvent TriggerRegisterVariableEvent(JTrigger whichTrigger, string varName, JLimitOp opcode, float limitval)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterVariableEvent"), whichTrigger.Handle, varName, opcode.Handle, limitval);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterVariableEvent"), whichTrigger.Handle, varName, opcode.Handle, limitval);
+            return new JEvent(handle);
         }
 
         public static JEvent TriggerRegisterTimerEvent(JTrigger whichTrigger, float timeout, bool periodic)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterTimerEvent"), whichTrigger.Handle, timeout, periodic);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterTimerEvent"), whichTrigger.Handle, timeout, periodic);
+            return new JEvent(handle);
         }
 
         public static JEvent TriggerRegisterTimerExpireEvent(JTrigger whichTrigger, JTimer t)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterTimerExpireEvent"), whichTrigger.Handle, t.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterTimerExpireEvent"), whichTrigger.Handle, t.Handle);
+            return new JEvent(handle);
         }
 
         public static JEvent TriggerRegisterGameStateEvent(JTrigger whichTrigger, JGameState whichState, JLimitOp opcode, float limitval)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterGameStateEvent"), whichTrigger.Handle, whichState.Handle, opcode.Handle, limitval);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterGameStateEvent"), whichTrigger.Handle, whichState.Handle, opcode.Handle, limitval);
+            return new JEvent(handle);
         }
 
         public static JEvent TriggerRegisterDialogEvent(JTrigger whichTrigger, JDialog whichDialog)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterDialogEvent"), whichTrigger.Handle, whichDialog.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterDialogEvent"), whichTrigger.Handle, whichDialog.Handle);
+            return new JEvent(handle);
         }
 
 
@@ -1843,12 +1929,14 @@ namespace War3Frame.Library.Api
 
         public static JEvent TriggerRegisterDialogButtonEvent(JTrigger whichTrigger, JButton whichButton)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterDialogButtonEvent"), whichTrigger.Handle, whichButton.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterDialogButtonEvent"), whichTrigger.Handle, whichButton.Handle);
+            return new JEvent(handle);
         }
 
         public static JGameState GetEventGameState()
         {
-            return War3.CallNative<JGameState>(War3.GetNativeFunction("GetEventGameState"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetEventGameState"));
+            return new JGameState(handle);
         }
 
 
@@ -1858,12 +1946,14 @@ namespace War3Frame.Library.Api
 
         public static JEvent TriggerRegisterGameEvent(JTrigger whichTrigger, JGameEvent whichGameEvent)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterGameEvent"), whichTrigger.Handle, whichGameEvent.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterGameEvent"), whichTrigger.Handle, whichGameEvent.Handle);
+            return new JEvent(handle);
         }
 
         public static JPlayer GetWinningPlayer()
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("GetWinningPlayer"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetWinningPlayer"));
+            return new JPlayer(handle);
         }
 
 
@@ -1873,7 +1963,8 @@ namespace War3Frame.Library.Api
 
         public static JEvent TriggerRegisterEnterRegion(JTrigger whichTrigger, JRegion whichRegion, JBoolExpr filter)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterEnterRegion"), whichTrigger.Handle, whichRegion.Handle, filter.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterEnterRegion"), whichTrigger.Handle, whichRegion.Handle, filter.Handle);
+            return new JEvent(handle);
         }
 
 
@@ -1883,7 +1974,8 @@ namespace War3Frame.Library.Api
 
         public static JRegion GetTriggeringRegion()
         {
-            return War3.CallNative<JRegion>(War3.GetNativeFunction("GetTriggeringRegion"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetTriggeringRegion"));
+            return new JRegion(handle);
         }
 
 
@@ -1893,7 +1985,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetEnteringUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetEnteringUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetEnteringUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -1903,7 +1996,8 @@ namespace War3Frame.Library.Api
 
         public static JEvent TriggerRegisterLeaveRegion(JTrigger whichTrigger, JRegion whichRegion, JBoolExpr filter)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterLeaveRegion"), whichTrigger.Handle, whichRegion.Handle, filter.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterLeaveRegion"), whichTrigger.Handle, whichRegion.Handle, filter.Handle);
+            return new JEvent(handle);
         }
 
 
@@ -1913,7 +2007,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetLeavingUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetLeavingUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetLeavingUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -1923,7 +2018,8 @@ namespace War3Frame.Library.Api
 
         public static JEvent TriggerRegisterTrackableHitEvent(JTrigger whichTrigger, JTrackable t)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterTrackableHitEvent"), whichTrigger.Handle, t.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterTrackableHitEvent"), whichTrigger.Handle, t.Handle);
+            return new JEvent(handle);
         }
 
 
@@ -1933,7 +2029,8 @@ namespace War3Frame.Library.Api
 
         public static JEvent TriggerRegisterTrackableTrackEvent(JTrigger whichTrigger, JTrackable t)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterTrackableTrackEvent"), whichTrigger.Handle, t.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterTrackableTrackEvent"), whichTrigger.Handle, t.Handle);
+            return new JEvent(handle);
         }
 
 
@@ -1943,17 +2040,20 @@ namespace War3Frame.Library.Api
 
         public static JTrackable GetTriggeringTrackable()
         {
-            return War3.CallNative<JTrackable>(War3.GetNativeFunction("GetTriggeringTrackable"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetTriggeringTrackable"));
+            return new JTrackable(handle);
         }
 
         public static JButton GetClickedButton()
         {
-            return War3.CallNative<JButton>(War3.GetNativeFunction("GetClickedButton"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetClickedButton"));
+            return new JButton(handle);
         }
 
         public static JDialog GetClickedDialog()
         {
-            return War3.CallNative<JDialog>(War3.GetNativeFunction("GetClickedDialog"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetClickedDialog"));
+            return new JDialog(handle);
         }
 
 
@@ -1978,7 +2078,8 @@ namespace War3Frame.Library.Api
 
         public static JPlayer GetTournamentFinishNowPlayer()
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("GetTournamentFinishNowPlayer"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetTournamentFinishNowPlayer"));
+            return new JPlayer(handle);
         }
 
 
@@ -2003,7 +2104,8 @@ namespace War3Frame.Library.Api
 
         public static JEvent TriggerRegisterPlayerEvent(JTrigger whichTrigger, JPlayer whichPlayer, JPlayerEvent whichPlayerEvent)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterPlayerEvent"), whichTrigger.Handle, whichPlayer.Handle, whichPlayerEvent.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterPlayerEvent"), whichTrigger.Handle, whichPlayer.Handle, whichPlayerEvent.Handle);
+            return new JEvent(handle);
         }
 
 
@@ -2013,12 +2115,14 @@ namespace War3Frame.Library.Api
 
         public static JPlayer GetTriggerPlayer()
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("GetTriggerPlayer"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetTriggerPlayer"));
+            return new JPlayer(handle);
         }
 
         public static JEvent TriggerRegisterPlayerUnitEvent(JTrigger whichTrigger, JPlayer whichPlayer, JPlayerUnitEvent whichPlayerUnitEvent, JBoolExpr filter)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterPlayerUnitEvent"), whichTrigger.Handle, whichPlayer.Handle, whichPlayerUnitEvent.Handle, filter.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterPlayerUnitEvent"), whichTrigger.Handle, whichPlayer.Handle, whichPlayerUnitEvent.Handle, filter.Handle);
+            return new JEvent(handle);
         }
 
 
@@ -2028,7 +2132,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetLevelingUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetLevelingUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetLevelingUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2038,7 +2143,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetLearningUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetLearningUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetLearningUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2068,7 +2174,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetRevivableUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetRevivableUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetRevivableUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2078,7 +2185,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetRevivingUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetRevivingUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetRevivingUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2088,12 +2196,14 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetAttacker()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetAttacker"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetAttacker"));
+            return new JUnit(handle);
         }
 
         public static JUnit GetRescuer()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetRescuer"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetRescuer"));
+            return new JUnit(handle);
         }
 
 
@@ -2103,12 +2213,14 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetDyingUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetDyingUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetDyingUnit"));
+            return new JUnit(handle);
         }
 
         public static JUnit GetKillingUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetKillingUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetKillingUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2118,7 +2230,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetDecayingUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetDecayingUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetDecayingUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2128,7 +2241,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetConstructingStructure()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetConstructingStructure"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetConstructingStructure"));
+            return new JUnit(handle);
         }
 
 
@@ -2138,7 +2252,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetCancelledStructure()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetCancelledStructure"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetCancelledStructure"));
+            return new JUnit(handle);
         }
 
 
@@ -2148,7 +2263,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetConstructedStructure()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetConstructedStructure"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetConstructedStructure"));
+            return new JUnit(handle);
         }
 
 
@@ -2158,7 +2274,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetResearchingUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetResearchingUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetResearchingUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2188,12 +2305,14 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetTrainedUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetTrainedUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetTrainedUnit"));
+            return new JUnit(handle);
         }
 
         public static JUnit GetDetectedUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetDetectedUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetDetectedUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2203,7 +2322,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetSummoningUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetSummoningUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetSummoningUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2213,17 +2333,20 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetSummonedUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetSummonedUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetSummonedUnit"));
+            return new JUnit(handle);
         }
 
         public static JUnit GetTransportUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetTransportUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetTransportUnit"));
+            return new JUnit(handle);
         }
 
         public static JUnit GetLoadedUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetLoadedUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetLoadedUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2233,7 +2356,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetSellingUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetSellingUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetSellingUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2243,7 +2367,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetSoldUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetSoldUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetSoldUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2253,7 +2378,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetBuyingUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetBuyingUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetBuyingUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2263,7 +2389,8 @@ namespace War3Frame.Library.Api
 
         public static JItem GetSoldItem()
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("GetSoldItem"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetSoldItem"));
+            return new JItem(handle);
         }
 
 
@@ -2273,7 +2400,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetChangingUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetChangingUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetChangingUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2283,7 +2411,8 @@ namespace War3Frame.Library.Api
 
         public static JPlayer GetChangingUnitPrevOwner()
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("GetChangingUnitPrevOwner"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetChangingUnitPrevOwner"));
+            return new JPlayer(handle);
         }
 
 
@@ -2293,7 +2422,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetManipulatingUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetManipulatingUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetManipulatingUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2303,7 +2433,8 @@ namespace War3Frame.Library.Api
 
         public static JItem GetManipulatedItem()
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("GetManipulatedItem"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetManipulatedItem"));
+            return new JItem(handle);
         }
 
 
@@ -2313,7 +2444,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetOrderedUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetOrderedUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetOrderedUnit"));
+            return new JUnit(handle);
         }
 
         public static int GetIssuedOrderId()
@@ -2348,12 +2480,14 @@ namespace War3Frame.Library.Api
 
         public static JLocation GetOrderPointLoc()
         {
-            return War3.CallNative<JLocation>(War3.GetNativeFunction("GetOrderPointLoc"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetOrderPointLoc"));
+            return new JLocation(handle);
         }
 
         public static JWidget GetOrderTarget()
         {
-            return War3.CallNative<JWidget>(War3.GetNativeFunction("GetOrderTarget"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetOrderTarget"));
+            return new JWidget(handle);
         }
 
 
@@ -2363,7 +2497,8 @@ namespace War3Frame.Library.Api
 
         public static JDestructable GetOrderTargetDestructable()
         {
-            return War3.CallNative<JDestructable>(War3.GetNativeFunction("GetOrderTargetDestructable"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetOrderTargetDestructable"));
+            return new JDestructable(handle);
         }
 
 
@@ -2373,7 +2508,8 @@ namespace War3Frame.Library.Api
 
         public static JItem GetOrderTargetItem()
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("GetOrderTargetItem"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetOrderTargetItem"));
+            return new JItem(handle);
         }
 
 
@@ -2383,7 +2519,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetOrderTargetUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetOrderTargetUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetOrderTargetUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2393,7 +2530,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetSpellAbilityUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetSpellAbilityUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetSpellAbilityUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2408,7 +2546,8 @@ namespace War3Frame.Library.Api
 
         public static JAbility GetSpellAbility()
         {
-            return War3.CallNative<JAbility>(War3.GetNativeFunction("GetSpellAbility"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetSpellAbility"));
+            return new JAbility(handle);
         }
 
 
@@ -2418,7 +2557,8 @@ namespace War3Frame.Library.Api
 
         public static JLocation GetSpellTargetLoc()
         {
-            return War3.CallNative<JLocation>(War3.GetNativeFunction("GetSpellTargetLoc"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetSpellTargetLoc"));
+            return new JLocation(handle);
         }
 
 
@@ -2448,7 +2588,8 @@ namespace War3Frame.Library.Api
 
         public static JDestructable GetSpellTargetDestructable()
         {
-            return War3.CallNative<JDestructable>(War3.GetNativeFunction("GetSpellTargetDestructable"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetSpellTargetDestructable"));
+            return new JDestructable(handle);
         }
 
 
@@ -2458,7 +2599,8 @@ namespace War3Frame.Library.Api
 
         public static JItem GetSpellTargetItem()
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("GetSpellTargetItem"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetSpellTargetItem"));
+            return new JItem(handle);
         }
 
 
@@ -2468,7 +2610,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetSpellTargetUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetSpellTargetUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetSpellTargetUnit"));
+            return new JUnit(handle);
         }
 
 
@@ -2478,7 +2621,8 @@ namespace War3Frame.Library.Api
 
         public static JEvent TriggerRegisterPlayerAllianceChange(JTrigger whichTrigger, JPlayer whichPlayer, JAllianceType whichAlliance)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterPlayerAllianceChange"), whichTrigger.Handle, whichPlayer.Handle, whichAlliance.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterPlayerAllianceChange"), whichTrigger.Handle, whichPlayer.Handle, whichAlliance.Handle);
+            return new JEvent(handle);
         }
 
 
@@ -2488,12 +2632,14 @@ namespace War3Frame.Library.Api
 
         public static JEvent TriggerRegisterPlayerStateEvent(JTrigger whichTrigger, JPlayer whichPlayer, JPlayerState whichState, JLimitOp opcode, float limitval)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterPlayerStateEvent"), whichTrigger.Handle, whichPlayer.Handle, whichState.Handle, opcode.Handle, limitval);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterPlayerStateEvent"), whichTrigger.Handle, whichPlayer.Handle, whichState.Handle, opcode.Handle, limitval);
+            return new JEvent(handle);
         }
 
         public static JPlayerState GetEventPlayerState()
         {
-            return War3.CallNative<JPlayerState>(War3.GetNativeFunction("GetEventPlayerState"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetEventPlayerState"));
+            return new JPlayerState(handle);
         }
 
 
@@ -2503,7 +2649,8 @@ namespace War3Frame.Library.Api
 
         public static JEvent TriggerRegisterPlayerChatEvent(JTrigger whichTrigger, JPlayer whichPlayer, string chatMessageToDetect, bool exactMatchOnly)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterPlayerChatEvent"), whichTrigger.Handle, whichPlayer.Handle, chatMessageToDetect, exactMatchOnly);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterPlayerChatEvent"), whichTrigger.Handle, whichPlayer.Handle, chatMessageToDetect, exactMatchOnly);
+            return new JEvent(handle);
         }
 
 
@@ -2533,7 +2680,8 @@ namespace War3Frame.Library.Api
 
         public static JEvent TriggerRegisterDeathEvent(JTrigger whichTrigger, JWidget whichWidget)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterDeathEvent"), whichTrigger.Handle, whichWidget.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterDeathEvent"), whichTrigger.Handle, whichWidget.Handle);
+            return new JEvent(handle);
         }
 
 
@@ -2543,17 +2691,20 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetTriggerUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetTriggerUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetTriggerUnit"));
+            return new JUnit(handle);
         }
 
         public static JEvent TriggerRegisterUnitStateEvent(JTrigger whichTrigger, JUnit whichUnit, JUnitState whichState, JLimitOp opcode, float limitval)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterUnitStateEvent"), whichTrigger.Handle, whichUnit.Handle, whichState.Handle, opcode.Handle, limitval);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterUnitStateEvent"), whichTrigger.Handle, whichUnit.Handle, whichState.Handle, opcode.Handle, limitval);
+            return new JEvent(handle);
         }
 
         public static JUnitState GetEventUnitState()
         {
-            return War3.CallNative<JUnitState>(War3.GetNativeFunction("GetEventUnitState"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetEventUnitState"));
+            return new JUnitState(handle);
         }
 
 
@@ -2563,7 +2714,8 @@ namespace War3Frame.Library.Api
 
         public static JEvent TriggerRegisterUnitEvent(JTrigger whichTrigger, JUnit whichUnit, JUnitEvent whichEvent)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterUnitEvent"), whichTrigger.Handle, whichUnit.Handle, whichEvent.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterUnitEvent"), whichTrigger.Handle, whichUnit.Handle, whichEvent.Handle);
+            return new JEvent(handle);
         }
 
 
@@ -2583,17 +2735,20 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetEventDamageSource()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetEventDamageSource"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetEventDamageSource"));
+            return new JUnit(handle);
         }
 
         public static JPlayer GetEventDetectingPlayer()
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("GetEventDetectingPlayer"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetEventDetectingPlayer"));
+            return new JPlayer(handle);
         }
 
         public static JEvent TriggerRegisterFilterUnitEvent(JTrigger whichTrigger, JUnit whichUnit, JUnitEvent whichEvent, JBoolExpr filter)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterFilterUnitEvent"), whichTrigger.Handle, whichUnit.Handle, whichEvent.Handle, filter.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterFilterUnitEvent"), whichTrigger.Handle, whichUnit.Handle, whichEvent.Handle, filter.Handle);
+            return new JEvent(handle);
         }
 
 
@@ -2603,17 +2758,20 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetEventTargetUnit()
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetEventTargetUnit"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetEventTargetUnit"));
+            return new JUnit(handle);
         }
 
         public static JEvent TriggerRegisterUnitInRange(JTrigger whichTrigger, JUnit whichUnit, float range, JBoolExpr filter)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("TriggerRegisterUnitInRange"), whichTrigger.Handle, whichUnit.Handle, range, filter.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerRegisterUnitInRange"), whichTrigger.Handle, whichUnit.Handle, range, filter.Handle);
+            return new JEvent(handle);
         }
 
         public static JTriggerCondition TriggerAddCondition(JTrigger whichTrigger, JBoolExpr condition)
         {
-            return War3.CallNative<JTriggerCondition>(War3.GetNativeFunction("TriggerAddCondition"), whichTrigger.Handle, condition.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerAddCondition"), whichTrigger.Handle, condition.Handle);
+            return new JTriggerCondition(handle);
         }
 
         public static void TriggerRemoveCondition(JTrigger whichTrigger, JTriggerCondition whichCondition)
@@ -2626,9 +2784,10 @@ namespace War3Frame.Library.Api
             War3.CallNative(War3.GetNativeFunction("TriggerClearConditions"), whichTrigger.Handle);
         }
 
-        public static JTriggerAction TriggerAddAction(JTrigger whichTrigger, JCode actionFunc)
+        public static JTriggerAction TriggerAddAction(JTrigger whichTrigger, Action actionFunc)
         {
-            return War3.CallNative<JTriggerAction>(War3.GetNativeFunction("TriggerAddAction"), whichTrigger.Handle, actionFunc);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TriggerAddAction"), whichTrigger.Handle, actionFunc);
+            return new JTriggerAction(handle);
         }
 
         public static void TriggerRemoveAction(JTrigger whichTrigger, JTriggerAction whichAction)
@@ -2713,12 +2872,14 @@ namespace War3Frame.Library.Api
 
         public static JWidget GetTriggerWidget()
         {
-            return War3.CallNative<JWidget>(War3.GetNativeFunction("GetTriggerWidget"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetTriggerWidget"));
+            return new JWidget(handle);
         }
 
         public static JDestructable CreateDestructable(int objectid, float x, float y, float face, float scale, int variation)
         {
-            return War3.CallNative<JDestructable>(War3.GetNativeFunction("CreateDestructable"), objectid, x, y, face, scale, variation);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateDestructable"), objectid, x, y, face, scale, variation);
+            return new JDestructable(handle);
         }
 
 
@@ -2728,12 +2889,14 @@ namespace War3Frame.Library.Api
 
         public static JDestructable CreateDestructableZ(int objectid, float x, float y, float z, float face, float scale, int variation)
         {
-            return War3.CallNative<JDestructable>(War3.GetNativeFunction("CreateDestructableZ"), objectid, x, y, z, face, scale, variation);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateDestructableZ"), objectid, x, y, z, face, scale, variation);
+            return new JDestructable(handle);
         }
 
         public static JDestructable CreateDeadDestructable(int objectid, float x, float y, float face, float scale, int variation)
         {
-            return War3.CallNative<JDestructable>(War3.GetNativeFunction("CreateDeadDestructable"), objectid, x, y, face, scale, variation);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateDeadDestructable"), objectid, x, y, face, scale, variation);
+            return new JDestructable(handle);
         }
 
 
@@ -2743,7 +2906,8 @@ namespace War3Frame.Library.Api
 
         public static JDestructable CreateDeadDestructableZ(int objectid, float x, float y, float z, float face, float scale, int variation)
         {
-            return War3.CallNative<JDestructable>(War3.GetNativeFunction("CreateDeadDestructableZ"), objectid, x, y, z, face, scale, variation);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateDeadDestructableZ"), objectid, x, y, z, face, scale, variation);
+            return new JDestructable(handle);
         }
 
 
@@ -2776,7 +2940,7 @@ namespace War3Frame.Library.Api
             return War3.CallNative<bool>(War3.GetNativeFunction("IsDestructableInvulnerable"), d.Handle);
         }
 
-        public static void EnumDestructablesInRect(JRect r, JBoolExpr filter, JCode actionFunc)
+        public static void EnumDestructablesInRect(JRect r, JBoolExpr filter, Action actionFunc)
         {
             War3.CallNative(War3.GetNativeFunction("EnumDestructablesInRect"), r.Handle, filter.Handle, actionFunc);
         }
@@ -2917,7 +3081,8 @@ namespace War3Frame.Library.Api
 
         public static JDestructable GetTriggerDestructable()
         {
-            return War3.CallNative<JDestructable>(War3.GetNativeFunction("GetTriggerDestructable"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetTriggerDestructable"));
+            return new JDestructable(handle);
         }
 
 
@@ -2927,7 +3092,8 @@ namespace War3Frame.Library.Api
 
         public static JItem CreateItem(int itemid, float x, float y)
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("CreateItem"), itemid, x, y);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateItem"), itemid, x, y);
+            return new JItem(handle);
         }
 
 
@@ -2947,7 +3113,8 @@ namespace War3Frame.Library.Api
 
         public static JPlayer GetItemPlayer(JItem whichItem)
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("GetItemPlayer"), whichItem.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetItemPlayer"), whichItem.Handle);
+            return new JPlayer(handle);
         }
 
 
@@ -3105,7 +3272,7 @@ namespace War3Frame.Library.Api
             return War3.CallNative<bool>(War3.GetNativeFunction("IsItemIdPawnable"), itemId);
         }
 
-        public static void EnumItemsInRect(JRect r, JBoolExpr filter, JCode actionFunc)
+        public static void EnumItemsInRect(JRect r, JBoolExpr filter, Action actionFunc)
         {
             War3.CallNative(War3.GetNativeFunction("EnumItemsInRect"), r.Handle, filter.Handle, actionFunc);
         }
@@ -3127,7 +3294,8 @@ namespace War3Frame.Library.Api
 
         public static JItemType GetItemType(JItem whichItem)
         {
-            return War3.CallNative<JItemType>(War3.GetNativeFunction("GetItemType"), whichItem.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetItemType"), whichItem.Handle);
+            return new JItemType(handle);
         }
 
 
@@ -3197,12 +3365,14 @@ namespace War3Frame.Library.Api
 
         public static JUnit CreateUnit(JPlayer id, int unitid, float x, float y, float face)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("CreateUnit"), id.Handle, unitid, x, y, face);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateUnit"), id.Handle, unitid, x, y, face);
+            return new JUnit(handle);
         }
 
         public static JUnit CreateUnitByName(JPlayer whichPlayer, string unitname, float x, float y, float face)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("CreateUnitByName"), whichPlayer.Handle, unitname, x, y, face);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateUnitByName"), whichPlayer.Handle, unitname, x, y, face);
+            return new JUnit(handle);
         }
 
 
@@ -3212,12 +3382,14 @@ namespace War3Frame.Library.Api
 
         public static JUnit CreateUnitAtLoc(JPlayer id, int unitid, JLocation whichLocation, float face)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("CreateUnitAtLoc"), id.Handle, unitid, whichLocation.Handle, face);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateUnitAtLoc"), id.Handle, unitid, whichLocation.Handle, face);
+            return new JUnit(handle);
         }
 
         public static JUnit CreateUnitAtLocByName(JPlayer id, string unitname, JLocation whichLocation, float face)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("CreateUnitAtLocByName"), id.Handle, unitname, whichLocation.Handle, face);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateUnitAtLocByName"), id.Handle, unitname, whichLocation.Handle, face);
+            return new JUnit(handle);
         }
 
 
@@ -3227,7 +3399,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit CreateCorpse(JPlayer whichPlayer, int unitid, float x, float y, float face)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("CreateCorpse"), whichPlayer.Handle, unitid, x, y, face);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateCorpse"), whichPlayer.Handle, unitid, x, y, face);
+            return new JUnit(handle);
         }
 
 
@@ -3927,7 +4100,8 @@ namespace War3Frame.Library.Api
 
         public static JItem UnitAddItemById(JUnit whichUnit, int itemId)
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("UnitAddItemById"), whichUnit.Handle, itemId);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("UnitAddItemById"), whichUnit.Handle, itemId);
+            return new JItem(handle);
         }
 
 
@@ -3947,7 +4121,8 @@ namespace War3Frame.Library.Api
 
         public static JItem UnitRemoveItemFromSlot(JUnit whichUnit, int itemSlot)
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("UnitRemoveItemFromSlot"), whichUnit.Handle, itemSlot);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("UnitRemoveItemFromSlot"), whichUnit.Handle, itemSlot);
+            return new JItem(handle);
         }
 
 
@@ -3967,7 +4142,8 @@ namespace War3Frame.Library.Api
 
         public static JItem UnitItemInSlot(JUnit whichUnit, int itemSlot)
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("UnitItemInSlot"), whichUnit.Handle, itemSlot);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("UnitItemInSlot"), whichUnit.Handle, itemSlot);
+            return new JItem(handle);
         }
 
         public static int UnitInventorySize(JUnit whichUnit)
@@ -4057,7 +4233,8 @@ namespace War3Frame.Library.Api
 
         public static JLocation GetUnitLoc(JUnit whichUnit)
         {
-            return War3.CallNative<JLocation>(War3.GetNativeFunction("GetUnitLoc"), whichUnit.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetUnitLoc"), whichUnit.Handle);
+            return new JLocation(handle);
         }
 
 
@@ -4107,7 +4284,8 @@ namespace War3Frame.Library.Api
 
         public static JPlayer GetOwningPlayer(JUnit whichUnit)
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("GetOwningPlayer"), whichUnit.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetOwningPlayer"), whichUnit.Handle);
+            return new JPlayer(handle);
         }
 
 
@@ -4127,7 +4305,8 @@ namespace War3Frame.Library.Api
 
         public static JRace GetUnitRace(JUnit whichUnit)
         {
-            return War3.CallNative<JRace>(War3.GetNativeFunction("GetUnitRace"), whichUnit.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetUnitRace"), whichUnit.Handle);
+            return new JRace(handle);
         }
 
 
@@ -4197,7 +4376,8 @@ namespace War3Frame.Library.Api
 
         public static JLocation GetUnitRallyPoint(JUnit whichUnit)
         {
-            return War3.CallNative<JLocation>(War3.GetNativeFunction("GetUnitRallyPoint"), whichUnit.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetUnitRallyPoint"), whichUnit.Handle);
+            return new JLocation(handle);
         }
 
 
@@ -4207,7 +4387,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit GetUnitRallyUnit(JUnit whichUnit)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("GetUnitRallyUnit"), whichUnit.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetUnitRallyUnit"), whichUnit.Handle);
+            return new JUnit(handle);
         }
 
 
@@ -4217,7 +4398,8 @@ namespace War3Frame.Library.Api
 
         public static JDestructable GetUnitRallyDestructable(JUnit whichUnit)
         {
-            return War3.CallNative<JDestructable>(War3.GetNativeFunction("GetUnitRallyDestructable"), whichUnit.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetUnitRallyDestructable"), whichUnit.Handle);
+            return new JDestructable(handle);
         }
 
 
@@ -5029,7 +5211,8 @@ namespace War3Frame.Library.Api
 
         public static JPlayer Player(int number)
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("Player"), number);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("Player"), number);
+            return new JPlayer(handle);
         }
 
 
@@ -5039,7 +5222,8 @@ namespace War3Frame.Library.Api
 
         public static JPlayer GetLocalPlayer()
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("GetLocalPlayer"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetLocalPlayer"));
+            return new JPlayer(handle);
         }
 
 
@@ -5149,7 +5333,8 @@ namespace War3Frame.Library.Api
 
         public static JRace GetPlayerRace(JPlayer whichPlayer)
         {
-            return War3.CallNative<JRace>(War3.GetNativeFunction("GetPlayerRace"), whichPlayer.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetPlayerRace"), whichPlayer.Handle);
+            return new JRace(handle);
         }
 
 
@@ -5399,7 +5584,8 @@ namespace War3Frame.Library.Api
 
         public static JFogModifier CreateFogModifierRect(JPlayer forWhichPlayer, JFogState whichState, JRect where, bool useSharedVision, bool afterUnits)
         {
-            return War3.CallNative<JFogModifier>(War3.GetNativeFunction("CreateFogModifierRect"), forWhichPlayer.Handle, whichState.Handle, where.Handle, useSharedVision, afterUnits);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateFogModifierRect"), forWhichPlayer.Handle, whichState.Handle, where.Handle, useSharedVision, afterUnits);
+            return new JFogModifier(handle);
         }
 
 
@@ -5409,12 +5595,14 @@ namespace War3Frame.Library.Api
 
         public static JFogModifier CreateFogModifierRadius(JPlayer forWhichPlayer, JFogState whichState, float centerx, float centerY, float radius, bool useSharedVision, bool afterUnits)
         {
-            return War3.CallNative<JFogModifier>(War3.GetNativeFunction("CreateFogModifierRadius"), forWhichPlayer.Handle, whichState.Handle, centerx, centerY, radius, useSharedVision, afterUnits);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateFogModifierRadius"), forWhichPlayer.Handle, whichState.Handle, centerx, centerY, radius, useSharedVision, afterUnits);
+            return new JFogModifier(handle);
         }
 
         public static JFogModifier CreateFogModifierRadiusLoc(JPlayer forWhichPlayer, JFogState whichState, JLocation center, float radius, bool useSharedVision, bool afterUnits)
         {
-            return War3.CallNative<JFogModifier>(War3.GetNativeFunction("CreateFogModifierRadiusLoc"), forWhichPlayer.Handle, whichState.Handle, center.Handle, radius, useSharedVision, afterUnits);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateFogModifierRadiusLoc"), forWhichPlayer.Handle, whichState.Handle, center.Handle, radius, useSharedVision, afterUnits);
+            return new JFogModifier(handle);
         }
 
 
@@ -5449,7 +5637,8 @@ namespace War3Frame.Library.Api
 
         public static JVersion VersionGet()
         {
-            return War3.CallNative<JVersion>(War3.GetNativeFunction("VersionGet"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("VersionGet"));
+            return new JVersion(handle);
         }
 
         public static bool VersionCompatible(JVersion whichVersion)
@@ -5594,7 +5783,8 @@ namespace War3Frame.Library.Api
 
         public static JGameDifficulty GetDefaultDifficulty()
         {
-            return War3.CallNative<JGameDifficulty>(War3.GetNativeFunction("GetDefaultDifficulty"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetDefaultDifficulty"));
+            return new JGameDifficulty(handle);
         }
 
         public static void SetDefaultDifficulty(JGameDifficulty g)
@@ -5629,7 +5819,8 @@ namespace War3Frame.Library.Api
 
         public static JDialog DialogCreate()
         {
-            return War3.CallNative<JDialog>(War3.GetNativeFunction("DialogCreate"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DialogCreate"));
+            return new JDialog(handle);
         }
 
 
@@ -5659,7 +5850,8 @@ namespace War3Frame.Library.Api
 
         public static JButton DialogAddButton(JDialog whichDialog, string buttonText, int hotkey)
         {
-            return War3.CallNative<JButton>(War3.GetNativeFunction("DialogAddButton"), whichDialog.Handle, buttonText, hotkey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DialogAddButton"), whichDialog.Handle, buttonText, hotkey);
+            return new JButton(handle);
         }
 
 
@@ -5669,7 +5861,8 @@ namespace War3Frame.Library.Api
 
         public static JButton DialogAddQuitButton(JDialog whichDialog, bool doScoreScreen, string buttonText, int hotkey)
         {
-            return War3.CallNative<JButton>(War3.GetNativeFunction("DialogAddQuitButton"), whichDialog.Handle, doScoreScreen, buttonText, hotkey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("DialogAddQuitButton"), whichDialog.Handle, doScoreScreen, buttonText, hotkey);
+            return new JButton(handle);
         }
 
 
@@ -5699,7 +5892,8 @@ namespace War3Frame.Library.Api
 
         public static JGameCache InitGameCache(string campaignFile)
         {
-            return War3.CallNative<JGameCache>(War3.GetNativeFunction("InitGameCache"), campaignFile);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("InitGameCache"), campaignFile);
+            return new JGameCache(handle);
         }
 
         public static bool SaveGameCache(JGameCache whichCache)
@@ -5889,7 +6083,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit RestoreUnit(JGameCache cache, string missionKey, string key, JPlayer forWhichPlayer, float x, float y, float facing)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("RestoreUnit"), cache.Handle, missionKey, key, forWhichPlayer.Handle, x, y, facing);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("RestoreUnit"), cache.Handle, missionKey, key, forWhichPlayer.Handle, x, y, facing);
+            return new JUnit(handle);
         }
 
 
@@ -5899,7 +6094,8 @@ namespace War3Frame.Library.Api
 
         public static JHashtable InitHashtable()
         {
-            return War3.CallNative<JHashtable>(War3.GetNativeFunction("InitHashtable"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("InitHashtable"));
+            return new JHashtable(handle);
         }
 
 
@@ -6369,12 +6565,14 @@ namespace War3Frame.Library.Api
 
         public static JPlayer LoadPlayerHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JPlayer>(War3.GetNativeFunction("LoadPlayerHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadPlayerHandle"), table.Handle, parentKey, childKey);
+            return new JPlayer(handle);
         }
 
         public static JWidget LoadWidgetHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JWidget>(War3.GetNativeFunction("LoadWidgetHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadWidgetHandle"), table.Handle, parentKey, childKey);
+            return new JWidget(handle);
         }
 
 
@@ -6384,7 +6582,8 @@ namespace War3Frame.Library.Api
 
         public static JDestructable LoadDestructableHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JDestructable>(War3.GetNativeFunction("LoadDestructableHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadDestructableHandle"), table.Handle, parentKey, childKey);
+            return new JDestructable(handle);
         }
 
 
@@ -6394,7 +6593,8 @@ namespace War3Frame.Library.Api
 
         public static JItem LoadItemHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("LoadItemHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadItemHandle"), table.Handle, parentKey, childKey);
+            return new JItem(handle);
         }
 
 
@@ -6404,12 +6604,14 @@ namespace War3Frame.Library.Api
 
         public static JUnit LoadUnitHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("LoadUnitHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadUnitHandle"), table.Handle, parentKey, childKey);
+            return new JUnit(handle);
         }
 
         public static JAbility LoadAbilityHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JAbility>(War3.GetNativeFunction("LoadAbilityHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadAbilityHandle"), table.Handle, parentKey, childKey);
+            return new JAbility(handle);
         }
 
 
@@ -6419,7 +6621,8 @@ namespace War3Frame.Library.Api
 
         public static JTimer LoadTimerHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JTimer>(War3.GetNativeFunction("LoadTimerHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadTimerHandle"), table.Handle, parentKey, childKey);
+            return new JTimer(handle);
         }
 
 
@@ -6429,7 +6632,8 @@ namespace War3Frame.Library.Api
 
         public static JTrigger LoadTriggerHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JTrigger>(War3.GetNativeFunction("LoadTriggerHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadTriggerHandle"), table.Handle, parentKey, childKey);
+            return new JTrigger(handle);
         }
 
 
@@ -6439,7 +6643,8 @@ namespace War3Frame.Library.Api
 
         public static JTriggerCondition LoadTriggerConditionHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JTriggerCondition>(War3.GetNativeFunction("LoadTriggerConditionHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadTriggerConditionHandle"), table.Handle, parentKey, childKey);
+            return new JTriggerCondition(handle);
         }
 
 
@@ -6449,7 +6654,8 @@ namespace War3Frame.Library.Api
 
         public static JTriggerAction LoadTriggerActionHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JTriggerAction>(War3.GetNativeFunction("LoadTriggerActionHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadTriggerActionHandle"), table.Handle, parentKey, childKey);
+            return new JTriggerAction(handle);
         }
 
 
@@ -6459,7 +6665,8 @@ namespace War3Frame.Library.Api
 
         public static JEvent LoadTriggerEventHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JEvent>(War3.GetNativeFunction("LoadTriggerEventHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadTriggerEventHandle"), table.Handle, parentKey, childKey);
+            return new JEvent(handle);
         }
 
 
@@ -6469,7 +6676,8 @@ namespace War3Frame.Library.Api
 
         public static JForce LoadForceHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JForce>(War3.GetNativeFunction("LoadForceHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadForceHandle"), table.Handle, parentKey, childKey);
+            return new JForce(handle);
         }
 
 
@@ -6479,7 +6687,8 @@ namespace War3Frame.Library.Api
 
         public static JGroup LoadGroupHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JGroup>(War3.GetNativeFunction("LoadGroupHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadGroupHandle"), table.Handle, parentKey, childKey);
+            return new JGroup(handle);
         }
 
 
@@ -6489,7 +6698,8 @@ namespace War3Frame.Library.Api
 
         public static JLocation LoadLocationHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JLocation>(War3.GetNativeFunction("LoadLocationHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadLocationHandle"), table.Handle, parentKey, childKey);
+            return new JLocation(handle);
         }
 
 
@@ -6499,7 +6709,8 @@ namespace War3Frame.Library.Api
 
         public static JRect LoadRectHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JRect>(War3.GetNativeFunction("LoadRectHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadRectHandle"), table.Handle, parentKey, childKey);
+            return new JRect(handle);
         }
 
 
@@ -6509,7 +6720,8 @@ namespace War3Frame.Library.Api
 
         public static JBoolExpr LoadBooleanExprHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JBoolExpr>(War3.GetNativeFunction("LoadBooleanExprHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadBooleanExprHandle"), table.Handle, parentKey, childKey);
+            return new JBoolExpr(handle);
         }
 
 
@@ -6519,7 +6731,8 @@ namespace War3Frame.Library.Api
 
         public static JSound LoadSoundHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JSound>(War3.GetNativeFunction("LoadSoundHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadSoundHandle"), table.Handle, parentKey, childKey);
+            return new JSound(handle);
         }
 
 
@@ -6529,7 +6742,8 @@ namespace War3Frame.Library.Api
 
         public static JEffect LoadEffectHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JEffect>(War3.GetNativeFunction("LoadEffectHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadEffectHandle"), table.Handle, parentKey, childKey);
+            return new JEffect(handle);
         }
 
 
@@ -6539,7 +6753,8 @@ namespace War3Frame.Library.Api
 
         public static JUnitPool LoadUnitPoolHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JUnitPool>(War3.GetNativeFunction("LoadUnitPoolHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadUnitPoolHandle"), table.Handle, parentKey, childKey);
+            return new JUnitPool(handle);
         }
 
 
@@ -6549,7 +6764,8 @@ namespace War3Frame.Library.Api
 
         public static JItemPool LoadItemPoolHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JItemPool>(War3.GetNativeFunction("LoadItemPoolHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadItemPoolHandle"), table.Handle, parentKey, childKey);
+            return new JItemPool(handle);
         }
 
 
@@ -6559,7 +6775,8 @@ namespace War3Frame.Library.Api
 
         public static JQuest LoadQuestHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JQuest>(War3.GetNativeFunction("LoadQuestHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadQuestHandle"), table.Handle, parentKey, childKey);
+            return new JQuest(handle);
         }
 
 
@@ -6569,7 +6786,8 @@ namespace War3Frame.Library.Api
 
         public static JQuestItem LoadQuestItemHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JQuestItem>(War3.GetNativeFunction("LoadQuestItemHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadQuestItemHandle"), table.Handle, parentKey, childKey);
+            return new JQuestItem(handle);
         }
 
 
@@ -6579,7 +6797,8 @@ namespace War3Frame.Library.Api
 
         public static JDefeatCondition LoadDefeatConditionHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JDefeatCondition>(War3.GetNativeFunction("LoadDefeatConditionHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadDefeatConditionHandle"), table.Handle, parentKey, childKey);
+            return new JDefeatCondition(handle);
         }
 
 
@@ -6589,7 +6808,8 @@ namespace War3Frame.Library.Api
 
         public static JTimerDialog LoadTimerDialogHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JTimerDialog>(War3.GetNativeFunction("LoadTimerDialogHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadTimerDialogHandle"), table.Handle, parentKey, childKey);
+            return new JTimerDialog(handle);
         }
 
 
@@ -6599,7 +6819,8 @@ namespace War3Frame.Library.Api
 
         public static JLeaderboard LoadLeaderboardHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JLeaderboard>(War3.GetNativeFunction("LoadLeaderboardHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadLeaderboardHandle"), table.Handle, parentKey, childKey);
+            return new JLeaderboard(handle);
         }
 
 
@@ -6609,7 +6830,8 @@ namespace War3Frame.Library.Api
 
         public static JMultiboard LoadMultiboardHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JMultiboard>(War3.GetNativeFunction("LoadMultiboardHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadMultiboardHandle"), table.Handle, parentKey, childKey);
+            return new JMultiboard(handle);
         }
 
 
@@ -6619,7 +6841,8 @@ namespace War3Frame.Library.Api
 
         public static JMultiboardItem LoadMultiboardItemHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JMultiboardItem>(War3.GetNativeFunction("LoadMultiboardItemHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadMultiboardItemHandle"), table.Handle, parentKey, childKey);
+            return new JMultiboardItem(handle);
         }
 
 
@@ -6629,7 +6852,8 @@ namespace War3Frame.Library.Api
 
         public static JTrackable LoadTrackableHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JTrackable>(War3.GetNativeFunction("LoadTrackableHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadTrackableHandle"), table.Handle, parentKey, childKey);
+            return new JTrackable(handle);
         }
 
 
@@ -6639,7 +6863,8 @@ namespace War3Frame.Library.Api
 
         public static JDialog LoadDialogHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JDialog>(War3.GetNativeFunction("LoadDialogHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadDialogHandle"), table.Handle, parentKey, childKey);
+            return new JDialog(handle);
         }
 
 
@@ -6649,7 +6874,8 @@ namespace War3Frame.Library.Api
 
         public static JButton LoadButtonHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JButton>(War3.GetNativeFunction("LoadButtonHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadButtonHandle"), table.Handle, parentKey, childKey);
+            return new JButton(handle);
         }
 
 
@@ -6659,7 +6885,8 @@ namespace War3Frame.Library.Api
 
         public static JTextTag LoadTextTagHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JTextTag>(War3.GetNativeFunction("LoadTextTagHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadTextTagHandle"), table.Handle, parentKey, childKey);
+            return new JTextTag(handle);
         }
 
 
@@ -6669,7 +6896,8 @@ namespace War3Frame.Library.Api
 
         public static JLightning LoadLightningHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JLightning>(War3.GetNativeFunction("LoadLightningHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadLightningHandle"), table.Handle, parentKey, childKey);
+            return new JLightning(handle);
         }
 
 
@@ -6679,7 +6907,8 @@ namespace War3Frame.Library.Api
 
         public static JImage LoadImageHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JImage>(War3.GetNativeFunction("LoadImageHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadImageHandle"), table.Handle, parentKey, childKey);
+            return new JImage(handle);
         }
 
 
@@ -6689,7 +6918,8 @@ namespace War3Frame.Library.Api
 
         public static JUbersplat LoadUbersplatHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JUbersplat>(War3.GetNativeFunction("LoadUbersplatHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadUbersplatHandle"), table.Handle, parentKey, childKey);
+            return new JUbersplat(handle);
         }
 
 
@@ -6699,7 +6929,8 @@ namespace War3Frame.Library.Api
 
         public static JRegion LoadRegionHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JRegion>(War3.GetNativeFunction("LoadRegionHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadRegionHandle"), table.Handle, parentKey, childKey);
+            return new JRegion(handle);
         }
 
 
@@ -6709,7 +6940,8 @@ namespace War3Frame.Library.Api
 
         public static JFogState LoadFogStateHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JFogState>(War3.GetNativeFunction("LoadFogStateHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadFogStateHandle"), table.Handle, parentKey, childKey);
+            return new JFogState(handle);
         }
 
 
@@ -6719,7 +6951,8 @@ namespace War3Frame.Library.Api
 
         public static JFogModifier LoadFogModifierHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JFogModifier>(War3.GetNativeFunction("LoadFogModifierHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadFogModifierHandle"), table.Handle, parentKey, childKey);
+            return new JFogModifier(handle);
         }
 
 
@@ -6729,7 +6962,8 @@ namespace War3Frame.Library.Api
 
         public static JHashtable LoadHashtableHandle(JHashtable table, int parentKey, int childKey)
         {
-            return War3.CallNative<JHashtable>(War3.GetNativeFunction("LoadHashtableHandle"), table.Handle, parentKey, childKey);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("LoadHashtableHandle"), table.Handle, parentKey, childKey);
+            return new JHashtable(handle);
         }
 
 
@@ -6879,7 +7113,8 @@ namespace War3Frame.Library.Api
 
         public static JUnitPool CreateUnitPool()
         {
-            return War3.CallNative<JUnitPool>(War3.GetNativeFunction("CreateUnitPool"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateUnitPool"));
+            return new JUnitPool(handle);
         }
 
 
@@ -6919,7 +7154,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit PlaceRandomUnit(JUnitPool whichPool, JPlayer forWhichPlayer, float x, float y, float facing)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("PlaceRandomUnit"), whichPool.Handle, forWhichPlayer.Handle, x, y, facing);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("PlaceRandomUnit"), whichPool.Handle, forWhichPlayer.Handle, x, y, facing);
+            return new JUnit(handle);
         }
 
 
@@ -6929,7 +7165,8 @@ namespace War3Frame.Library.Api
 
         public static JItemPool CreateItemPool()
         {
-            return War3.CallNative<JItemPool>(War3.GetNativeFunction("CreateItemPool"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateItemPool"));
+            return new JItemPool(handle);
         }
 
 
@@ -6969,7 +7206,8 @@ namespace War3Frame.Library.Api
 
         public static JItem PlaceRandomItem(JItemPool whichItemPool, float x, float y)
         {
-            return War3.CallNative<JItem>(War3.GetNativeFunction("PlaceRandomItem"), whichItemPool.Handle, x, y);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("PlaceRandomItem"), whichItemPool.Handle, x, y);
+            return new JItem(handle);
         }
 
         public static int ChooseRandomCreep(int level)
@@ -7249,7 +7487,8 @@ namespace War3Frame.Library.Api
 
         public static JTextTag CreateTextTag()
         {
-            return War3.CallNative<JTextTag>(War3.GetNativeFunction("CreateTextTag"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateTextTag"));
+            return new JTextTag(handle);
         }
 
         public static void DestroyTextTag(JTextTag t)
@@ -7434,7 +7673,8 @@ namespace War3Frame.Library.Api
 
         public static JTrackable CreateTrackable(string trackableModelPath, float x, float y, float facing)
         {
-            return War3.CallNative<JTrackable>(War3.GetNativeFunction("CreateTrackable"), trackableModelPath, x, y, facing);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateTrackable"), trackableModelPath, x, y, facing);
+            return new JTrackable(handle);
         }
 
 
@@ -7444,7 +7684,8 @@ namespace War3Frame.Library.Api
 
         public static JQuest CreateQuest()
         {
-            return War3.CallNative<JQuest>(War3.GetNativeFunction("CreateQuest"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateQuest"));
+            return new JQuest(handle);
         }
 
         public static void DestroyQuest(JQuest whichQuest)
@@ -7549,7 +7790,8 @@ namespace War3Frame.Library.Api
 
         public static JQuestItem QuestCreateItem(JQuest whichQuest)
         {
-            return War3.CallNative<JQuestItem>(War3.GetNativeFunction("QuestCreateItem"), whichQuest.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("QuestCreateItem"), whichQuest.Handle);
+            return new JQuestItem(handle);
         }
 
         public static void QuestItemSetDescription(JQuestItem whichQuestItem, string description)
@@ -7574,7 +7816,8 @@ namespace War3Frame.Library.Api
 
         public static JDefeatCondition CreateDefeatCondition()
         {
-            return War3.CallNative<JDefeatCondition>(War3.GetNativeFunction("CreateDefeatCondition"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateDefeatCondition"));
+            return new JDefeatCondition(handle);
         }
 
         public static void DestroyDefeatCondition(JDefeatCondition whichCondition)
@@ -7604,7 +7847,8 @@ namespace War3Frame.Library.Api
 
         public static JTimerDialog CreateTimerDialog(JTimer t)
         {
-            return War3.CallNative<JTimerDialog>(War3.GetNativeFunction("CreateTimerDialog"), t.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateTimerDialog"), t.Handle);
+            return new JTimerDialog(handle);
         }
 
         public static void DestroyTimerDialog(JTimerDialog whichDialog)
@@ -7674,7 +7918,8 @@ namespace War3Frame.Library.Api
 
         public static JLeaderboard CreateLeaderboard()
         {
-            return War3.CallNative<JLeaderboard>(War3.GetNativeFunction("CreateLeaderboard"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateLeaderboard"));
+            return new JLeaderboard(handle);
         }
 
         public static void DestroyLeaderboard(JLeaderboard lb)
@@ -7784,7 +8029,8 @@ namespace War3Frame.Library.Api
 
         public static JLeaderboard PlayerGetLeaderboard(JPlayer toPlayer)
         {
-            return War3.CallNative<JLeaderboard>(War3.GetNativeFunction("PlayerGetLeaderboard"), toPlayer.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("PlayerGetLeaderboard"), toPlayer.Handle);
+            return new JLeaderboard(handle);
         }
 
 
@@ -7844,7 +8090,8 @@ namespace War3Frame.Library.Api
 
         public static JMultiboard CreateMultiboard()
         {
-            return War3.CallNative<JMultiboard>(War3.GetNativeFunction("CreateMultiboard"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateMultiboard"));
+            return new JMultiboard(handle);
         }
 
         public static void DestroyMultiboard(JMultiboard lb)
@@ -8025,7 +8272,8 @@ namespace War3Frame.Library.Api
 
         public static JMultiboardItem MultiboardGetItem(JMultiboard lb, int row, int column)
         {
-            return War3.CallNative<JMultiboardItem>(War3.GetNativeFunction("MultiboardGetItem"), lb.Handle, row, column);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("MultiboardGetItem"), lb.Handle, row, column);
+            return new JMultiboardItem(handle);
         }
 
 
@@ -8228,7 +8476,8 @@ namespace War3Frame.Library.Api
 
         public static JCameraSetup CreateCameraSetup()
         {
-            return War3.CallNative<JCameraSetup>(War3.GetNativeFunction("CreateCameraSetup"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateCameraSetup"));
+            return new JCameraSetup(handle);
         }
 
         public static void CameraSetupSetField(JCameraSetup whichSetup, JCameraField whichField, float value, float duration)
@@ -8258,7 +8507,8 @@ namespace War3Frame.Library.Api
 
         public static JLocation CameraSetupGetDestPositionLoc(JCameraSetup whichSetup)
         {
-            return War3.CallNative<JLocation>(War3.GetNativeFunction("CameraSetupGetDestPositionLoc"), whichSetup.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CameraSetupGetDestPositionLoc"), whichSetup.Handle);
+            return new JLocation(handle);
         }
 
         public static float CameraSetupGetDestPositionX(JCameraSetup whichSetup)
@@ -8468,7 +8718,8 @@ namespace War3Frame.Library.Api
 
         public static JLocation GetCameraTargetPositionLoc()
         {
-            return War3.CallNative<JLocation>(War3.GetNativeFunction("GetCameraTargetPositionLoc"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetCameraTargetPositionLoc"));
+            return new JLocation(handle);
         }
 
 
@@ -8508,7 +8759,8 @@ namespace War3Frame.Library.Api
 
         public static JLocation GetCameraEyePositionLoc()
         {
-            return War3.CallNative<JLocation>(War3.GetNativeFunction("GetCameraEyePositionLoc"));
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetCameraEyePositionLoc"));
+            return new JLocation(handle);
         }
 
 
@@ -8528,7 +8780,8 @@ namespace War3Frame.Library.Api
 
         public static JSound CreateSound(string fileName, bool looping, bool is3D, bool stopwhenoutofrange, int fadeInRate, int fadeOutRate, string eaxSetting)
         {
-            return War3.CallNative<JSound>(War3.GetNativeFunction("CreateSound"), fileName, looping, is3D, stopwhenoutofrange, fadeInRate, fadeOutRate, eaxSetting);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateSound"), fileName, looping, is3D, stopwhenoutofrange, fadeInRate, fadeOutRate, eaxSetting);
+            return new JSound(handle);
         }
 
 
@@ -8538,7 +8791,8 @@ namespace War3Frame.Library.Api
 
         public static JSound CreateSoundFilenameWithLabel(string fileName, bool looping, bool is3D, bool stopwhenoutofrange, int fadeInRate, int fadeOutRate, string SLKEntryName)
         {
-            return War3.CallNative<JSound>(War3.GetNativeFunction("CreateSoundFilenameWithLabel"), fileName, looping, is3D, stopwhenoutofrange, fadeInRate, fadeOutRate, SLKEntryName);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateSoundFilenameWithLabel"), fileName, looping, is3D, stopwhenoutofrange, fadeInRate, fadeOutRate, SLKEntryName);
+            return new JSound(handle);
         }
 
 
@@ -8548,7 +8802,8 @@ namespace War3Frame.Library.Api
 
         public static JSound CreateSoundFromLabel(string soundLabel, bool looping, bool is3D, bool stopwhenoutofrange, int fadeInRate, int fadeOutRate)
         {
-            return War3.CallNative<JSound>(War3.GetNativeFunction("CreateSoundFromLabel"), soundLabel, looping, is3D, stopwhenoutofrange, fadeInRate, fadeOutRate);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateSoundFromLabel"), soundLabel, looping, is3D, stopwhenoutofrange, fadeInRate, fadeOutRate);
+            return new JSound(handle);
         }
 
 
@@ -8558,7 +8813,8 @@ namespace War3Frame.Library.Api
 
         public static JSound CreateMIDISound(string soundLabel, int fadeInRate, int fadeOutRate)
         {
-            return War3.CallNative<JSound>(War3.GetNativeFunction("CreateMIDISound"), soundLabel, fadeInRate, fadeOutRate);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateMIDISound"), soundLabel, fadeInRate, fadeOutRate);
+            return new JSound(handle);
         }
 
 
@@ -8851,7 +9107,8 @@ namespace War3Frame.Library.Api
 
         public static JWeatherEffect AddWeatherEffect(JRect where, int effectID)
         {
-            return War3.CallNative<JWeatherEffect>(War3.GetNativeFunction("AddWeatherEffect"), where.Handle, effectID);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("AddWeatherEffect"), where.Handle, effectID);
+            return new JWeatherEffect(handle);
         }
 
         public static void RemoveWeatherEffect(JWeatherEffect whichEffect)
@@ -8876,7 +9133,8 @@ namespace War3Frame.Library.Api
 
         public static JTerrainDeformation TerrainDeformCrater(float x, float y, float radius, float depth, int duration, bool permanent)
         {
-            return War3.CallNative<JTerrainDeformation>(War3.GetNativeFunction("TerrainDeformCrater"), x, y, radius, depth, duration, permanent);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TerrainDeformCrater"), x, y, radius, depth, duration, permanent);
+            return new JTerrainDeformation(handle);
         }
 
 
@@ -8886,7 +9144,8 @@ namespace War3Frame.Library.Api
 
         public static JTerrainDeformation TerrainDeformRipple(float x, float y, float radius, float depth, int duration, int count, float spaceWaves, float timeWaves, float radiusStartPct, bool limitNeg)
         {
-            return War3.CallNative<JTerrainDeformation>(War3.GetNativeFunction("TerrainDeformRipple"), x, y, radius, depth, duration, count, spaceWaves, timeWaves, radiusStartPct, limitNeg);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TerrainDeformRipple"), x, y, radius, depth, duration, count, spaceWaves, timeWaves, radiusStartPct, limitNeg);
+            return new JTerrainDeformation(handle);
         }
 
 
@@ -8896,7 +9155,8 @@ namespace War3Frame.Library.Api
 
         public static JTerrainDeformation TerrainDeformWave(float x, float y, float dirX, float dirY, float distance, float speed, float radius, float depth, int trailTime, int count)
         {
-            return War3.CallNative<JTerrainDeformation>(War3.GetNativeFunction("TerrainDeformWave"), x, y, dirX, dirY, distance, speed, radius, depth, trailTime, count);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TerrainDeformWave"), x, y, dirX, dirY, distance, speed, radius, depth, trailTime, count);
+            return new JTerrainDeformation(handle);
         }
 
 
@@ -8906,7 +9166,8 @@ namespace War3Frame.Library.Api
 
         public static JTerrainDeformation TerrainDeformRandom(float x, float y, float radius, float minDelta, float maxDelta, int duration, int updateInterval)
         {
-            return War3.CallNative<JTerrainDeformation>(War3.GetNativeFunction("TerrainDeformRandom"), x, y, radius, minDelta, maxDelta, duration, updateInterval);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("TerrainDeformRandom"), x, y, radius, minDelta, maxDelta, duration, updateInterval);
+            return new JTerrainDeformation(handle);
         }
 
 
@@ -8936,7 +9197,8 @@ namespace War3Frame.Library.Api
 
         public static JEffect AddSpecialEffect(string modelName, float x, float y)
         {
-            return War3.CallNative<JEffect>(War3.GetNativeFunction("AddSpecialEffect"), modelName, x, y);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("AddSpecialEffect"), modelName, x, y);
+            return new JEffect(handle);
         }
 
 
@@ -8946,7 +9208,8 @@ namespace War3Frame.Library.Api
 
         public static JEffect AddSpecialEffectLoc(string modelName, JLocation where)
         {
-            return War3.CallNative<JEffect>(War3.GetNativeFunction("AddSpecialEffectLoc"), modelName, where.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("AddSpecialEffectLoc"), modelName, where.Handle);
+            return new JEffect(handle);
         }
 
 
@@ -8956,7 +9219,8 @@ namespace War3Frame.Library.Api
 
         public static JEffect AddSpecialEffectTarget(string modelName, JWidget targetWidget, string attachPointName)
         {
-            return War3.CallNative<JEffect>(War3.GetNativeFunction("AddSpecialEffectTarget"), modelName, targetWidget.Handle, attachPointName);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("AddSpecialEffectTarget"), modelName, targetWidget.Handle, attachPointName);
+            return new JEffect(handle);
         }
 
         public static void DestroyEffect(JEffect whichEffect)
@@ -8966,12 +9230,14 @@ namespace War3Frame.Library.Api
 
         public static JEffect AddSpellEffect(string abilityString, JEffectType t, float x, float y)
         {
-            return War3.CallNative<JEffect>(War3.GetNativeFunction("AddSpellEffect"), abilityString, t.Handle, x, y);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("AddSpellEffect"), abilityString, t.Handle, x, y);
+            return new JEffect(handle);
         }
 
         public static JEffect AddSpellEffectLoc(string abilityString, JEffectType t, JLocation where)
         {
-            return War3.CallNative<JEffect>(War3.GetNativeFunction("AddSpellEffectLoc"), abilityString, t.Handle, where.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("AddSpellEffectLoc"), abilityString, t.Handle, where.Handle);
+            return new JEffect(handle);
         }
 
 
@@ -8981,7 +9247,8 @@ namespace War3Frame.Library.Api
 
         public static JEffect AddSpellEffectById(int abilityId, JEffectType t, float x, float y)
         {
-            return War3.CallNative<JEffect>(War3.GetNativeFunction("AddSpellEffectById"), abilityId, t.Handle, x, y);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("AddSpellEffectById"), abilityId, t.Handle, x, y);
+            return new JEffect(handle);
         }
 
 
@@ -8991,12 +9258,14 @@ namespace War3Frame.Library.Api
 
         public static JEffect AddSpellEffectByIdLoc(int abilityId, JEffectType t, JLocation where)
         {
-            return War3.CallNative<JEffect>(War3.GetNativeFunction("AddSpellEffectByIdLoc"), abilityId, t.Handle, where.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("AddSpellEffectByIdLoc"), abilityId, t.Handle, where.Handle);
+            return new JEffect(handle);
         }
 
         public static JEffect AddSpellEffectTarget(string modelName, JEffectType t, JWidget targetWidget, string attachPoint)
         {
-            return War3.CallNative<JEffect>(War3.GetNativeFunction("AddSpellEffectTarget"), modelName, t.Handle, targetWidget.Handle, attachPoint);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("AddSpellEffectTarget"), modelName, t.Handle, targetWidget.Handle, attachPoint);
+            return new JEffect(handle);
         }
 
 
@@ -9006,7 +9275,8 @@ namespace War3Frame.Library.Api
 
         public static JEffect AddSpellEffectTargetById(int abilityId, JEffectType t, JWidget targetWidget, string attachPoint)
         {
-            return War3.CallNative<JEffect>(War3.GetNativeFunction("AddSpellEffectTargetById"), abilityId, t.Handle, targetWidget.Handle, attachPoint);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("AddSpellEffectTargetById"), abilityId, t.Handle, targetWidget.Handle, attachPoint);
+            return new JEffect(handle);
         }
 
 
@@ -9016,7 +9286,8 @@ namespace War3Frame.Library.Api
 
         public static JLightning AddLightning(string codeName, bool checkVisibility, float x1, float y1, float x2, float y2)
         {
-            return War3.CallNative<JLightning>(War3.GetNativeFunction("AddLightning"), codeName, checkVisibility, x1, y1, x2, y2);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("AddLightning"), codeName, checkVisibility, x1, y1, x2, y2);
+            return new JLightning(handle);
         }
 
 
@@ -9026,7 +9297,8 @@ namespace War3Frame.Library.Api
 
         public static JLightning AddLightningEx(string codeName, bool checkVisibility, float x1, float y1, float z1, float x2, float y2, float z2)
         {
-            return War3.CallNative<JLightning>(War3.GetNativeFunction("AddLightningEx"), codeName, checkVisibility, x1, y1, z1, x2, y2, z2);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("AddLightningEx"), codeName, checkVisibility, x1, y1, z1, x2, y2, z2);
+            return new JLightning(handle);
         }
 
         public static bool DestroyLightning(JLightning whichBolt)
@@ -9181,7 +9453,8 @@ namespace War3Frame.Library.Api
 
         public static JImage CreateImage(string file, float sizeX, float sizeY, float sizeZ, float posX, float posY, float posZ, float originX, float originY, float originZ, int imageType)
         {
-            return War3.CallNative<JImage>(War3.GetNativeFunction("CreateImage"), file, sizeX, sizeY, sizeZ, posX, posY, posZ, originX, originY, originZ, imageType);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateImage"), file, sizeX, sizeY, sizeZ, posX, posY, posZ, originX, originY, originZ, imageType);
+            return new JImage(handle);
         }
 
 
@@ -9281,7 +9554,8 @@ namespace War3Frame.Library.Api
 
         public static JUbersplat CreateUbersplat(float x, float y, string name, int red, int green, int blue, int alpha, bool forcePaused, bool noBirthTime)
         {
-            return War3.CallNative<JUbersplat>(War3.GetNativeFunction("CreateUbersplat"), x, y, name, red, green, blue, alpha, forcePaused, noBirthTime);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateUbersplat"), x, y, name, red, green, blue, alpha, forcePaused, noBirthTime);
+            return new JUbersplat(handle);
         }
 
 
@@ -9381,7 +9655,8 @@ namespace War3Frame.Library.Api
 
         public static JUnit CreateBlightedGoldmine(JPlayer id, float x, float y, float face)
         {
-            return War3.CallNative<JUnit>(War3.GetNativeFunction("CreateBlightedGoldmine"), id.Handle, x, y, face);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("CreateBlightedGoldmine"), id.Handle, x, y, face);
+            return new JUnit(handle);
         }
 
 
@@ -9461,7 +9736,8 @@ namespace War3Frame.Library.Api
 
         public static JAiDifficulty GetAIDifficulty(JPlayer num)
         {
-            return War3.CallNative<JAiDifficulty>(War3.GetNativeFunction("GetAIDifficulty"), num.Handle);
+            var handle = War3.CallNative<int>(War3.GetNativeFunction("GetAIDifficulty"), num.Handle);
+            return new JAiDifficulty(handle);
         }
 
 
