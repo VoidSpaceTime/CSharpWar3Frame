@@ -236,6 +236,7 @@ namespace War3FrameBuild.CommandManager
                 await PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir);
             }
             Task.WaitAll();
+            Task.Delay(500).Wait();
             await PackupMap(modeLni, dstW3xFire);
 
 

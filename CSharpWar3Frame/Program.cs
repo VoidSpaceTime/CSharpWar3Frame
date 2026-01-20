@@ -13,6 +13,8 @@ namespace CSharpWar3FrameConsole
         public static CommandManager CommandManager { get; set; }
         static async Task Main(string[] args)
         {
+            Console.InputEncoding = System.Text.Encoding.UTF8;
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
             // 日志和配置初始化
             ApplicationBuilderExtensions.LogRegister();
             var configFlag = ApplicationBuilderExtensions.ConfigLoad(out var pathConfig);
