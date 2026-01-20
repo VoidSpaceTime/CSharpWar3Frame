@@ -25,35 +25,43 @@ modelsFile.AddRange(Directory.GetFiles(sourceFolder, "*.mdl", SearchOption.AllDi
 int count = 0;
 foreach (var modelFile in modelsFile)
 {
-    var model = new MDX(modelFile);
     var modelFolder = Path.Combine(targetFolder, Path.GetFileNameWithoutExtension(modelFile));
     if (!Directory.Exists(modelFolder))
     {
         Directory.CreateDirectory(modelFolder);
     }
-    for (int i = 0; i < model.Textures.Count(); i++)
+    try
     {
-        var texture = model.Textures[i];
-        if (texture.ReplaceableId is 0)
+        var model = new MDX(modelFile);
+        for (int i = 0; i < model.Textures.Count(); i++)
         {
-            var texturePath = texture.Name;
-            texturePath = Path.Combine(Directory.GetParent(modelFile).FullName, texturePath);
-            if (File.Exists(texturePath))
+            var texture = model.Textures[i];
+            if (texture.ReplaceableId is 0)
             {
-                if (isRename)
+                var texturePath = texture.Name;
+                texturePath = Path.Combine(Directory.GetParent(modelFile).FullName, texturePath);
+                if (File.Exists(texturePath))
                 {
-                    texture.Name = Path.GetFileNameWithoutExtension(modelFile) + $"_{i}";
+                    if (isRename)
+                    {
+                        texture.Name = (Path.GetFileNameWithoutExtension(modelFile) + $"_{i}").ToLower();
+                    }
+                    else
+                    {
+                        texture.Name = Path.GetFileName(texturePath).ToLower();
+                    }
+                    File.Copy(texturePath, Path.Combine(targetFolder, modelFolder, texture.Name), true);
                 }
-                else
-                {
-                    texture.Name = Path.GetFileName(texturePath);
-                }
-                File.Copy(texturePath, Path.Combine(targetFolder, modelFolder, texture.Name), true);
             }
         }
+        model.SaveTo(Path.Combine(modelFolder, Path.GetFileName(modelFile)));
+        count++;
     }
-    model.SaveTo(Path.Combine(modelFolder, Path.GetFileName(modelFile)));
-    count++;
+    catch
+    {
+        throw new Exception("模型打开失败:" + modelFile);
+    }
 }
 
-Console.WriteLine($"完成模型格式化，共处理模型数量：{count},失败{modelsFile.Count() - count}");
+Console.WriteLine($"完成模型格式化，共处理模型数量：{count},失败:{modelsFile.Count() - count}");
+

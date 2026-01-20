@@ -1,4 +1,5 @@
-﻿using IniParser;
+﻿using FastMDX;
+using IniParser;
 using IniParser.Model;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -270,10 +271,6 @@ namespace War3FrameBuild.CommandManager
                                         newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(pickPath)));
                                         flag = true;
                                     }
-                                    else
-                                    {
-                                        newArguments = arguments.Select(arg => arg.Expression).ToList();
-                                    }
                                     break;
                                 }
                             case "AddBGM":
@@ -540,7 +537,7 @@ namespace War3FrameBuild.CommandManager
                 analyser = Path.ChangeExtension(analyser, ext);
             }
             var isWar3 = false;
-            var sourcePath = Path.Combine(BuildDstPath, "resource", support.Path, analyser); //资源文件
+            var sourcePath = Path.Combine(Config.Assets, "resource", support.Path, analyser); //资源文件
             var asPath = string.Empty;
             // 是否资源文件
             if (File.Exists(sourcePath))
@@ -550,7 +547,16 @@ namespace War3FrameBuild.CommandManager
                 {
                     asPath = Path.Combine(support.Path, analyser);
                     var dstPath = Path.Combine(BuildDstPath, "resource", support.Path, analyser);
+                    var dstFolder = Directory.GetParent(dstPath).FullName;
+                    if (!Directory.Exists(dstFolder))
+                    {
+                        Directory.CreateDirectory(dstFolder);
+                    }
                     File.Copy(sourcePath, dstPath, true);
+                    if (ext is ".mdl" or ".mdx")
+                    {
+                        CopyTexturesToResource(sourcePath, Directory.GetParent(dstPath).FullName);
+                    }
                 }
             }
             else // 否则projects资源文件
@@ -657,6 +663,39 @@ namespace War3FrameBuild.CommandManager
                 Log.Error($"(原生)音频配置不存在：{path}");
                 return 0;
             }
+        }
+        /// <summary>
+        /// 模型贴图,复制到目标文件夹内, 
+        /// </summary>
+        /// <param name="modelFile"></param>
+        /// <param name="targetModelFolder"></param>
+        /// <returns></returns>
+        static public async Task<bool> CopyTexturesToResource(string modelFile, string targetModelFolder)
+        {
+            if (!File.Exists(modelFile))
+            {
+                return false;
+            }
+
+            if (!Directory.Exists(targetModelFolder))
+            {
+                return false;
+                //Directory.CreateDirectory(targetModelFolder);
+            }
+            var model = new MDX(modelFile);
+            //File.Copy(modelFile, Path.Combine(targetFolder, modelFolder, Path.GetFileName(modelFile)), true);
+            var modelFolder = Directory.GetParent(modelFile).FullName;
+            foreach (var texture in model.Textures)
+            {
+                var textureFile = Path.Combine(modelFolder, texture.Name);
+                if (File.Exists(textureFile))
+                {
+                    File.Copy(textureFile, Path.Combine(targetModelFolder, texture.Name), true);
+                }
+            }
+
+
+            return true;
         }
     }
 }
