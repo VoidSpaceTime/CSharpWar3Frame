@@ -1,0 +1,59 @@
+﻿// See https://aka.ms/new-console-template for more information
+using FastMDX;
+
+string sourceFolder = args.Length >= 1 ? args[0] : string.Empty;
+bool isRename = false;
+
+sourceFolder = @"D:\Game\war3\xlik\.tmp\_local\demo\resource\war3mapModel";
+if (sourceFolder == string.Empty)
+{
+    Console.WriteLine("传入文件夹地址为空");
+    return;
+}
+else if (!Directory.Exists(sourceFolder))
+{
+    Console.WriteLine("传入文件夹地址不存在");
+    return;
+}
+var targetFolder = sourceFolder + "_Format";
+if (!Directory.Exists(targetFolder))
+{
+    Directory.CreateDirectory(targetFolder);
+}
+List<string> modelsFile = Directory.GetFiles(sourceFolder, "*.mdx", SearchOption.AllDirectories).ToList();
+modelsFile.AddRange(Directory.GetFiles(sourceFolder, "*.mdl", SearchOption.AllDirectories).ToList());
+int count = 0;
+foreach (var modelFile in modelsFile)
+{
+    var model = new MDX(modelFile);
+    var modelFolder = Path.Combine(targetFolder, Path.GetFileNameWithoutExtension(modelFile));
+    if (!Directory.Exists(modelFolder))
+    {
+        Directory.CreateDirectory(modelFolder);
+    }
+    for (int i = 0; i < model.Textures.Count(); i++)
+    {
+        var texture = model.Textures[i];
+        if (texture.ReplaceableId is 0)
+        {
+            var texturePath = texture.Name;
+            texturePath = Path.Combine(Directory.GetParent(modelFile).FullName, texturePath);
+            if (File.Exists(texturePath))
+            {
+                if (isRename)
+                {
+                    texture.Name = Path.GetFileNameWithoutExtension(modelFile) + $"_{i}";
+                }
+                else
+                {
+                    texture.Name = Path.GetFileName(texturePath);
+                }
+                File.Copy(texturePath, Path.Combine(targetFolder, modelFolder, texture.Name), true);
+            }
+        }
+    }
+    model.SaveTo(Path.Combine(modelFolder, Path.GetFileName(modelFile)));
+    count++;
+}
+
+Console.WriteLine($"完成模型格式化，共处理模型数量：{count},失败{modelsFile.Count() - count}");

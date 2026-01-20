@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace War3FrameBuild.Extension
 {
@@ -10,44 +11,53 @@ namespace War3FrameBuild.Extension
     {
         public static void CopyDir(string sourceDir, string targetDir)
         {
+            if (string.IsNullOrEmpty(sourceDir)) throw new ArgumentException("sourceDir is null or empty", nameof(sourceDir));
+            if (string.IsNullOrEmpty(targetDir)) throw new ArgumentException("targetDir is null or empty", nameof(targetDir));
 
-            try
+            // normalize full paths
+            var sourceFull = Path.GetFullPath(sourceDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var targetFull = Path.GetFullPath(targetDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            // don't attempt to copy into the same directory or into a subdirectory of the source
+            if (string.Equals(sourceFull, targetFull, StringComparison.OrdinalIgnoreCase) ||
+                targetFull.StartsWith(sourceFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
             {
-                // 检查目标目录是否以目录分割字符结束如果不是则添加
-                if (targetDir[targetDir.Length - 1] != Path.DirectorySeparatorChar)
-                {
-                    targetDir += Path.DirectorySeparatorChar;
-                }
-                // 判断目标目录是否存在如果不存在则新建
-                if (!Directory.Exists(targetDir))
-                {
-                    Directory.CreateDirectory(targetDir);
-                }
-                // 得到源目录的文件列表，该里面是包含文件以及目录路径的一个数组
-                // 如果你指向copy目标文件下面的文件而不包含目录请使用下面的方法
-                // string[] fileList = Directory.GetFiles（srcPath）；
-                string[] fileList = Directory.GetFileSystemEntries(sourceDir);
-                // 遍历所有的文件和目录
-                foreach (string file in fileList)
-                {
-                    // 先当作目录处理如果存在这个目录就递归Copy该目录下面的文件
-                    if (Directory.Exists(file))
-                    {
-                        CopyDir(file, targetDir + Path.GetFileName(file));
-                    }
-                    // 否则直接Copy文件
-                    else
-                    {
-                        File.Copy(file, targetDir + Path.GetFileName(file), true);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                throw;
+                return;
             }
 
+            // ensure source exists
+            if (!Directory.Exists(sourceFull))
+                throw new DirectoryNotFoundException($"Source directory not found: {sourceFull}");
 
+            // create target if missing
+            if (!Directory.Exists(targetFull))
+                Directory.CreateDirectory(targetFull);
+
+            // enumerate entries in source
+            var entries = Directory.GetFileSystemEntries(sourceFull);
+            foreach (var entry in entries)
+            {
+                var entryFull = Path.GetFullPath(entry);
+
+                // skip entries that are inside the target directory to avoid infinite recursion
+                if (string.Equals(entryFull, targetFull, StringComparison.OrdinalIgnoreCase) ||
+                    entryFull.StartsWith(targetFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var name = Path.GetFileName(entryFull);
+                var destPath = Path.Combine(targetFull, name);
+
+                if (Directory.Exists(entryFull))
+                {
+                    CopyDir(entryFull, destPath);
+                }
+                else
+                {
+                    File.Copy(entryFull, destPath, true);
+                }
+            }
         }
     }
 }
