@@ -1,5 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using FastMDX;
+using System.IO;
+using System.Text.RegularExpressions;
 
 string sourceFolder = args.Length >= 1 ? args[0] : string.Empty;
 bool isRename = false;
@@ -35,12 +37,33 @@ foreach (var modelFile in modelsFile)
         var model = new MDX(modelFile);
         for (int i = 0; i < model.Textures.Count(); i++)
         {
+            bool flag = false;
             var texture = model.Textures[i];
             if (texture.ReplaceableId is 0)
             {
                 var texturePath = texture.Name;
-                texturePath = Path.Combine(Directory.GetParent(modelFile).FullName, texturePath);
+                var ext = Path.GetExtension(texturePath).ToLower();
+                var textureName = Path.ChangeExtension(texturePath, ext);
+
+                texturePath = Path.Combine(Directory.GetParent(modelFile).FullName, textureName);
                 if (File.Exists(texturePath))
+                {
+                    flag = true;
+                }
+                else
+                {
+
+                    string folderName = "war3mapModel";
+                    var pattern = $@"^(.*?[/\\]{Regex.Escape(folderName)})(?=[/\\]|$)";
+                    var m = Regex.Match(modelFile, pattern, RegexOptions.IgnoreCase);
+                    var xlikTextureDir = Directory.GetParent(m.Value).FullName;
+                    texturePath = Path.Combine(xlikTextureDir, textureName);
+                    if (File.Exists(texturePath))
+                    {
+                        flag = true;
+                    }
+                }
+                if (flag)
                 {
                     if (isRename)
                     {
@@ -52,6 +75,7 @@ foreach (var modelFile in modelsFile)
                     }
                     File.Copy(texturePath, Path.Combine(targetFolder, modelFolder, texture.Name), true);
                 }
+
             }
         }
         model.SaveTo(Path.Combine(modelFolder, Path.GetFileName(modelFile)));
@@ -64,4 +88,5 @@ foreach (var modelFile in modelsFile)
 }
 
 Console.WriteLine($"完成模型格式化，共处理模型数量：{count},失败:{modelsFile.Count() - count}");
+Console.ReadLine();
 

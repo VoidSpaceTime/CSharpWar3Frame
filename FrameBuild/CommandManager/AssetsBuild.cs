@@ -538,14 +538,14 @@ namespace War3FrameBuild.CommandManager
             }
             var isWar3 = false;
             var sourcePath = Path.Combine(Config.Assets, "resource", support.Path, analyser); //资源文件
-            var asPath = string.Empty;
+            var pickPath = string.Empty;
             // 是否资源文件
             if (File.Exists(sourcePath))
             {
                 // 复制assets文件到temp
                 if (!skipDetect)
                 {
-                    asPath = Path.Combine(support.Path, analyser);
+                    pickPath = Path.Combine(support.Path, analyser);
                     var dstPath = Path.Combine(BuildDstPath, "resource", support.Path, analyser);
                     var dstFolder = Directory.GetParent(dstPath).FullName;
                     if (!Directory.Exists(dstFolder))
@@ -569,23 +569,23 @@ namespace War3FrameBuild.CommandManager
                 sourcePath = Path.Combine(Projects, ProjectName, "w3x", "resource", r);
                 if (File.Exists(sourcePath))
                 {
-                    asPath = Path.Combine("resource", r);
+                    pickPath = Path.Combine("resource", r);
                 }
                 else //原生资源
                 {
                     sourcePath = string.Empty;
                     isWar3 = true;
-                    asPath = analyser;
+                    pickPath = analyser;
 
                 }
             }
-            if (asPath == string.Empty)
+            if (pickPath == string.Empty)
             {
                 status = false;
                 Log.Error($"{kind}-资源文件不存在：{path}");
             }
-            asPath = asPath.Replace("/", "\\");
-            return (status, isWar3, asPath, sourcePath);
+            pickPath = pickPath.Replace("/", "\\");
+            return (status, isWar3, pickPath, sourcePath);
         }
 
         public async Task SupplementAssetsPackPath(string[] targetPaths)
@@ -693,7 +693,6 @@ namespace War3FrameBuild.CommandManager
                     File.Copy(textureFile, Path.Combine(targetModelFolder, texture.Name), true);
                 }
             }
-
 
             return true;
         }

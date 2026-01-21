@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxTokenParser;
 
 namespace War3FrameBuild.Extension
 {
@@ -59,5 +60,20 @@ namespace War3FrameBuild.Extension
                 }
             }
         }
+        // helper: 在起始目录向上查找相对文件（返回找到的完整路径或 null）
+
+        public static string FindFileUpwards(string startDir, int maxLevels)
+        {
+            var dir = new DirectoryInfo(startDir);
+            for (int i = 0; i <= maxLevels && dir != null; i++)
+            {
+                var candidate = dir.FullName;
+                dir = dir.Parent;
+            }
+            if (dir is null) { return string.Empty; }
+            return dir.FullName;
+
+        }
+
     }
 }
