@@ -73,7 +73,7 @@ foreach (var modelFile in modelsFile)
                     {
                         texture.Name = Path.GetFileName(texturePath).ToLower();
                     }
-                    File.Copy(texturePath, Path.Combine(targetFolder, modelFolder, texture.Name), true);
+                    File.Copy(texturePath, Path.Combine(modelFolder, texture.Name), true);
                 }
 
             }
