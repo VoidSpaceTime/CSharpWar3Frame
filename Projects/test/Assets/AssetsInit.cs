@@ -1,8 +1,7 @@
 namespace War3Frame
 {
-
     public static partial class AssetsInit
-    { 
+    {
         public static Library.Assets Init()
         {
             Library.Assets AssetsList = new();

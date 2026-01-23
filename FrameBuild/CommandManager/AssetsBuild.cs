@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.Emit;
 using NAudio.Wave;
 using Serilog;
 using System.Reflection;
+using System.Threading.Tasks;
 using War3Frame.Library;
 using War3FrameBuild.Extension;
 using YamlDotNet.Serialization;
@@ -57,7 +58,7 @@ namespace War3FrameBuild.CommandManager
                 s = s.Replace("\\\\", "\\");
                 return s;
             }
-            public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
+            public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node)
             {
                 if (node.Expression is MemberAccessExpressionSyntax memberAccess)
                 {
@@ -233,7 +234,7 @@ namespace War3FrameBuild.CommandManager
                                 }
                             case "AddImage":
                                 {
-                                    var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("image", GetArgumentString(arguments[0]), commandManager.IsSkip);
+                                var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("image", GetArgumentString(arguments[0]), commandManager.IsSkip);
                                     newArguments.Add(arguments[0].Expression);
                                     if (status is true && arguments.Count < 3)
                                     {
@@ -385,7 +386,6 @@ namespace War3FrameBuild.CommandManager
                             case "AddVWP":
                                 {
                                     var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("vwp", GetArgumentString(arguments[0]).Replace("\"", ""), commandManager.IsSkip);
-
                                     newArguments.Add(arguments[0].Expression);
                                     // 如果使用原生资源
                                     if (status is true && File.Exists(sourcePath))
@@ -402,51 +402,51 @@ namespace War3FrameBuild.CommandManager
                                                      .Select(conf => (pickPath: conf, durtion: commandManager.GetWar3AuidoDuration(conf)))
                                                      .ToList()
                                          );
-                                        var vwp = new VwpSound(GetArgumentString(arguments[0]), dir);
 
-                                        foreach (var kv in vwp.soundTypeDic)
+                                        // 使用 SyntaxFactory 直接构建表达式，避免手工字符串格式化可能产生的语法问题
+                                        var complexInits = new List<ExpressionSyntax>();
+                                        foreach (var kv in dir)
                                         {
-                                            // key: "xxx"
-                                            // 为字典的 key 构建一个字符串字面量表达式，表示字典元素的键
                                             var keyExpr = SyntaxFactory.LiteralExpression(
                                                 SyntaxKind.StringLiteralExpression,
-                                                SyntaxFactory.Literal(vwp.alias));
+                                                SyntaxFactory.Literal(kv.Key));
 
-                                            // 构建 tuple 列表 ( "pickPath", duration )
-                                            // 对 kv.Value（一个 List<(string pickPath, int duration)>）中的每一个元素 t：
-                                            // - 创建一个 TupleExpression，内部包含两个 ArgumentSyntax：
-                                            //   1) 字符串字面量：t.pickPath
-                                            //   2) 数值字面量：t.duration
-                                            // 最终将所有 TupleExpression 转为 ExpressionSyntax 列表
                                             var tupleExprs = kv.Value
                                                 .Select(t => (ExpressionSyntax)SyntaxFactory.TupleExpression(
                                                     SyntaxFactory.SeparatedList<ArgumentSyntax>(new[]
                                                     {
-                                                    SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(t.pickPath))),
-                                                    SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(t.duration)))
+                                                        SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(t.pickPath))),
+                                                        SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(t.durtion)))
                                                     })))
                                                 .ToList();
 
-                                            // new List<(string pickPath, int duration)> { (..), (..), ... }
-                                            // 使用 ObjectCreationExpression 创建一个 List<(string pickPath, int duration)> 的实例表达式
-                                            // 并通过 WithInitializer 提供一个集合初始化器，初始化器使用上面构建的 tupleExprs 作为集合元素
                                             var listCreation = SyntaxFactory.ObjectCreationExpression(
-                                                    SyntaxFactory.ParseTypeName("List<(string pickPath, int duration)>"))
+                                                    SyntaxFactory.ParseTypeName("List<(string pickPath, int duration)>") )
                                                 .WithInitializer(SyntaxFactory.InitializerExpression(
-                                                    // 使用集合初始化器语法（{ ... }）
                                                     SyntaxKind.CollectionInitializerExpression,
-                                                    // 将 tupleExprs（每个都是一个 TupleExpression）作为初始化列表
                                                     SyntaxFactory.SeparatedList(tupleExprs)));
 
-                                            // 字典元素初始化器：{ "key", new List<...>{ ... } }
-                                            // 为字典的一个元素创建复杂初始器：复杂元素初始化器的第一个子表达式是 keyExpr（键），
-                                            // 第二个子表达式是上面创建的 listCreation（值）
                                             var complexInit = SyntaxFactory.InitializerExpression(
                                                 SyntaxKind.ComplexElementInitializerExpression,
                                                 SyntaxFactory.SeparatedList<ExpressionSyntax>(new ExpressionSyntax[] { keyExpr, listCreation }));
-                                            // 将这个字典元素初始化表达式加入到 newArguments（用于后续生成参数或初始化代码）
-                                            newArguments.Add(complexInit);
+
+                                            complexInits.Add(complexInit);
                                         }
+
+                                        var dictCreation = SyntaxFactory.ObjectCreationExpression(
+                                                SyntaxFactory.ParseTypeName("Dictionary<string, List<(string pickPath, int duration)>>"))
+                                            .WithInitializer(SyntaxFactory.InitializerExpression(
+                                                SyntaxKind.CollectionInitializerExpression,
+                                                SyntaxFactory.SeparatedList(complexInits)));
+
+                                        var aliasExpr = arguments[0].Expression;
+                                        var vwpCreation = SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("VwpSound"))
+                                            .WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(new[] {
+                                                SyntaxFactory.Argument(aliasExpr),
+                                                SyntaxFactory.Argument(dictCreation)
+                                            })));
+
+                                        newArguments.Add(vwpCreation);
                                         flag = true;
                                     }
                                     break;
@@ -527,7 +527,12 @@ namespace War3FrameBuild.CommandManager
         /// <returns>状态和路径的元组</returns>
         public (bool status, bool isWar3, string pickPath, string sourcePath) AnalysisFile(string kind, string path, bool skipDetect)
         {
-            var analyser = path.Replace("\\\\\\\\", "\\\\");
+            var analyser = path.Replace("/", "\\");
+            while (analyser.Contains("\\\\"))
+            {
+                analyser = analyser.Replace("\\\\", "\\");
+            }
+
             var ext = Path.GetExtension(analyser).ToLower();
             var isContaine = AssetsTypes.TryGetValue(kind, out var support);
             var status = true;
@@ -537,27 +542,27 @@ namespace War3FrameBuild.CommandManager
                 analyser = Path.ChangeExtension(analyser, ext);
             }
             var isWar3 = false;
-            var sourcePath = Path.Combine(Config.Assets, "resource", support.Path, analyser); //资源文件
+            var sourcePath = Path.Combine(Config.Assets, support.Path, analyser); //资源文件
             var pickPath = string.Empty;
             // 是否资源文件
             if (File.Exists(sourcePath))
             {
                 // 复制assets文件到temp
-                if (!skipDetect)
-                {
-                    pickPath = Path.Combine(support.Path, analyser);
-                    var dstPath = Path.Combine(BuildDstPath, "resource", support.Path, analyser);
-                    var dstFolder = Directory.GetParent(dstPath).FullName;
-                    if (!Directory.Exists(dstFolder))
+                    if (!skipDetect)
                     {
-                        Directory.CreateDirectory(dstFolder);
+                        pickPath = Path.Combine(support.Path, analyser);
+                        var dstPath = Path.Combine(BuildDstPath, "resource", support.Path, analyser);
+                        var dstFolder = Directory.GetParent(dstPath).FullName;
+                        if (!Directory.Exists(dstFolder))
+                        {
+                            Directory.CreateDirectory(dstFolder);
+                        }
+                        File.Copy(sourcePath, dstPath, true);
+                        if (ext is ".mdl" or ".mdx")
+                        {
+                            CopyTexturesToResourceSync(sourcePath, Directory.GetParent(dstPath).FullName);
+                        }
                     }
-                    File.Copy(sourcePath, dstPath, true);
-                    if (ext is ".mdl" or ".mdx")
-                    {
-                        CopyTexturesToResource(sourcePath, Directory.GetParent(dstPath).FullName);
-                    }
-                }
             }
             else // 否则projects资源文件
             {
@@ -571,15 +576,21 @@ namespace War3FrameBuild.CommandManager
                 {
                     pickPath = Path.Combine("resource", r);
                 }
-                else //原生资源
+                var nativeFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                 {
+                     "units","buildings","abilities","doodads","replaceabletextures","ui","glues","textures","sound","environment","terrainart","splats","scripts","objects","sharedmodels"
+                 };
+                var firstSeg = analyser.Split(new[] { '\\' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+                //原生资源
+                if (!string.IsNullOrEmpty(firstSeg) && nativeFolders.Contains(firstSeg.ToLower()))
                 {
-                    sourcePath = string.Empty;
                     isWar3 = true;
                     pickPath = analyser;
-
+                    sourcePath = string.Empty;
                 }
+
             }
-            if (pickPath == string.Empty)
+            if (string.IsNullOrEmpty(pickPath) && isWar3 is false)
             {
                 status = false;
                 Log.Error($"{kind}-资源文件不存在：{path}");
@@ -601,8 +612,9 @@ namespace War3FrameBuild.CommandManager
                 var newRoot = rewriter.Visit(root);
                 if (newRoot is not null)
                 {
-
-                    await File.WriteAllTextAsync(path, newRoot.ToFullString());
+                    // 格式化生成的语法树以保证空格和标点正确
+                    var formatted = newRoot.NormalizeWhitespace().ToFullString();
+                    await File.WriteAllTextAsync(path, formatted);
                 }
             }
             return;
@@ -670,7 +682,7 @@ namespace War3FrameBuild.CommandManager
         /// <param name="modelFile"></param>
         /// <param name="targetModelFolder"></param>
         /// <returns></returns>
-        static public async Task<bool> CopyTexturesToResource(string modelFile, string targetModelFolder)
+        static public bool CopyTexturesToResourceSync(string modelFile, string targetModelFolder)
         {
             if (!File.Exists(modelFile))
             {

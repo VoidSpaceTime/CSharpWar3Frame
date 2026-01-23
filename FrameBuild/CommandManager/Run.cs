@@ -194,27 +194,60 @@ namespace War3FrameBuild.CommandManager
 
             return true;
         }
-        private Task PublishProject(bool isNative, string projectsPath, string pubilshDir)
+        private async Task PublishProject(bool isNative, string projectsPath, string pubilshDir)
         {
-            // 目前只会aot打包
+            // 目前只会 AOT 打包
             isNative = true;
-            var aotCommand = isNative ? "-p:PublishAot=true -p:PublishTrimmed=true -r win-x86  -p:DebugType=None -p:DebugSymbols=false " : "";
-            //aotCommand += BuildMode is BuildModeEnum.Release ? " -p:DebugType=None -p:DebugSymbols=false " : "";
+            // -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false 
+            var aotCommand = isNative ? "-p:PublishAot=true  -r win-x86 " : "";
             string command = @$"publish {projectsPath} -c Release --self-contained true {aotCommand}  -o {pubilshDir}";
-            //  dotnet publish .\demo.csproj -c Release --self-contained true -p:PublishAot=true -r win-x86 -o G:\CSharp\CSharpWar3Frame\.build\test
+
             var psi = new ProcessStartInfo("dotnet", command)
             {
                 RedirectStandardOutput = true,
-                UseShellExecute = false
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
             };
-            using var w2l = Process.Start(psi);
 
-            if (!w2l.Start())
+            Log.Debug($"准备执行 dotnet publish，输出目录: {pubilshDir}");
+
+            using var proc = new Process() { StartInfo = psi, EnableRaisingEvents = true };
+            // 异步读取输出，避免子进程因输出缓冲区满而阻塞
+            var stdoutSb = new StringBuilder();
+            var stderrSb = new StringBuilder();
+            try
             {
-                Log.Error($"w2l执行失败: {w2l.StandardError.ReadToEnd()}");
-            }
-            return Task.CompletedTask;
+                if (!proc.Start())
+                {
+                    Log.Error("dotnet publish 启动失败");
+                    return;
+                }
 
+/*                proc.OutputDataReceived += (s, e) => { if (e.Data != null) { stdoutSb.AppendLine(e.Data); Log.Debug(e.Data); } };
+                proc.ErrorDataReceived += (s, e) => { if (e.Data != null) { stderrSb.AppendLine(e.Data); Log.Warning(e.Data); } };
+                proc.BeginOutputReadLine();
+                proc.BeginErrorReadLine();*/
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"dotnet publish 启动异常: {ex.Message}");
+                return;
+            }
+
+            // 等待发布进程完成
+            await proc.WaitForExitAsync();
+            // 读取收集到的输出
+            var stderr = stderrSb.ToString();
+            if (!string.IsNullOrEmpty(stderr))
+            {
+                Log.Error($"dotnet publish 错误: {stderr}");
+            }
+            else
+            {
+                Log.Information("dotnet publish 完成");
+            }
+            return;
         }
         public async Task<bool> Run(bool isCache, bool isSemi)
         {
@@ -230,13 +263,12 @@ namespace War3FrameBuild.CommandManager
 
             var projectsPath = Path.Combine(Projects, ProjectName, $"{ProjectName}.csproj");
             var pubilshDir = Path.Combine(BuildDstPath, "map");
-            if (!isCache)
-            {
-                // 打包dll->
-                await PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir);
-            }
-            Task.WaitAll();
-            Task.Delay(500).Wait();
+
+            // 打包dll->
+            await PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir);
+
+            // 确保前面所有异步步骤均已完成后再进行打包
+            // （BuildMap 和 PublishProject 均已 await，故直接调用即可）
             await PackupMap(modeLni, dstW3xFire);
 
 
