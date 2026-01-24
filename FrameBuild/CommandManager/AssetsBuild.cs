@@ -9,11 +9,11 @@ using NAudio.Wave;
 using Serilog;
 using System.Reflection;
 using System.Threading.Tasks;
-using War3Frame.Library;
+using War3Frame;
 using War3FrameBuild.Extension;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using static War3Frame.Library.Assets;
+using static War3Frame.Assets;
 
 namespace War3FrameBuild.CommandManager
 {

@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using War3FrameBuild.Extension;
-using static War3Frame.Library.Assets;
+using static War3Frame.Assets;
 
 namespace War3FrameBuild.CommandManager
 {
@@ -199,7 +199,7 @@ namespace War3FrameBuild.CommandManager
             // 目前只会 AOT 打包
             isNative = true;
             // -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false 
-            var aotCommand = isNative ? "-p:PublishAot=true  -r win-x86 " : "";
+            var aotCommand = isNative ? "-p:PublishAot=true -r win-x86 -p:DebugType=None -p:DebugSymbols=false " : "";
             string command = @$"publish {projectsPath} -c Release --self-contained true {aotCommand}  -o {pubilshDir}";
 
             var psi = new ProcessStartInfo("dotnet", command)
@@ -224,10 +224,11 @@ namespace War3FrameBuild.CommandManager
                     return;
                 }
 
-/*                proc.OutputDataReceived += (s, e) => { if (e.Data != null) { stdoutSb.AppendLine(e.Data); Log.Debug(e.Data); } };
+                // 异步读取输出，避免子进程因输出缓冲区满而阻塞
+                proc.OutputDataReceived += (s, e) => { if (e.Data != null) { stdoutSb.AppendLine(e.Data); Log.Debug(e.Data); } };
                 proc.ErrorDataReceived += (s, e) => { if (e.Data != null) { stderrSb.AppendLine(e.Data); Log.Warning(e.Data); } };
                 proc.BeginOutputReadLine();
-                proc.BeginErrorReadLine();*/
+                proc.BeginErrorReadLine();
             }
             catch (Exception ex)
             {

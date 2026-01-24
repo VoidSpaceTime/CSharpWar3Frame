@@ -1,4 +1,4 @@
-﻿using War3Frame.Library;
+﻿using War3Frame;
 
 namespace War3FrameBuild.CommandManager
 {

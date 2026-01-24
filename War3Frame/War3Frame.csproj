@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>War3Frame</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -18,5 +19,11 @@
   <ItemGroup>
     <PackageReference Include="Friflo.Engine.ECS" Version="3.4.2" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Src\Tags\" />
+  </ItemGroup>
+
+
 
 </Project>

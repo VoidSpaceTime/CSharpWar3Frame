@@ -1,4 +1,4 @@
-using static War3Frame.Library.Assets;
+using static War3Frame.Assets;
 
 namespace War3Frame
 {
