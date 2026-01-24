@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace War3Frame.Library.Api
+namespace War3Frame
 {
     public class JHandle
     {

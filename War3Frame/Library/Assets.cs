@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace War3Frame.Library
+namespace War3Frame
 {
     public class Assets
     {

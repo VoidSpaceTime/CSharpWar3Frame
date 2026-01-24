@@ -1,4 +1,4 @@
-﻿namespace War3Frame.Library.Api
+﻿namespace War3Frame
 {
     // 
     public static partial class Blizzard

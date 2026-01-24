@@ -7,10 +7,35 @@ namespace War3Frame.Library.Api
 {
     public partial class KKApi
     {
+        private static readonly IntPtr _dzSendKeyboardPtr = War3.GetNativeFunction("DzSendKeyboard");
+        private static readonly IntPtr _dzForceUiKeyboardPtr = War3.GetNativeFunction("DzForceUiKeyboard");
+        private static readonly IntPtr _dzDisableWindowKeyboardPtr = War3.GetNativeFunction("DzDisableWindowKeyboard");
+        private static readonly IntPtr _dzDisableGameUIKeyboardPtr = War3.GetNativeFunction("DzDisableGameUIKeyboard");
+        private static readonly IntPtr _dzUnitCanPlaceAroundPtr = War3.GetNativeFunction("DzUnitCanPlaceAround");
+        private static readonly IntPtr _dzPositionCanPlaceAroundPtr = War3.GetNativeFunction("DzPositionCanPlaceAround");
+        private static readonly IntPtr _dzGetTerrainZPtr = War3.GetNativeFunction("DzGetTerrainZ");
+        private static readonly IntPtr _dzGetUnitZPtr = War3.GetNativeFunction("DzGetUnitZ");
+        private static readonly IntPtr _dzGetUnitOverheadOffsetPtr = War3.GetNativeFunction("DzGetUnitOverheadOffset");
+        private static readonly IntPtr _dzFrameSetModelEnableWideScreenPtr = War3.GetNativeFunction("DzFrameSetModelEnableWideScreen");
+        private static readonly IntPtr _dzSetUnitAbilityEnablePtr = War3.GetNativeFunction("DzSetUnitAbilityEnable");
+        private static readonly IntPtr _dzSetUnitAbilityDisablePtr = War3.GetNativeFunction("DzSetUnitAbilityDisable");
+        private static readonly IntPtr _dzGetUnitAbilityIsDisabledPtr = War3.GetNativeFunction("DzGetUnitAbilityIsDisabled");
+        private static readonly IntPtr _dzGetUnitAbilityDisabledCountPtr = War3.GetNativeFunction("DzGetUnitAbilityDisabledCount");
+        private static readonly IntPtr _dzSetUnitAbilityTechReachPtr = War3.GetNativeFunction("DzSetUnitAbilityTechReach");
+        private static readonly IntPtr _dzGetUnitAbilityTechReachPtr = War3.GetNativeFunction("DzGetUnitAbilityTechReach");
+        private static readonly IntPtr _dzSetUnitAbilityTechReachTipPtr = War3.GetNativeFunction("DzSetUnitAbilityTechReachTip");
+        private static readonly IntPtr _dzAsyncGetCurrentBuildingAbilityIdPtr = War3.GetNativeFunction("DzAsyncGetCurrentBuildingAbilityId");
+        private static readonly IntPtr _dzAsyncGetCurrentBuildingUnitIdPtr = War3.GetNativeFunction("DzAsyncGetCurrentBuildingUnitId");
+        private static readonly IntPtr _dzFrameUnlockMouseRectLimitPtr = War3.GetNativeFunction("DzFrameUnlockMouseRectLimit");
+        private static readonly IntPtr _kKSimpleFrameIsVisiblePtr = War3.GetNativeFunction("KKSimpleFrameIsVisible");
+        private static readonly IntPtr _dzFrameGetChatEditBarPtr = War3.GetNativeFunction("DzFrameGetChatEditBar");
+        private static readonly IntPtr _dzGetLocalChatRecipientPtr = War3.GetNativeFunction("DzGetLocalChatRecipient");
+        private static readonly IntPtr _dzPlayerSendChatPtr = War3.GetNativeFunction("DzPlayerSendChat");
+
         /// title = "游戏 - 模拟按键 (窗口消息)"        /// description = "让玩家 ${player} 发送窗口消息 模拟键盘 ${key_code} 进行 ${is_down} 的消息"        /// comment = "[[会触发响应同步事件, 发送模拟按键窗口消息给魔兽, 相当于SendMessage, 点击记得释放, 不然可能会键盘按键会在下一次失效, 聊天框显示时不执行]]"
         public static void DzSendKeyboard(JPlayer p, int key_code, int is_down)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSendKeyboard"), p.Handle, key_code, is_down);
+            War3.CallNative(_dzSendKeyboardPtr, p.Handle, key_code, is_down);
         }
 
         /// title = "游戏 - 模拟按键 (游戏UI消息)"
@@ -19,7 +44,7 @@ namespace War3Frame.Library.Api
 
         public static void DzForceUiKeyboard(JPlayer p, int key_code, int is_down)
         {
-            War3.CallNative(War3.GetNativeFunction("DzForceUiKeyboard"), p.Handle, key_code, is_down);
+            War3.CallNative(_dzForceUiKeyboardPtr, p.Handle, key_code, is_down);
         }
 
 
@@ -29,7 +54,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDisableWindowKeyboard(JPlayer p, int key_code)
         {
-            War3.CallNative(War3.GetNativeFunction("DzDisableWindowKeyboard"), p.Handle, key_code);
+            War3.CallNative(_dzDisableWindowKeyboardPtr, p.Handle, key_code);
         }
 
 
@@ -39,7 +64,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDisableGameUIKeyboard(JPlayer p, int key_code)
         {
-            War3.CallNative(War3.GetNativeFunction("DzDisableGameUIKeyboard"), p.Handle, key_code);
+            War3.CallNative(_dzDisableGameUIKeyboardPtr, p.Handle, key_code);
         }
 
 
@@ -49,7 +74,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzUnitCanPlaceAround(JWidget obj, float x, float y)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzUnitCanPlaceAround"), obj.Handle, x, y);
+            return War3.CallNative<bool>(_dzUnitCanPlaceAroundPtr, obj.Handle, x, y);
         }
 
 
@@ -89,7 +114,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzPositionCanPlaceAround(float x, float y, float collision_size, int collision_type)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzPositionCanPlaceAround"), x, y, collision_size, collision_type);
+            return War3.CallNative<bool>(_dzPositionCanPlaceAroundPtr, x, y, collision_size, collision_type);
         }
 
 
@@ -109,7 +134,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetTerrainZ(float x, float y)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetTerrainZ"), x, y);
+            return War3.CallNative<float>(_dzGetTerrainZPtr, x, y);
         }
 
 
@@ -119,7 +144,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitZ(JUnit u)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitZ"), u.Handle);
+            return War3.CallNative<float>(_dzGetUnitZPtr, u.Handle);
         }
 
 
@@ -129,7 +154,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitOverheadOffset(JWidget u)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitOverheadOffset"), u.Handle);
+            return War3.CallNative<float>(_dzGetUnitOverheadOffsetPtr, u.Handle);
         }
 
 
@@ -139,7 +164,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelEnableWideScreen(int frame, bool is_enable)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelEnableWideScreen"), frame, is_enable);
+            War3.CallNative(_dzFrameSetModelEnableWideScreenPtr, frame, is_enable);
         }
 
 
@@ -149,7 +174,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityEnable(JUnit u, int abil_id)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityEnable"), u.Handle, abil_id);
+            return War3.CallNative<bool>(_dzSetUnitAbilityEnablePtr, u.Handle, abil_id);
         }
 
 
@@ -159,7 +184,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityDisable(JUnit u, int abil_id)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityDisable"), u.Handle, abil_id);
+            return War3.CallNative<bool>(_dzSetUnitAbilityDisablePtr, u.Handle, abil_id);
         }
 
 
@@ -169,7 +194,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzGetUnitAbilityIsDisabled(JUnit u, int abil_id)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzGetUnitAbilityIsDisabled"), u.Handle, abil_id);
+            return War3.CallNative<bool>(_dzGetUnitAbilityIsDisabledPtr, u.Handle, abil_id);
         }
 
 
@@ -179,7 +204,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetUnitAbilityDisabledCount(JUnit u, int abil_id)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetUnitAbilityDisabledCount"), u.Handle, abil_id);
+            return War3.CallNative<int>(_dzGetUnitAbilityDisabledCountPtr, u.Handle, abil_id);
         }
 
 
@@ -189,7 +214,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityTechReach(JUnit u, int abil_id, bool reach)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityTechReach"), u.Handle, abil_id, reach);
+            return War3.CallNative<bool>(_dzSetUnitAbilityTechReachPtr, u.Handle, abil_id, reach);
         }
 
 
@@ -199,7 +224,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzGetUnitAbilityTechReach(JUnit u, int abil_id)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzGetUnitAbilityTechReach"), u.Handle, abil_id);
+            return War3.CallNative<bool>(_dzGetUnitAbilityTechReachPtr, u.Handle, abil_id);
         }
 
 
@@ -209,7 +234,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityTechReachTip(JUnit u, int abil_id, string tip)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityTechReachTip"), u.Handle, abil_id, tip);
+            return War3.CallNative<bool>(_dzSetUnitAbilityTechReachTipPtr, u.Handle, abil_id, tip);
         }
 
 
@@ -219,7 +244,7 @@ namespace War3Frame.Library.Api
 
         public static int DzAsyncGetCurrentBuildingAbilityId()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzAsyncGetCurrentBuildingAbilityId"));
+            return War3.CallNative<int>(_dzAsyncGetCurrentBuildingAbilityIdPtr);
         }
 
 
@@ -229,7 +254,7 @@ namespace War3Frame.Library.Api
 
         public static int DzAsyncGetCurrentBuildingUnitId()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzAsyncGetCurrentBuildingUnitId"));
+            return War3.CallNative<int>(_dzAsyncGetCurrentBuildingUnitIdPtr);
         }
 
 
@@ -239,7 +264,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameUnlockMouseRectLimit(bool is_unlock)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameUnlockMouseRectLimit"), is_unlock);
+            War3.CallNative(_dzFrameUnlockMouseRectLimitPtr, is_unlock);
         }
 
 
@@ -249,7 +274,7 @@ namespace War3Frame.Library.Api
 
         public static bool KKSimpleFrameIsVisible(int simple_frame)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("KKSimpleFrameIsVisible"), simple_frame);
+            return War3.CallNative<bool>(_kKSimpleFrameIsVisiblePtr, simple_frame);
         }
 
 
@@ -259,7 +284,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetChatEditBar()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetChatEditBar"));
+            return War3.CallNative<int>(_dzFrameGetChatEditBarPtr);
         }
 
 
@@ -269,7 +294,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetLocalChatRecipient()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetLocalChatRecipient"));
+            return War3.CallNative<int>(_dzGetLocalChatRecipientPtr);
         }
 
 
@@ -279,7 +304,7 @@ namespace War3Frame.Library.Api
 
         public static void DzPlayerSendChat(JPlayer p, string msg, int recipient)
         {
-            War3.CallNative(War3.GetNativeFunction("DzPlayerSendChat"), p.Handle, msg, recipient);
+            War3.CallNative(_dzPlayerSendChatPtr, p.Handle, msg, recipient);
         }
     }
 }

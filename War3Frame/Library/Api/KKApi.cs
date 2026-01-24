@@ -1,20 +1,351 @@
-﻿using System;
+using System;
 using System.Numerics;
 using System.Reflection;
 using System.Threading;
 using War3Frame;
-using War3Frame.Library.Api;
+using War3Frame;
 
-namespace War3Frame.Library.Api
+namespace War3Frame
 {
     // JAPI自kk库，包含kk平台引擎自带的japi方法，方法以 KK_ 开头
 
     public static partial class KKApi
     {
+        private static readonly IntPtr _dzAPI_Map_HasMallItemPtr = War3.GetNativeFunction("DzAPI_Map_HasMallItem");
+        private static readonly IntPtr _dzAPI_Map_GetMapLevelPtr = War3.GetNativeFunction("DzAPI_Map_GetMapLevel");
+        private static readonly IntPtr _requestExtraIntegerDataPtr = War3.GetNativeFunction("RequestExtraIntegerData");
+        private static readonly IntPtr _requestExtraBooleanDataPtr = War3.GetNativeFunction("RequestExtraBooleanData");
+        private static readonly IntPtr _requestExtraStringDataPtr = War3.GetNativeFunction("RequestExtraStringData");
+        private static readonly IntPtr _requestExtraRealDataPtr = War3.GetNativeFunction("RequestExtraRealData");
+        private static readonly IntPtr _dzGetSelectedLeaderUnitPtr = War3.GetNativeFunction("DzGetSelectedLeaderUnit");
+        private static readonly IntPtr _dzIsChatBoxOpenPtr = War3.GetNativeFunction("DzIsChatBoxOpen");
+        private static readonly IntPtr _dzSetUnitPreselectUIVisiblePtr = War3.GetNativeFunction("DzSetUnitPreselectUIVisible");
+        private static readonly IntPtr _dzSetEffectAnimationPtr = War3.GetNativeFunction("DzSetEffectAnimation");
+        private static readonly IntPtr _dzSetEffectPosPtr = War3.GetNativeFunction("DzSetEffectPos");
+        private static readonly IntPtr _dzSetEffectVertexColorPtr = War3.GetNativeFunction("DzSetEffectVertexColor");
+        private static readonly IntPtr _dzSetEffectVertexAlphaPtr = War3.GetNativeFunction("DzSetEffectVertexAlpha");
+        private static readonly IntPtr _dzSetEffectModelPtr = War3.GetNativeFunction("DzSetEffectModel");
+        private static readonly IntPtr _dzSetEffectTeamColorPtr = War3.GetNativeFunction("DzSetEffectTeamColor");
+        private static readonly IntPtr _dzFrameSetClipPtr = War3.GetNativeFunction("DzFrameSetClip");
+        private static readonly IntPtr _dzChangeWindowSizePtr = War3.GetNativeFunction("DzChangeWindowSize");
+        private static readonly IntPtr _dzPlayEffectAnimationPtr = War3.GetNativeFunction("DzPlayEffectAnimation");
+        private static readonly IntPtr _dzBindEffectPtr = War3.GetNativeFunction("DzBindEffect");
+        private static readonly IntPtr _dzUnbindEffectPtr = War3.GetNativeFunction("DzUnbindEffect");
+        private static readonly IntPtr _dzSetWidgetSpriteScalePtr = War3.GetNativeFunction("DzSetWidgetSpriteScale");
+        private static readonly IntPtr _dzSetEffectScalePtr = War3.GetNativeFunction("DzSetEffectScale");
+        private static readonly IntPtr _dzGetEffectVertexColorPtr = War3.GetNativeFunction("DzGetEffectVertexColor");
+        private static readonly IntPtr _dzGetEffectVertexAlphaPtr = War3.GetNativeFunction("DzGetEffectVertexAlpha");
+        private static readonly IntPtr _dzGetItemAbilityPtr = War3.GetNativeFunction("DzGetItemAbility");
+        private static readonly IntPtr _dzFrameGetChildrenCountPtr = War3.GetNativeFunction("DzFrameGetChildrenCount");
+        private static readonly IntPtr _dzFrameGetChildPtr = War3.GetNativeFunction("DzFrameGetChild");
+        private static readonly IntPtr _dzUnlockBlpSizeLimitPtr = War3.GetNativeFunction("DzUnlockBlpSizeLimit");
+        private static readonly IntPtr _dzGetActivePatronPtr = War3.GetNativeFunction("DzGetActivePatron");
+        private static readonly IntPtr _dzGetLocalSelectUnitCountPtr = War3.GetNativeFunction("DzGetLocalSelectUnitCount");
+        private static readonly IntPtr _dzGetLocalSelectUnitPtr = War3.GetNativeFunction("DzGetLocalSelectUnit");
+        private static readonly IntPtr _dzGetJassStringTableCountPtr = War3.GetNativeFunction("DzGetJassStringTableCount");
+        private static readonly IntPtr _dzModelRemoveFromCachePtr = War3.GetNativeFunction("DzModelRemoveFromCache");
+        private static readonly IntPtr _dzModelRemoveAllFromCachePtr = War3.GetNativeFunction("DzModelRemoveAllFromCache");
+        private static readonly IntPtr _dzFrameGetInfoPanelSelectButtonPtr = War3.GetNativeFunction("DzFrameGetInfoPanelSelectButton");
+        private static readonly IntPtr _dzFrameGetInfoPanelBuffButtonPtr = War3.GetNativeFunction("DzFrameGetInfoPanelBuffButton");
+        private static readonly IntPtr _dzFrameGetPeonBarPtr = War3.GetNativeFunction("DzFrameGetPeonBar");
+        private static readonly IntPtr _dzFrameGetCommandBarButtonNumberTextPtr = War3.GetNativeFunction("DzFrameGetCommandBarButtonNumberText");
+        private static readonly IntPtr _dzFrameGetCommandBarButtonNumberOverlayPtr = War3.GetNativeFunction("DzFrameGetCommandBarButtonNumberOverlay");
+        private static readonly IntPtr _dzFrameGetCommandBarButtonCooldownIndicatorPtr = War3.GetNativeFunction("DzFrameGetCommandBarButtonCooldownIndicator");
+        private static readonly IntPtr _dzFrameGetCommandBarButtonAutoCastIndicatorPtr = War3.GetNativeFunction("DzFrameGetCommandBarButtonAutoCastIndicator");
+        private static readonly IntPtr _dzToggleFPSPtr = War3.GetNativeFunction("DzToggleFPS");
+        private static readonly IntPtr _dzGetFPSPtr = War3.GetNativeFunction("DzGetFPS");
+        private static readonly IntPtr _dzFrameWorldToMinimapPosXPtr = War3.GetNativeFunction("DzFrameWorldToMinimapPosX");
+        private static readonly IntPtr _dzFrameWorldToMinimapPosYPtr = War3.GetNativeFunction("DzFrameWorldToMinimapPosY");
+        private static readonly IntPtr _dzWidgetSetMinimapIconPtr = War3.GetNativeFunction("DzWidgetSetMinimapIcon");
+        private static readonly IntPtr _dzWidgetSetMinimapIconEnablePtr = War3.GetNativeFunction("DzWidgetSetMinimapIconEnable");
+        private static readonly IntPtr _dzFrameGetWorldFrameMessagePtr = War3.GetNativeFunction("DzFrameGetWorldFrameMessage");
+        private static readonly IntPtr _dzSimpleMessageFrameAddMessagePtr = War3.GetNativeFunction("DzSimpleMessageFrameAddMessage");
+        private static readonly IntPtr _dzSimpleMessageFrameClearPtr = War3.GetNativeFunction("DzSimpleMessageFrameClear");
+        private static readonly IntPtr _dzConvertScreenPositionXPtr = War3.GetNativeFunction("DzConvertScreenPositionX");
+        private static readonly IntPtr _dzConvertScreenPositionYPtr = War3.GetNativeFunction("DzConvertScreenPositionY");
+        private static readonly IntPtr _dzRegisterOnBuildLocalPtr = War3.GetNativeFunction("DzRegisterOnBuildLocal");
+        private static readonly IntPtr _dzGetOnBuildOrderIdPtr = War3.GetNativeFunction("DzGetOnBuildOrderId");
+        private static readonly IntPtr _dzGetOnBuildOrderTypePtr = War3.GetNativeFunction("DzGetOnBuildOrderType");
+        private static readonly IntPtr _dzGetOnBuildAgentPtr = War3.GetNativeFunction("DzGetOnBuildAgent");
+        private static readonly IntPtr _dzRegisterOnTargetLocalPtr = War3.GetNativeFunction("DzRegisterOnTargetLocal");
+        private static readonly IntPtr _dzGetOnTargetAbilIdPtr = War3.GetNativeFunction("DzGetOnTargetAbilId");
+        private static readonly IntPtr _dzGetOnTargetOrderIdPtr = War3.GetNativeFunction("DzGetOnTargetOrderId");
+        private static readonly IntPtr _dzGetOnTargetOrderTypePtr = War3.GetNativeFunction("DzGetOnTargetOrderType");
+        private static readonly IntPtr _dzGetOnTargetAgentPtr = War3.GetNativeFunction("DzGetOnTargetAgent");
+        private static readonly IntPtr _dzGetOnTargetInstantTargetPtr = War3.GetNativeFunction("DzGetOnTargetInstantTarget");
+        private static readonly IntPtr _dzOpenQQGroupUrlPtr = War3.GetNativeFunction("DzOpenQQGroupUrl");
+        private static readonly IntPtr _dzFrameEnableClipRectPtr = War3.GetNativeFunction("DzFrameEnableClipRect");
+        private static readonly IntPtr _dzSetUnitNamePtr = War3.GetNativeFunction("DzSetUnitName");
+        private static readonly IntPtr _dzSetUnitPortraitPtr = War3.GetNativeFunction("DzSetUnitPortrait");
+        private static readonly IntPtr _dzSetUnitDescriptionPtr = War3.GetNativeFunction("DzSetUnitDescription");
+        private static readonly IntPtr _dzSetUnitMissileArcPtr = War3.GetNativeFunction("DzSetUnitMissileArc");
+        private static readonly IntPtr _dzSetUnitMissileModelPtr = War3.GetNativeFunction("DzSetUnitMissileModel");
+        private static readonly IntPtr _dzSetUnitProperNamePtr = War3.GetNativeFunction("DzSetUnitProperName");
+        private static readonly IntPtr _dzSetUnitMissileHomingPtr = War3.GetNativeFunction("DzSetUnitMissileHoming");
+        private static readonly IntPtr _dzSetUnitMissileSpeedPtr = War3.GetNativeFunction("DzSetUnitMissileSpeed");
+        private static readonly IntPtr _dzSetEffectVisiblePtr = War3.GetNativeFunction("DzSetEffectVisible");
+        private static readonly IntPtr _dzReviveUnitPtr = War3.GetNativeFunction("DzReviveUnit");
+        private static readonly IntPtr _dzGetAttackAbilityPtr = War3.GetNativeFunction("DzGetAttackAbility");
+        private static readonly IntPtr _dzAttackAbilityEndCooldownPtr = War3.GetNativeFunction("DzAttackAbilityEndCooldown");
+        private static readonly IntPtr _eXSetUnitArrayStringPtr = War3.GetNativeFunction("EXSetUnitArrayString");
+        private static readonly IntPtr _eXSetUnitIntegerPtr = War3.GetNativeFunction("EXSetUnitInteger");
+        private static readonly IntPtr _dzDoodadCreatePtr = War3.GetNativeFunction("DzDoodadCreate");
+        private static readonly IntPtr _dzDoodadGetTypeIdPtr = War3.GetNativeFunction("DzDoodadGetTypeId");
+        private static readonly IntPtr _dzDoodadSetModelPtr = War3.GetNativeFunction("DzDoodadSetModel");
+        private static readonly IntPtr _dzDoodadSetTeamColorPtr = War3.GetNativeFunction("DzDoodadSetTeamColor");
+        private static readonly IntPtr _dzDoodadSetColorPtr = War3.GetNativeFunction("DzDoodadSetColor");
+        private static readonly IntPtr _dzDoodadGetXPtr = War3.GetNativeFunction("DzDoodadGetX");
+        private static readonly IntPtr _dzDoodadGetYPtr = War3.GetNativeFunction("DzDoodadGetY");
+        private static readonly IntPtr _dzDoodadGetZPtr = War3.GetNativeFunction("DzDoodadGetZ");
+        private static readonly IntPtr _dzDoodadSetPositionPtr = War3.GetNativeFunction("DzDoodadSetPosition");
+        private static readonly IntPtr _dzDoodadSetOrientMatrixRotatePtr = War3.GetNativeFunction("DzDoodadSetOrientMatrixRotate");
+        private static readonly IntPtr _dzDoodadSetOrientMatrixScalePtr = War3.GetNativeFunction("DzDoodadSetOrientMatrixScale");
+        private static readonly IntPtr _dzDoodadSetOrientMatrixResizePtr = War3.GetNativeFunction("DzDoodadSetOrientMatrixResize");
+        private static readonly IntPtr _dzDoodadSetVisiblePtr = War3.GetNativeFunction("DzDoodadSetVisible");
+        private static readonly IntPtr _dzDoodadSetAnimationPtr = War3.GetNativeFunction("DzDoodadSetAnimation");
+        private static readonly IntPtr _dzDoodadSetTimeScalePtr = War3.GetNativeFunction("DzDoodadSetTimeScale");
+        private static readonly IntPtr _dzDoodadGetTimeScalePtr = War3.GetNativeFunction("DzDoodadGetTimeScale");
+        private static readonly IntPtr _dzDoodadGetCurrentAnimationIndexPtr = War3.GetNativeFunction("DzDoodadGetCurrentAnimationIndex");
+        private static readonly IntPtr _dzDoodadGetAnimationCountPtr = War3.GetNativeFunction("DzDoodadGetAnimationCount");
+        private static readonly IntPtr _dzDoodadGetAnimationNamePtr = War3.GetNativeFunction("DzDoodadGetAnimationName");
+        private static readonly IntPtr _dzDoodadGetAnimationTimePtr = War3.GetNativeFunction("DzDoodadGetAnimationTime");
+        private static readonly IntPtr _dzUnlockOpCodeLimitPtr = War3.GetNativeFunction("DzUnlockOpCodeLimit");
+        private static readonly IntPtr _dzSetClipboardPtr = War3.GetNativeFunction("DzSetClipboard");
+        private static readonly IntPtr _dzDoodadRemovePtr = War3.GetNativeFunction("DzDoodadRemove");
+        private static readonly IntPtr _dzRemovePlayerTechResearchedPtr = War3.GetNativeFunction("DzRemovePlayerTechResearched");
+        private static readonly IntPtr _dzUnitFindAbilityPtr = War3.GetNativeFunction("DzUnitFindAbility");
+        private static readonly IntPtr _dzAbilitySetStringDataPtr = War3.GetNativeFunction("DzAbilitySetStringData");
+        private static readonly IntPtr _dzAbilitySetEnablePtr = War3.GetNativeFunction("DzAbilitySetEnable");
+        private static readonly IntPtr _dzUnitSetMoveTypePtr = War3.GetNativeFunction("DzUnitSetMoveType");
+        private static readonly IntPtr _dzFrameGetWidthPtr = War3.GetNativeFunction("DzFrameGetWidth");
+        private static readonly IntPtr _dzFrameSetAnimateByIndexPtr = War3.GetNativeFunction("DzFrameSetAnimateByIndex");
+        private static readonly IntPtr _dzSetUnitDataCacheIntegerPtr = War3.GetNativeFunction("DzSetUnitDataCacheInteger");
+        private static readonly IntPtr _dzUnitUIAddLevelArrayIntegerPtr = War3.GetNativeFunction("DzUnitUIAddLevelArrayInteger");
+        private static readonly IntPtr _dzItemSetModelPtr = War3.GetNativeFunction("DzItemSetModel");
+        private static readonly IntPtr _dzItemSetVertexColorPtr = War3.GetNativeFunction("DzItemSetVertexColor");
+        private static readonly IntPtr _dzItemSetAlphaPtr = War3.GetNativeFunction("DzItemSetAlpha");
+        private static readonly IntPtr _dzItemSetPortraitPtr = War3.GetNativeFunction("DzItemSetPortrait");
+        private static readonly IntPtr _dzFrameHookHpBarPtr = War3.GetNativeFunction("DzFrameHookHpBar");
+        private static readonly IntPtr _dzFrameGetTriggerHpBarUnitPtr = War3.GetNativeFunction("DzFrameGetTriggerHpBarUnit");
+        private static readonly IntPtr _dzFrameGetTriggerHpBarPtr = War3.GetNativeFunction("DzFrameGetTriggerHpBar");
+        private static readonly IntPtr _dzFrameGetUnitHpBarPtr = War3.GetNativeFunction("DzFrameGetUnitHpBar");
+        private static readonly IntPtr _dzGetCursorFramePtr = War3.GetNativeFunction("DzGetCursorFrame");
+        private static readonly IntPtr _dzFrameGetPointValidPtr = War3.GetNativeFunction("DzFrameGetPointValid");
+        private static readonly IntPtr _dzFrameGetPointRelativePtr = War3.GetNativeFunction("DzFrameGetPointRelative");
+        private static readonly IntPtr _dzFrameGetPointRelativePointPtr = War3.GetNativeFunction("DzFrameGetPointRelativePoint");
+        private static readonly IntPtr _dzFrameGetPointXPtr = War3.GetNativeFunction("DzFrameGetPointX");
+        private static readonly IntPtr _dzFrameGetPointYPtr = War3.GetNativeFunction("DzFrameGetPointY");
+        private static readonly IntPtr _dzWriteLogPtr = War3.GetNativeFunction("DzWriteLog");
+        private static readonly IntPtr _dzTextTagGetFontPtr = War3.GetNativeFunction("DzTextTagGetFont");
+        private static readonly IntPtr _dzTextTagSetFontPtr = War3.GetNativeFunction("DzTextTagSetFont");
+        private static readonly IntPtr _dzTextTagSetStartAlphaPtr = War3.GetNativeFunction("DzTextTagSetStartAlpha");
+        private static readonly IntPtr _dzTextTagGetShadowColorPtr = War3.GetNativeFunction("DzTextTagGetShadowColor");
+        private static readonly IntPtr _dzTextTagSetShadowColorPtr = War3.GetNativeFunction("DzTextTagSetShadowColor");
+        private static readonly IntPtr _dzGroupGetCountPtr = War3.GetNativeFunction("DzGroupGetCount");
+        private static readonly IntPtr _dzGroupGetUnitAtPtr = War3.GetNativeFunction("DzGroupGetUnitAt");
+        private static readonly IntPtr _dzUnitCreateIllusionPtr = War3.GetNativeFunction("DzUnitCreateIllusion");
+        private static readonly IntPtr _dzUnitCreateIllusionFromUnitPtr = War3.GetNativeFunction("DzUnitCreateIllusionFromUnit");
+        private static readonly IntPtr _dzStringContainsPtr = War3.GetNativeFunction("DzStringContains");
+        private static readonly IntPtr _dzStringFindPtr = War3.GetNativeFunction("DzStringFind");
+        private static readonly IntPtr _dzStringFindFirstOfPtr = War3.GetNativeFunction("DzStringFindFirstOf");
+        private static readonly IntPtr _dzStringFindFirstNotOfPtr = War3.GetNativeFunction("DzStringFindFirstNotOf");
+        private static readonly IntPtr _dzStringFindLastOfPtr = War3.GetNativeFunction("DzStringFindLastOf");
+        private static readonly IntPtr _dzStringFindLastNotOfPtr = War3.GetNativeFunction("DzStringFindLastNotOf");
+        private static readonly IntPtr _dzStringTrimLeftPtr = War3.GetNativeFunction("DzStringTrimLeft");
+        private static readonly IntPtr _dzStringTrimRightPtr = War3.GetNativeFunction("DzStringTrimRight");
+        private static readonly IntPtr _dzStringTrimPtr = War3.GetNativeFunction("DzStringTrim");
+        private static readonly IntPtr _dzStringReversePtr = War3.GetNativeFunction("DzStringReverse");
+        private static readonly IntPtr _dzStringReplacePtr = War3.GetNativeFunction("DzStringReplace");
+        private static readonly IntPtr _dzStringInsertPtr = War3.GetNativeFunction("DzStringInsert");
+        private static readonly IntPtr _dzBitGetPtr = War3.GetNativeFunction("DzBitGet");
+        private static readonly IntPtr _dzBitSetPtr = War3.GetNativeFunction("DzBitSet");
+        private static readonly IntPtr _dzBitGetBytePtr = War3.GetNativeFunction("DzBitGetByte");
+        private static readonly IntPtr _dzBitSetBytePtr = War3.GetNativeFunction("DzBitSetByte");
+        private static readonly IntPtr _dzBitNotPtr = War3.GetNativeFunction("DzBitNot");
+        private static readonly IntPtr _dzBitAndPtr = War3.GetNativeFunction("DzBitAnd");
+        private static readonly IntPtr _dzBitOrPtr = War3.GetNativeFunction("DzBitOr");
+        private static readonly IntPtr _dzBitXorPtr = War3.GetNativeFunction("DzBitXor");
+        private static readonly IntPtr _dzBitShiftLeftPtr = War3.GetNativeFunction("DzBitShiftLeft");
+        private static readonly IntPtr _dzBitShiftRightPtr = War3.GetNativeFunction("DzBitShiftRight");
+        private static readonly IntPtr _dzBitToIntPtr = War3.GetNativeFunction("DzBitToInt");
+        private static readonly IntPtr _dzQueueGroupImmediateOrderByIdPtr = War3.GetNativeFunction("DzQueueGroupImmediateOrderById");
+        private static readonly IntPtr _dzQueueGroupPointOrderByIdPtr = War3.GetNativeFunction("DzQueueGroupPointOrderById");
+        private static readonly IntPtr _dzQueueGroupTargetOrderByIdPtr = War3.GetNativeFunction("DzQueueGroupTargetOrderById");
+        private static readonly IntPtr _dzQueueIssueImmediateOrderByIdPtr = War3.GetNativeFunction("DzQueueIssueImmediateOrderById");
+        private static readonly IntPtr _dzQueueIssuePointOrderByIdPtr = War3.GetNativeFunction("DzQueueIssuePointOrderById");
+        private static readonly IntPtr _dzQueueIssueTargetOrderByIdPtr = War3.GetNativeFunction("DzQueueIssueTargetOrderById");
+        private static readonly IntPtr _dzQueueIssueInstantPointOrderByIdPtr = War3.GetNativeFunction("DzQueueIssueInstantPointOrderById");
+        private static readonly IntPtr _dzQueueIssueInstantTargetOrderByIdPtr = War3.GetNativeFunction("DzQueueIssueInstantTargetOrderById");
+        private static readonly IntPtr _dzQueueIssueBuildOrderByIdPtr = War3.GetNativeFunction("DzQueueIssueBuildOrderById");
+        private static readonly IntPtr _dzQueueIssueNeutralImmediateOrderByIdPtr = War3.GetNativeFunction("DzQueueIssueNeutralImmediateOrderById");
+        private static readonly IntPtr _dzQueueIssueNeutralPointOrderByIdPtr = War3.GetNativeFunction("DzQueueIssueNeutralPointOrderById");
+        private static readonly IntPtr _dzQueueIssueNeutralTargetOrderByIdPtr = War3.GetNativeFunction("DzQueueIssueNeutralTargetOrderById");
+        private static readonly IntPtr _dzUnitOrdersCountPtr = War3.GetNativeFunction("DzUnitOrdersCount");
+        private static readonly IntPtr _dzUnitOrdersClearPtr = War3.GetNativeFunction("DzUnitOrdersClear");
+        private static readonly IntPtr _dzUnitOrdersExecPtr = War3.GetNativeFunction("DzUnitOrdersExec");
+        private static readonly IntPtr _dzUnitOrdersForceStopPtr = War3.GetNativeFunction("DzUnitOrdersForceStop");
+        private static readonly IntPtr _dzUnitOrdersReversePtr = War3.GetNativeFunction("DzUnitOrdersReverse");
+        private static readonly IntPtr _dzXlsxOpenPtr = War3.GetNativeFunction("DzXlsxOpen");
+        private static readonly IntPtr _dzXlsxClosePtr = War3.GetNativeFunction("DzXlsxClose");
+        private static readonly IntPtr _dzXlsxWorksheetGetRowCountPtr = War3.GetNativeFunction("DzXlsxWorksheetGetRowCount");
+        private static readonly IntPtr _dzXlsxWorksheetGetColumnCountPtr = War3.GetNativeFunction("DzXlsxWorksheetGetColumnCount");
+        private static readonly IntPtr _dzXlsxWorksheetGetCellTypePtr = War3.GetNativeFunction("DzXlsxWorksheetGetCellType");
+        private static readonly IntPtr _dzXlsxWorksheetGetCellStringPtr = War3.GetNativeFunction("DzXlsxWorksheetGetCellString");
+        private static readonly IntPtr _dzXlsxWorksheetGetCellIntegerPtr = War3.GetNativeFunction("DzXlsxWorksheetGetCellInteger");
+        private static readonly IntPtr _dzXlsxWorksheetGetCellBooleanPtr = War3.GetNativeFunction("DzXlsxWorksheetGetCellBoolean");
+        private static readonly IntPtr _dzXlsxWorksheetGetCellFloatPtr = War3.GetNativeFunction("DzXlsxWorksheetGetCellFloat");
+        private static readonly IntPtr _dzFrameSetTexCoordPtr = War3.GetNativeFunction("DzFrameSetTexCoord");
+        private static readonly IntPtr _dzSetUnitAbilityRangePtr = War3.GetNativeFunction("DzSetUnitAbilityRange");
+        private static readonly IntPtr _dzGetUnitAbilityRangePtr = War3.GetNativeFunction("DzGetUnitAbilityRange");
+        private static readonly IntPtr _dzSetUnitAbilityAreaPtr = War3.GetNativeFunction("DzSetUnitAbilityArea");
+        private static readonly IntPtr _dzGetUnitAbilityAreaPtr = War3.GetNativeFunction("DzGetUnitAbilityArea");
+        private static readonly IntPtr _dzSetUnitAbilityCoolPtr = War3.GetNativeFunction("DzSetUnitAbilityCool");
+        private static readonly IntPtr _dzGetUnitAbilityCoolPtr = War3.GetNativeFunction("DzGetUnitAbilityCool");
+        private static readonly IntPtr _dzGetUnitAbilityMaxCoolPtr = War3.GetNativeFunction("DzGetUnitAbilityMaxCool");
+        private static readonly IntPtr _dzSetUnitAbilityDataAPtr = War3.GetNativeFunction("DzSetUnitAbilityDataA");
+        private static readonly IntPtr _dzGetUnitAbilityDataAPtr = War3.GetNativeFunction("DzGetUnitAbilityDataA");
+        private static readonly IntPtr _dzSetUnitAbilityDataBPtr = War3.GetNativeFunction("DzSetUnitAbilityDataB");
+        private static readonly IntPtr _dzGetUnitAbilityDataBPtr = War3.GetNativeFunction("DzGetUnitAbilityDataB");
+        private static readonly IntPtr _dzSetUnitAbilityDataCPtr = War3.GetNativeFunction("DzSetUnitAbilityDataC");
+        private static readonly IntPtr _dzGetUnitAbilityDataCPtr = War3.GetNativeFunction("DzGetUnitAbilityDataC");
+        private static readonly IntPtr _dzSetUnitAbilityDataDPtr = War3.GetNativeFunction("DzSetUnitAbilityDataD");
+        private static readonly IntPtr _dzGetUnitAbilityDataDPtr = War3.GetNativeFunction("DzGetUnitAbilityDataD");
+        private static readonly IntPtr _dzSetUnitAbilityDataEPtr = War3.GetNativeFunction("DzSetUnitAbilityDataE");
+        private static readonly IntPtr _dzGetUnitAbilityDataEPtr = War3.GetNativeFunction("DzGetUnitAbilityDataE");
+        private static readonly IntPtr _dzSetUnitAbilityButtonPosPtr = War3.GetNativeFunction("DzSetUnitAbilityButtonPos");
+        private static readonly IntPtr _dzSetUnitAbilityHotkeyPtr = War3.GetNativeFunction("DzSetUnitAbilityHotkey");
+        private static readonly IntPtr _dzConvertTargs2StrPtr = War3.GetNativeFunction("DzConvertTargs2Str");
+        private static readonly IntPtr _dzConvertStr2TargsPtr = War3.GetNativeFunction("DzConvertStr2Targs");
+        private static readonly IntPtr _dzSetUnitAbilityTargsPtr = War3.GetNativeFunction("DzSetUnitAbilityTargs");
+        private static readonly IntPtr _dzGetUnitAbilityTargsPtr = War3.GetNativeFunction("DzGetUnitAbilityTargs");
+        private static readonly IntPtr _dzSetUnitAbilityCostPtr = War3.GetNativeFunction("DzSetUnitAbilityCost");
+        private static readonly IntPtr _dzGetUnitAbilityCostPtr = War3.GetNativeFunction("DzGetUnitAbilityCost");
+        private static readonly IntPtr _dzSetUnitAbilityReqLevelPtr = War3.GetNativeFunction("DzSetUnitAbilityReqLevel");
+        private static readonly IntPtr _dzGetUnitAbilityReqLevelPtr = War3.GetNativeFunction("DzGetUnitAbilityReqLevel");
+        private static readonly IntPtr _dzSetUnitAbilityUnitIdPtr = War3.GetNativeFunction("DzSetUnitAbilityUnitId");
+        private static readonly IntPtr _dzGetUnitAbilityUnitIdPtr = War3.GetNativeFunction("DzGetUnitAbilityUnitId");
+        private static readonly IntPtr _dzSetUnitAbilityBuildOrderIdPtr = War3.GetNativeFunction("DzSetUnitAbilityBuildOrderId");
+        private static readonly IntPtr _dzGetUnitAbilityBuildOrderIdPtr = War3.GetNativeFunction("DzGetUnitAbilityBuildOrderId");
+        private static readonly IntPtr _dzSetUnitAbilityBuildModelPtr = War3.GetNativeFunction("DzSetUnitAbilityBuildModel");
+        private static readonly IntPtr _dzUnitHasAbilityPtr = War3.GetNativeFunction("DzUnitHasAbility");
+        private static readonly IntPtr _kKCreateCommandButtonPtr = War3.GetNativeFunction("KKCreateCommandButton");
+        private static readonly IntPtr _kKDestroyCommandButtonPtr = War3.GetNativeFunction("KKDestroyCommandButton");
+        private static readonly IntPtr _kKCommandButtonClickPtr = War3.GetNativeFunction("KKCommandButtonClick");
+        private static readonly IntPtr _kKCommandTargetClickPtr = War3.GetNativeFunction("KKCommandTargetClick");
+        private static readonly IntPtr _kKCommandTerrainClickPtr = War3.GetNativeFunction("KKCommandTerrainClick");
+        private static readonly IntPtr _kKSetCommandUnitAbilityPtr = War3.GetNativeFunction("KKSetCommandUnitAbility");
+        private static readonly IntPtr _dzItemGetVertexColorPtr = War3.GetNativeFunction("DzItemGetVertexColor");
+        private static readonly IntPtr _dzItemSetSizePtr = War3.GetNativeFunction("DzItemSetSize");
+        private static readonly IntPtr _dzItemGetSizePtr = War3.GetNativeFunction("DzItemGetSize");
+        private static readonly IntPtr _dzItemMatRotateXPtr = War3.GetNativeFunction("DzItemMatRotateX");
+        private static readonly IntPtr _dzItemMatRotateYPtr = War3.GetNativeFunction("DzItemMatRotateY");
+        private static readonly IntPtr _dzItemMatRotateZPtr = War3.GetNativeFunction("DzItemMatRotateZ");
+        private static readonly IntPtr _dzItemMatScalePtr = War3.GetNativeFunction("DzItemMatScale");
+        private static readonly IntPtr _dzItemMatResetPtr = War3.GetNativeFunction("DzItemMatReset");
+        private static readonly IntPtr _dzGetLastSelectedItemPtr = War3.GetNativeFunction("DzGetLastSelectedItem");
+        private static readonly IntPtr _dzSetPariticle2SizePtr = War3.GetNativeFunction("DzSetPariticle2Size");
+        private static readonly IntPtr _dzSetUnitCollisionSizePtr = War3.GetNativeFunction("DzSetUnitCollisionSize");
+        private static readonly IntPtr _dzGetUnitCollisionSizePtr = War3.GetNativeFunction("DzGetUnitCollisionSize");
+        private static readonly IntPtr _dzSetWidgetTexturePtr = War3.GetNativeFunction("DzSetWidgetTexture");
+        private static readonly IntPtr _dzSetUnitSelectScalePtr = War3.GetNativeFunction("DzSetUnitSelectScale");
+        private static readonly IntPtr _dzSetUnitHitIgnorePtr = War3.GetNativeFunction("DzSetUnitHitIgnore");
+        private static readonly IntPtr _dzEffectBindEffectPtr = War3.GetNativeFunction("DzEffectBindEffect");
+        private static readonly IntPtr _dzFrameSetIgnoreTrackEventsPtr = War3.GetNativeFunction("DzFrameSetIgnoreTrackEvents");
+        private static readonly IntPtr _dzFrameAddModelPtr = War3.GetNativeFunction("DzFrameAddModel");
+        private static readonly IntPtr _dzFrameSetModel2Ptr = War3.GetNativeFunction("DzFrameSetModel2");
+        private static readonly IntPtr _dzFrameAddModelEffectPtr = War3.GetNativeFunction("DzFrameAddModelEffect");
+        private static readonly IntPtr _dzFrameRemoveModelEffectPtr = War3.GetNativeFunction("DzFrameRemoveModelEffect");
+        private static readonly IntPtr _dzFrameSetModelAnimationByIndexPtr = War3.GetNativeFunction("DzFrameSetModelAnimationByIndex");
+        private static readonly IntPtr _dzFrameSetModelAnimationPtr = War3.GetNativeFunction("DzFrameSetModelAnimation");
+        private static readonly IntPtr _dzFrameSetModelCameraSourcePtr = War3.GetNativeFunction("DzFrameSetModelCameraSource");
+        private static readonly IntPtr _dzFrameSetModelCameraTargetPtr = War3.GetNativeFunction("DzFrameSetModelCameraTarget");
+        private static readonly IntPtr _dzFrameSetModelSizePtr = War3.GetNativeFunction("DzFrameSetModelSize");
+        private static readonly IntPtr _dzFrameGetModelSizePtr = War3.GetNativeFunction("DzFrameGetModelSize");
+        private static readonly IntPtr _dzFrameSetModelPositionPtr = War3.GetNativeFunction("DzFrameSetModelPosition");
+        private static readonly IntPtr _dzFrameSetModelXPtr = War3.GetNativeFunction("DzFrameSetModelX");
+        private static readonly IntPtr _dzFrameGetModelXPtr = War3.GetNativeFunction("DzFrameGetModelX");
+        private static readonly IntPtr _dzFrameSetModelYPtr = War3.GetNativeFunction("DzFrameSetModelY");
+        private static readonly IntPtr _dzFrameGetModelYPtr = War3.GetNativeFunction("DzFrameGetModelY");
+        private static readonly IntPtr _dzFrameSetModelZPtr = War3.GetNativeFunction("DzFrameSetModelZ");
+        private static readonly IntPtr _dzFrameGetModelZPtr = War3.GetNativeFunction("DzFrameGetModelZ");
+        private static readonly IntPtr _dzFrameSetModelSpeedPtr = War3.GetNativeFunction("DzFrameSetModelSpeed");
+        private static readonly IntPtr _dzFrameGetModelSpeedPtr = War3.GetNativeFunction("DzFrameGetModelSpeed");
+        private static readonly IntPtr _dzFrameSetModelScalePtr = War3.GetNativeFunction("DzFrameSetModelScale");
+        private static readonly IntPtr _dzFrameSetModelMatResetPtr = War3.GetNativeFunction("DzFrameSetModelMatReset");
+        private static readonly IntPtr _dzFrameSetModelRotateXPtr = War3.GetNativeFunction("DzFrameSetModelRotateX");
+        private static readonly IntPtr _dzFrameSetModelRotateYPtr = War3.GetNativeFunction("DzFrameSetModelRotateY");
+        private static readonly IntPtr _dzFrameSetModelRotateZPtr = War3.GetNativeFunction("DzFrameSetModelRotateZ");
+        private static readonly IntPtr _dzFrameSetModelColorPtr = War3.GetNativeFunction("DzFrameSetModelColor");
+        private static readonly IntPtr _dzFrameGetModelColorPtr = War3.GetNativeFunction("DzFrameGetModelColor");
+        private static readonly IntPtr _dzFrameSetModelTexturePtr = War3.GetNativeFunction("DzFrameSetModelTexture");
+        private static readonly IntPtr _dzFrameSetModelParticle2SizePtr = War3.GetNativeFunction("DzFrameSetModelParticle2Size");
+        private static readonly IntPtr _dzGetGlueUIPtr = War3.GetNativeFunction("DzGetGlueUI");
+        private static readonly IntPtr _dzFrameGetMousePtr = War3.GetNativeFunction("DzFrameGetMouse");
+        private static readonly IntPtr _dzFrameGetContextPtr = War3.GetNativeFunction("DzFrameGetContext");
+        private static readonly IntPtr _dzFrameGetNamePtr = War3.GetNativeFunction("DzFrameGetName");
+        private static readonly IntPtr _dzFrameSetNameContextPtr = War3.GetNativeFunction("DzFrameSetNameContext");
+        private static readonly IntPtr _dzFrameSetTextFontSpacingPtr = War3.GetNativeFunction("DzFrameSetTextFontSpacing");
+        private static readonly IntPtr _kKCommandGetCooldownModelPtr = War3.GetNativeFunction("KKCommandGetCooldownModel");
+        private static readonly IntPtr _kKCommandSetCooldownModelSizePtr = War3.GetNativeFunction("KKCommandSetCooldownModelSize");
+        private static readonly IntPtr _kKCommandSetCooldownModelSize2Ptr = War3.GetNativeFunction("KKCommandSetCooldownModelSize2");
+        private static readonly IntPtr _dzGetPlayerLastSelectedItemPtr = War3.GetNativeFunction("DzGetPlayerLastSelectedItem");
+        private static readonly IntPtr _dzGetCacheModelCountPtr = War3.GetNativeFunction("DzGetCacheModelCount");
+        private static readonly IntPtr _dzSetMaxFpsPtr = War3.GetNativeFunction("DzSetMaxFps");
+        private static readonly IntPtr _dzEnableDrawSkillPanelPtr = War3.GetNativeFunction("DzEnableDrawSkillPanel");
+        private static readonly IntPtr _dzEnableDrawSkillPanelByPlayerPtr = War3.GetNativeFunction("DzEnableDrawSkillPanelByPlayer");
+        private static readonly IntPtr _dzSetEffectFogVisiblePtr = War3.GetNativeFunction("DzSetEffectFogVisible");
+        private static readonly IntPtr _dzSetEffectMaskVisiblePtr = War3.GetNativeFunction("DzSetEffectMaskVisible");
+        private static readonly IntPtr _dzFrameBindWidgetPtr = War3.GetNativeFunction("DzFrameBindWidget");
+        private static readonly IntPtr _dzFrameBindWorldPosPtr = War3.GetNativeFunction("DzFrameBindWorldPos");
+        private static readonly IntPtr _dzFrameUnBindPtr = War3.GetNativeFunction("DzFrameUnBind");
+        private static readonly IntPtr _dzDisableUnitPreselectUiPtr = War3.GetNativeFunction("DzDisableUnitPreselectUi");
+        private static readonly IntPtr _dzDisableItemPreselectUiPtr = War3.GetNativeFunction("DzDisableItemPreselectUi");
+        private static readonly IntPtr _dzFrameGetLowerLevelFramePtr = War3.GetNativeFunction("DzFrameGetLowerLevelFrame");
+        private static readonly IntPtr _dzFrameSetCheckBoxStatePtr = War3.GetNativeFunction("DzFrameSetCheckBoxState");
+        private static readonly IntPtr _dzFrameGetCheckBoxStatePtr = War3.GetNativeFunction("DzFrameGetCheckBoxState");
+        private static readonly IntPtr _dzFrameIsFocusPtr = War3.GetNativeFunction("DzFrameIsFocus");
+        private static readonly IntPtr _dzFrameSetEditBoxActivePtr = War3.GetNativeFunction("DzFrameSetEditBoxActive");
+        private static readonly IntPtr _dzFrameSetEditBoxDisableImePtr = War3.GetNativeFunction("DzFrameSetEditBoxDisableIme");
+        private static readonly IntPtr _dzIsWindowModePtr = War3.GetNativeFunction("DzIsWindowMode");
+        private static readonly IntPtr _dzIsWindowActivePtr = War3.GetNativeFunction("DzIsWindowActive");
+        private static readonly IntPtr _dzWindowSetPointPtr = War3.GetNativeFunction("DzWindowSetPoint");
+        private static readonly IntPtr _dzWindowSetSizePtr = War3.GetNativeFunction("DzWindowSetSize");
+        private static readonly IntPtr _dzGetSystemMetricsWidthPtr = War3.GetNativeFunction("DzGetSystemMetricsWidth");
+        private static readonly IntPtr _dzGetSystemMetricsHeightPtr = War3.GetNativeFunction("DzGetSystemMetricsHeight");
+        private static readonly IntPtr _dzGetDoodadsCountPtr = War3.GetNativeFunction("DzGetDoodadsCount");
+        private static readonly IntPtr _dzSetDoodadsMatScalePtr = War3.GetNativeFunction("DzSetDoodadsMatScale");
+        private static readonly IntPtr _dzSetDoodadsMatRotateXPtr = War3.GetNativeFunction("DzSetDoodadsMatRotateX");
+        private static readonly IntPtr _dzSetDoodadsMatRotateYPtr = War3.GetNativeFunction("DzSetDoodadsMatRotateY");
+        private static readonly IntPtr _dzSetDoodadsMatRotateZPtr = War3.GetNativeFunction("DzSetDoodadsMatRotateZ");
+        private static readonly IntPtr _dzSetDoodadsMatResetPtr = War3.GetNativeFunction("DzSetDoodadsMatReset");
+        private static readonly IntPtr _dzSetUnitAbilityArtPtr = War3.GetNativeFunction("DzSetUnitAbilityArt");
+        private static readonly IntPtr _dzGetUnitAbilityArtPtr = War3.GetNativeFunction("DzGetUnitAbilityArt");
+        private static readonly IntPtr _dzSetUnitAbilityTipPtr = War3.GetNativeFunction("DzSetUnitAbilityTip");
+        private static readonly IntPtr _dzGetUnitAbilityTipPtr = War3.GetNativeFunction("DzGetUnitAbilityTip");
+        private static readonly IntPtr _dzSetUnitAbilityUberTipPtr = War3.GetNativeFunction("DzSetUnitAbilityUberTip");
+        private static readonly IntPtr _dzGetUnitAbilityUberTipPtr = War3.GetNativeFunction("DzGetUnitAbilityUberTip");
+        private static readonly IntPtr _dzSetUnitAbilityUpdatePtr = War3.GetNativeFunction("DzSetUnitAbilityUpdate");
+        private static readonly IntPtr _dzSetUnitAbilityOrderIdPtr = War3.GetNativeFunction("DzSetUnitAbilityOrderId");
+        private static readonly IntPtr _dzGetUnitAbilityOrderIdPtr = War3.GetNativeFunction("DzGetUnitAbilityOrderId");
+        private static readonly IntPtr _dzSetUnitAbilitySpellBookListPtr = War3.GetNativeFunction("DzSetUnitAbilitySpellBookList");
+        private static readonly IntPtr _dzGetUnitAbilitySpellBookListPtr = War3.GetNativeFunction("DzGetUnitAbilitySpellBookList");
+        private static readonly IntPtr _dzSetUnitAbilityMissileArtPtr = War3.GetNativeFunction("DzSetUnitAbilityMissileArt");
+        private static readonly IntPtr _dzGetUnitAbilityMissileArtPtr = War3.GetNativeFunction("DzGetUnitAbilityMissileArt");
+        private static readonly IntPtr _dzSetUnitAbilityMissileSpeedPtr = War3.GetNativeFunction("DzSetUnitAbilityMissileSpeed");
+        private static readonly IntPtr _dzGetUnitAbilityMissileSpeedPtr = War3.GetNativeFunction("DzGetUnitAbilityMissileSpeed");
+        private static readonly IntPtr _dzSetUnitAbilityMissileArcPtr = War3.GetNativeFunction("DzSetUnitAbilityMissileArc");
+        private static readonly IntPtr _dzGetUnitAbilityMissileArcPtr = War3.GetNativeFunction("DzGetUnitAbilityMissileArc");
+        private static readonly IntPtr _dzSetUnitAbilityMissileHomingPtr = War3.GetNativeFunction("DzSetUnitAbilityMissileHoming");
+        private static readonly IntPtr _dzGetUnitAbilityMissileHomingPtr = War3.GetNativeFunction("DzGetUnitAbilityMissileHoming");
+        private static readonly IntPtr _dzSetUnitAbilityMissileCountPtr = War3.GetNativeFunction("DzSetUnitAbilityMissileCount");
+        private static readonly IntPtr _dzGetUnitAbilityMissileCountPtr = War3.GetNativeFunction("DzGetUnitAbilityMissileCount");
+        private static readonly IntPtr _dzSetUnitAbilityMissileDamagePtr = War3.GetNativeFunction("DzSetUnitAbilityMissileDamage");
+        private static readonly IntPtr _dzGetUnitAbilityMissileDamagePtr = War3.GetNativeFunction("DzGetUnitAbilityMissileDamage");
+        private static readonly IntPtr _dzGetUnitAbilityMissileMaxDamagePtr = War3.GetNativeFunction("DzGetUnitAbilityMissileMaxDamage");
         /// title = "玩家是否拥有地图商城道具"        /// description = "获取 ${whichPlayer} 是否拥有: ${key} 对应的地图商城道具."        /// comment = "检测玩家背包中是否拥该道具且处于有效状态。已过期的时效性道具、剩余数量为0的数量型道具均视为无效；"
         public static bool DzAPI_Map_HasMallItem(JPlayer whichPlayer, string key)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzAPI_Map_HasMallItem"), whichPlayer.Handle, key);
+            return War3.CallNative<bool>(_dzAPI_Map_HasMallItemPtr, whichPlayer.Handle, key);
         }
 
 
@@ -24,27 +355,27 @@ namespace War3Frame.Library.Api
 
         public static int DzAPI_Map_GetMapLevel(JPlayer whichPlayer)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzAPI_Map_GetMapLevel"), whichPlayer.Handle);
+            return War3.CallNative<int>(_dzAPI_Map_GetMapLevelPtr, whichPlayer.Handle);
         }
 
         public static int RequestExtraIntegerData(int dataType, JPlayer whichPlayer, string param1, string param2, bool param3, int param4, int param5, int param6)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("RequestExtraIntegerData"), dataType, whichPlayer.Handle, param1, param2, param3, param4, param5, param6);
+            return War3.CallNative<int>(_requestExtraIntegerDataPtr, dataType, whichPlayer.Handle, param1, param2, param3, param4, param5, param6);
         }
 
         public static bool RequestExtraBooleanData(int dataType, JPlayer whichPlayer, string param1, string param2, bool param3, int param4, int param5, int param6)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("RequestExtraBooleanData"), dataType, whichPlayer.Handle, param1, param2, param3, param4, param5, param6);
+            return War3.CallNative<bool>(_requestExtraBooleanDataPtr, dataType, whichPlayer.Handle, param1, param2, param3, param4, param5, param6);
         }
 
         public static string RequestExtraStringData(int dataType, JPlayer whichPlayer, string param1, string param2, bool param3, int param4, int param5, int param6)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("RequestExtraStringData"), dataType, whichPlayer.Handle, param1, param2, param3, param4, param5, param6);
+            return War3.CallNative<string>(_requestExtraStringDataPtr, dataType, whichPlayer.Handle, param1, param2, param3, param4, param5, param6);
         }
 
         public static float RequestExtraRealData(int dataType, JPlayer whichPlayer, string param1, string param2, bool param3, int param4, int param5, int param6)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("RequestExtraRealData"), dataType, whichPlayer.Handle, param1, param2, param3, param4, param5, param6);
+            return War3.CallNative<float>(_requestExtraRealDataPtr, dataType, whichPlayer.Handle, param1, param2, param3, param4, param5, param6);
         }
 
 
@@ -1574,7 +1905,7 @@ namespace War3Frame.Library.Api
         /// title = "当前选择的单位(异步)"        /// description = "获取主控单位"        /// comment = "获取的单位是异步的，请谨慎操作"
         public static JUnit DzGetSelectedLeaderUnit()
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetSelectedLeaderUnit"));
+            var handle = War3.CallNative<int>(_dzGetSelectedLeaderUnitPtr);
             return new(handle);
         }
 
@@ -1585,7 +1916,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzIsChatBoxOpen()
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzIsChatBoxOpen"));
+            return War3.CallNative<bool>(_dzIsChatBoxOpenPtr);
         }
 
 
@@ -1595,7 +1926,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetUnitPreselectUIVisible(JUnit whichUnit, bool visible)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetUnitPreselectUIVisible"), whichUnit.Handle, visible);
+            War3.CallNative(_dzSetUnitPreselectUIVisiblePtr, whichUnit.Handle, visible);
         }
 
 
@@ -1605,7 +1936,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetEffectAnimation(JEffect whichEffect, int index, int flag)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetEffectAnimation"), whichEffect.Handle, index, flag);
+            War3.CallNative(_dzSetEffectAnimationPtr, whichEffect.Handle, index, flag);
         }
 
 
@@ -1615,7 +1946,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetEffectPos(JEffect whichEffect, float x, float y, float z)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetEffectPos"), whichEffect.Handle, x, y, z);
+            War3.CallNative(_dzSetEffectPosPtr, whichEffect.Handle, x, y, z);
         }
 
 
@@ -1625,7 +1956,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetEffectVertexColor(JEffect whichEffect, int color)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetEffectVertexColor"), whichEffect.Handle, color);
+            War3.CallNative(_dzSetEffectVertexColorPtr, whichEffect.Handle, color);
         }
 
 
@@ -1635,7 +1966,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetEffectVertexAlpha(JEffect whichEffect, int alpha)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetEffectVertexAlpha"), whichEffect.Handle, alpha);
+            War3.CallNative(_dzSetEffectVertexAlphaPtr, whichEffect.Handle, alpha);
         }
 
 
@@ -1645,7 +1976,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetEffectModel(JEffect whichEffect, string model)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetEffectModel"), whichEffect.Handle, model);
+            War3.CallNative(_dzSetEffectModelPtr, whichEffect.Handle, model);
         }
 
 
@@ -1655,7 +1986,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetEffectTeamColor(JEffect whichHandle, int playerId)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetEffectTeamColor"), whichHandle.Handle, playerId);
+            War3.CallNative(_dzSetEffectTeamColorPtr, whichHandle.Handle, playerId);
         }
 
 
@@ -1665,7 +1996,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetClip(int whichframe, bool enable)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetClip"), whichframe, enable);
+            War3.CallNative(_dzFrameSetClipPtr, whichframe, enable);
         }
 
 
@@ -1675,7 +2006,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzChangeWindowSize(int width, int height)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzChangeWindowSize"), width, height);
+            return War3.CallNative<bool>(_dzChangeWindowSizePtr, width, height);
         }
 
 
@@ -1685,7 +2016,7 @@ namespace War3Frame.Library.Api
 
         public static void DzPlayEffectAnimation(JEffect whichEffect, string anim, string link)
         {
-            War3.CallNative(War3.GetNativeFunction("DzPlayEffectAnimation"), whichEffect.Handle, anim, link);
+            War3.CallNative(_dzPlayEffectAnimationPtr, whichEffect.Handle, anim, link);
         }
 
 
@@ -1695,7 +2026,7 @@ namespace War3Frame.Library.Api
 
         public static void DzBindEffect(JWidget parent, string attachPoint, JEffect whichEffect)
         {
-            War3.CallNative(War3.GetNativeFunction("DzBindEffect"), parent.Handle, attachPoint, whichEffect.Handle);
+            War3.CallNative(_dzBindEffectPtr, parent.Handle, attachPoint, whichEffect.Handle);
         }
 
 
@@ -1705,7 +2036,7 @@ namespace War3Frame.Library.Api
 
         public static void DzUnbindEffect(JEffect whichEffect)
         {
-            War3.CallNative(War3.GetNativeFunction("DzUnbindEffect"), whichEffect.Handle);
+            War3.CallNative(_dzUnbindEffectPtr, whichEffect.Handle);
         }
 
 
@@ -1715,7 +2046,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetWidgetSpriteScale(JWidget whichUnit, float scale)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetWidgetSpriteScale"), whichUnit.Handle, scale);
+            War3.CallNative(_dzSetWidgetSpriteScalePtr, whichUnit.Handle, scale);
         }
 
 
@@ -1725,7 +2056,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetEffectScale(JEffect whichHandle, float scale)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetEffectScale"), whichHandle.Handle, scale);
+            War3.CallNative(_dzSetEffectScalePtr, whichHandle.Handle, scale);
         }
 
 
@@ -1735,7 +2066,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetEffectVertexColor(JEffect whichEffect)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetEffectVertexColor"), whichEffect.Handle);
+            return War3.CallNative<int>(_dzGetEffectVertexColorPtr, whichEffect.Handle);
         }
 
 
@@ -1745,7 +2076,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetEffectVertexAlpha(JEffect whichEffect)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetEffectVertexAlpha"), whichEffect.Handle);
+            return War3.CallNative<int>(_dzGetEffectVertexAlphaPtr, whichEffect.Handle);
         }
 
 
@@ -1755,7 +2086,7 @@ namespace War3Frame.Library.Api
 
         public static JAbility DzGetItemAbility(JItem whichEffect, int index)
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetItemAbility"), whichEffect.Handle, index);
+            var handle = War3.CallNative<int>(_dzGetItemAbilityPtr, whichEffect.Handle, index);
             return new(handle);
         }
 
@@ -1766,7 +2097,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetChildrenCount(int whichframe)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetChildrenCount"), whichframe);
+            return War3.CallNative<int>(_dzFrameGetChildrenCountPtr, whichframe);
         }
 
 
@@ -1776,7 +2107,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetChild(int whichframe, int index)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetChild"), whichframe, index);
+            return War3.CallNative<int>(_dzFrameGetChildPtr, whichframe, index);
         }
 
 
@@ -1786,7 +2117,7 @@ namespace War3Frame.Library.Api
 
         public static void DzUnlockBlpSizeLimit(bool enable)
         {
-            War3.CallNative(War3.GetNativeFunction("DzUnlockBlpSizeLimit"), enable);
+            War3.CallNative(_dzUnlockBlpSizeLimitPtr, enable);
         }
 
 
@@ -1796,7 +2127,7 @@ namespace War3Frame.Library.Api
 
         public static JUnit DzGetActivePatron(JUnit store, JPlayer p)
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetActivePatron"), store.Handle, p.Handle);
+            var handle = War3.CallNative<int>(_dzGetActivePatronPtr, store.Handle, p.Handle);
             return new(handle);
         }
 
@@ -1807,7 +2138,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetLocalSelectUnitCount()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetLocalSelectUnitCount"));
+            return War3.CallNative<int>(_dzGetLocalSelectUnitCountPtr);
         }
 
 
@@ -1817,7 +2148,7 @@ namespace War3Frame.Library.Api
 
         public static JUnit DzGetLocalSelectUnit(int index)
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetLocalSelectUnit"), index);
+            var handle = War3.CallNative<int>(_dzGetLocalSelectUnitPtr, index);
             return new(handle);
         }
 
@@ -1828,7 +2159,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetJassStringTableCount()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetJassStringTableCount"));
+            return War3.CallNative<int>(_dzGetJassStringTableCountPtr);
         }
 
 
@@ -1838,7 +2169,7 @@ namespace War3Frame.Library.Api
 
         public static void DzModelRemoveFromCache(string path)
         {
-            War3.CallNative(War3.GetNativeFunction("DzModelRemoveFromCache"), path);
+            War3.CallNative(_dzModelRemoveFromCachePtr, path);
         }
 
 
@@ -1848,7 +2179,7 @@ namespace War3Frame.Library.Api
 
         public static void DzModelRemoveAllFromCache()
         {
-            War3.CallNative(War3.GetNativeFunction("DzModelRemoveAllFromCache"));
+            War3.CallNative(_dzModelRemoveAllFromCachePtr);
         }
 
 
@@ -1858,7 +2189,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetInfoPanelSelectButton(int index)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetInfoPanelSelectButton"), index);
+            return War3.CallNative<int>(_dzFrameGetInfoPanelSelectButtonPtr, index);
         }
 
 
@@ -1868,7 +2199,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetInfoPanelBuffButton(int index)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetInfoPanelBuffButton"), index);
+            return War3.CallNative<int>(_dzFrameGetInfoPanelBuffButtonPtr, index);
         }
 
 
@@ -1878,7 +2209,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetPeonBar()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetPeonBar"));
+            return War3.CallNative<int>(_dzFrameGetPeonBarPtr);
         }
 
 
@@ -1888,7 +2219,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetCommandBarButtonNumberText(int whichframe)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetCommandBarButtonNumberText"), whichframe);
+            return War3.CallNative<int>(_dzFrameGetCommandBarButtonNumberTextPtr, whichframe);
         }
 
 
@@ -1898,7 +2229,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetCommandBarButtonNumberOverlay(int whichframe)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetCommandBarButtonNumberOverlay"), whichframe);
+            return War3.CallNative<int>(_dzFrameGetCommandBarButtonNumberOverlayPtr, whichframe);
         }
 
 
@@ -1908,7 +2239,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetCommandBarButtonCooldownIndicator(int whichframe)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetCommandBarButtonCooldownIndicator"), whichframe);
+            return War3.CallNative<int>(_dzFrameGetCommandBarButtonCooldownIndicatorPtr, whichframe);
         }
 
 
@@ -1918,7 +2249,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetCommandBarButtonAutoCastIndicator(int whichframe)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetCommandBarButtonAutoCastIndicator"), whichframe);
+            return War3.CallNative<int>(_dzFrameGetCommandBarButtonAutoCastIndicatorPtr, whichframe);
         }
 
 
@@ -1928,7 +2259,7 @@ namespace War3Frame.Library.Api
 
         public static void DzToggleFPS(bool show)
         {
-            War3.CallNative(War3.GetNativeFunction("DzToggleFPS"), show);
+            War3.CallNative(_dzToggleFPSPtr, show);
         }
 
 
@@ -1938,7 +2269,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetFPS()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetFPS"));
+            return War3.CallNative<int>(_dzGetFPSPtr);
         }
 
 
@@ -1948,7 +2279,7 @@ namespace War3Frame.Library.Api
 
         public static float DzFrameWorldToMinimapPosX(float x, float y)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzFrameWorldToMinimapPosX"), x, y);
+            return War3.CallNative<float>(_dzFrameWorldToMinimapPosXPtr, x, y);
         }
 
 
@@ -1958,7 +2289,7 @@ namespace War3Frame.Library.Api
 
         public static float DzFrameWorldToMinimapPosY(float x, float y)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzFrameWorldToMinimapPosY"), x, y);
+            return War3.CallNative<float>(_dzFrameWorldToMinimapPosYPtr, x, y);
         }
 
 
@@ -1968,7 +2299,7 @@ namespace War3Frame.Library.Api
 
         public static void DzWidgetSetMinimapIcon(JUnit whichunit, string path)
         {
-            War3.CallNative(War3.GetNativeFunction("DzWidgetSetMinimapIcon"), whichunit.Handle, path);
+            War3.CallNative(_dzWidgetSetMinimapIconPtr, whichunit.Handle, path);
         }
 
 
@@ -1978,7 +2309,7 @@ namespace War3Frame.Library.Api
 
         public static void DzWidgetSetMinimapIconEnable(JUnit whichunit, bool enable)
         {
-            War3.CallNative(War3.GetNativeFunction("DzWidgetSetMinimapIconEnable"), whichunit.Handle, enable);
+            War3.CallNative(_dzWidgetSetMinimapIconEnablePtr, whichunit.Handle, enable);
         }
 
 
@@ -1988,7 +2319,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetWorldFrameMessage()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetWorldFrameMessage"));
+            return War3.CallNative<int>(_dzFrameGetWorldFrameMessagePtr);
         }
 
 
@@ -1998,7 +2329,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSimpleMessageFrameAddMessage(int whichframe, string text, int color, float duration, bool permanent)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSimpleMessageFrameAddMessage"), whichframe, text, color, duration, permanent);
+            War3.CallNative(_dzSimpleMessageFrameAddMessagePtr, whichframe, text, color, duration, permanent);
         }
 
 
@@ -2008,7 +2339,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSimpleMessageFrameClear(int whichframe)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSimpleMessageFrameClear"), whichframe);
+            War3.CallNative(_dzSimpleMessageFrameClearPtr, whichframe);
         }
 
 
@@ -2018,7 +2349,7 @@ namespace War3Frame.Library.Api
 
         public static float DzConvertScreenPositionX(float x, float y)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzConvertScreenPositionX"), x, y);
+            return War3.CallNative<float>(_dzConvertScreenPositionXPtr, x, y);
         }
 
 
@@ -2028,7 +2359,7 @@ namespace War3Frame.Library.Api
 
         public static float DzConvertScreenPositionY(float x, float y)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzConvertScreenPositionY"), x, y);
+            return War3.CallNative<float>(_dzConvertScreenPositionYPtr, x, y);
         }
 
 
@@ -2038,7 +2369,7 @@ namespace War3Frame.Library.Api
 
         public static void DzRegisterOnBuildLocal(Action func)
         {
-            War3.CallNative(War3.GetNativeFunction("DzRegisterOnBuildLocal"), func);
+            War3.CallNative(_dzRegisterOnBuildLocalPtr, func);
         }
 
 
@@ -2048,7 +2379,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetOnBuildOrderId()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetOnBuildOrderId"));
+            return War3.CallNative<int>(_dzGetOnBuildOrderIdPtr);
         }
 
 
@@ -2058,7 +2389,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetOnBuildOrderType()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetOnBuildOrderType"));
+            return War3.CallNative<int>(_dzGetOnBuildOrderTypePtr);
         }
 
 
@@ -2068,7 +2399,7 @@ namespace War3Frame.Library.Api
 
         public static JWidget DzGetOnBuildAgent()
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetOnBuildAgent"));
+            var handle = War3.CallNative<int>(_dzGetOnBuildAgentPtr);
             return new(handle);
         }
 
@@ -2079,7 +2410,7 @@ namespace War3Frame.Library.Api
 
         public static void DzRegisterOnTargetLocal(Action func)
         {
-            War3.CallNative(War3.GetNativeFunction("DzRegisterOnTargetLocal"), func);
+            War3.CallNative(_dzRegisterOnTargetLocalPtr, func);
         }
 
 
@@ -2089,7 +2420,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetOnTargetAbilId()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetOnTargetAbilId"));
+            return War3.CallNative<int>(_dzGetOnTargetAbilIdPtr);
         }
 
 
@@ -2099,7 +2430,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetOnTargetOrderId()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetOnTargetOrderId"));
+            return War3.CallNative<int>(_dzGetOnTargetOrderIdPtr);
         }
 
 
@@ -2109,7 +2440,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetOnTargetOrderType()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetOnTargetOrderType"));
+            return War3.CallNative<int>(_dzGetOnTargetOrderTypePtr);
         }
 
 
@@ -2119,7 +2450,7 @@ namespace War3Frame.Library.Api
 
         public static JWidget DzGetOnTargetAgent()
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetOnTargetAgent"));
+            var handle = War3.CallNative<int>(_dzGetOnTargetAgentPtr);
             return new(handle);
         }
 
@@ -2130,7 +2461,7 @@ namespace War3Frame.Library.Api
 
         public static JWidget DzGetOnTargetInstantTarget()
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetOnTargetInstantTarget"));
+            var handle = War3.CallNative<int>(_dzGetOnTargetInstantTargetPtr);
             return new(handle);
         }
 
@@ -2141,7 +2472,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzOpenQQGroupUrl(string url)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzOpenQQGroupUrl"), url);
+            return War3.CallNative<bool>(_dzOpenQQGroupUrlPtr, url);
         }
 
 
@@ -2151,7 +2482,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameEnableClipRect(bool enable)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameEnableClipRect"), enable);
+            War3.CallNative(_dzFrameEnableClipRectPtr, enable);
         }
 
 
@@ -2161,7 +2492,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetUnitName(JUnit whichUnit, string name)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetUnitName"), whichUnit.Handle, name);
+            War3.CallNative(_dzSetUnitNamePtr, whichUnit.Handle, name);
         }
 
 
@@ -2171,7 +2502,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetUnitPortrait(JUnit whichUnit, string modelFile)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetUnitPortrait"), whichUnit.Handle, modelFile);
+            War3.CallNative(_dzSetUnitPortraitPtr, whichUnit.Handle, modelFile);
         }
 
 
@@ -2181,7 +2512,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetUnitDescription(JUnit whichUnit, string value)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetUnitDescription"), whichUnit.Handle, value);
+            War3.CallNative(_dzSetUnitDescriptionPtr, whichUnit.Handle, value);
         }
 
 
@@ -2191,7 +2522,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetUnitMissileArc(JUnit whichUnit, float arc)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetUnitMissileArc"), whichUnit.Handle, arc);
+            War3.CallNative(_dzSetUnitMissileArcPtr, whichUnit.Handle, arc);
         }
 
 
@@ -2201,7 +2532,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetUnitMissileModel(JUnit whichUnit, string modelFile)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetUnitMissileModel"), whichUnit.Handle, modelFile);
+            War3.CallNative(_dzSetUnitMissileModelPtr, whichUnit.Handle, modelFile);
         }
 
 
@@ -2211,7 +2542,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetUnitProperName(JUnit whichUnit, string name)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetUnitProperName"), whichUnit.Handle, name);
+            War3.CallNative(_dzSetUnitProperNamePtr, whichUnit.Handle, name);
         }
 
 
@@ -2221,7 +2552,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetUnitMissileHoming(JUnit whichUnit, bool enable)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetUnitMissileHoming"), whichUnit.Handle, enable);
+            War3.CallNative(_dzSetUnitMissileHomingPtr, whichUnit.Handle, enable);
         }
 
 
@@ -2231,7 +2562,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetUnitMissileSpeed(JUnit whichUnit, float speed)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetUnitMissileSpeed"), whichUnit.Handle, speed);
+            War3.CallNative(_dzSetUnitMissileSpeedPtr, whichUnit.Handle, speed);
         }
 
 
@@ -2241,7 +2572,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetEffectVisible(JEffect whichHandle, bool enable)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetEffectVisible"), whichHandle.Handle, enable);
+            War3.CallNative(_dzSetEffectVisiblePtr, whichHandle.Handle, enable);
         }
 
 
@@ -2251,7 +2582,7 @@ namespace War3Frame.Library.Api
 
         public static void DzReviveUnit(JUnit whichUnit, JPlayer whichPlayer, float hp, float mp, float x, float y)
         {
-            War3.CallNative(War3.GetNativeFunction("DzReviveUnit"), whichUnit.Handle, whichPlayer.Handle, hp, mp, x, y);
+            War3.CallNative(_dzReviveUnitPtr, whichUnit.Handle, whichPlayer.Handle, hp, mp, x, y);
         }
 
 
@@ -2261,7 +2592,7 @@ namespace War3Frame.Library.Api
 
         public static JAbility DzGetAttackAbility(JUnit whichUnit)
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetAttackAbility"), whichUnit.Handle);
+            var handle = War3.CallNative<int>(_dzGetAttackAbilityPtr, whichUnit.Handle);
             return new(handle);
         }
 
@@ -2272,17 +2603,17 @@ namespace War3Frame.Library.Api
 
         public static void DzAttackAbilityEndCooldown(JAbility whichHandle)
         {
-            War3.CallNative(War3.GetNativeFunction("DzAttackAbilityEndCooldown"), whichHandle.Handle);
+            War3.CallNative(_dzAttackAbilityEndCooldownPtr, whichHandle.Handle);
         }
 
         public static bool EXSetUnitArrayString(int uid, int id, int n, string name)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("EXSetUnitArrayString"), uid, id, n, name);
+            return War3.CallNative<bool>(_eXSetUnitArrayStringPtr, uid, id, n, name);
         }
 
         public static bool EXSetUnitInteger(int uid, int id, int n)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("EXSetUnitInteger"), uid, id, n);
+            return War3.CallNative<bool>(_eXSetUnitIntegerPtr, uid, id, n);
         }
 
 
@@ -2354,7 +2685,7 @@ namespace War3Frame.Library.Api
 
         public static int DzDoodadCreate(int id, int var, float x, float y, float z, float rotate, float scale)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzDoodadCreate"), id, var, x, y, z, rotate, scale);
+            return War3.CallNative<int>(_dzDoodadCreatePtr, id, var, x, y, z, rotate, scale);
         }
 
 
@@ -2364,7 +2695,7 @@ namespace War3Frame.Library.Api
 
         public static int DzDoodadGetTypeId(int doodad)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzDoodadGetTypeId"), doodad);
+            return War3.CallNative<int>(_dzDoodadGetTypeIdPtr, doodad);
         }
 
 
@@ -2374,7 +2705,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDoodadSetModel(int doodad, string modelFile)
         {
-            War3.CallNative(War3.GetNativeFunction("DzDoodadSetModel"), doodad, modelFile);
+            War3.CallNative(_dzDoodadSetModelPtr, doodad, modelFile);
         }
 
 
@@ -2384,7 +2715,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDoodadSetTeamColor(int doodad, int color)
         {
-            War3.CallNative(War3.GetNativeFunction("DzDoodadSetTeamColor"), doodad, color);
+            War3.CallNative(_dzDoodadSetTeamColorPtr, doodad, color);
         }
 
 
@@ -2394,7 +2725,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDoodadSetColor(int doodad, int color)
         {
-            War3.CallNative(War3.GetNativeFunction("DzDoodadSetColor"), doodad, color);
+            War3.CallNative(_dzDoodadSetColorPtr, doodad, color);
         }
 
 
@@ -2404,7 +2735,7 @@ namespace War3Frame.Library.Api
 
         public static float DzDoodadGetX(int doodad)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzDoodadGetX"), doodad);
+            return War3.CallNative<float>(_dzDoodadGetXPtr, doodad);
         }
 
 
@@ -2414,7 +2745,7 @@ namespace War3Frame.Library.Api
 
         public static float DzDoodadGetY(int doodad)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzDoodadGetY"), doodad);
+            return War3.CallNative<float>(_dzDoodadGetYPtr, doodad);
         }
 
 
@@ -2424,7 +2755,7 @@ namespace War3Frame.Library.Api
 
         public static float DzDoodadGetZ(int doodad)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzDoodadGetZ"), doodad);
+            return War3.CallNative<float>(_dzDoodadGetZPtr, doodad);
         }
 
 
@@ -2434,7 +2765,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDoodadSetPosition(int doodad, float x, float y, float z)
         {
-            War3.CallNative(War3.GetNativeFunction("DzDoodadSetPosition"), doodad, x, y, z);
+            War3.CallNative(_dzDoodadSetPositionPtr, doodad, x, y, z);
         }
 
 
@@ -2444,7 +2775,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDoodadSetOrientMatrixRotate(int doodad, float angle, float axisX, float axisY, float axisZ)
         {
-            War3.CallNative(War3.GetNativeFunction("DzDoodadSetOrientMatrixRotate"), doodad, angle, axisX, axisY, axisZ);
+            War3.CallNative(_dzDoodadSetOrientMatrixRotatePtr, doodad, angle, axisX, axisY, axisZ);
         }
 
 
@@ -2454,7 +2785,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDoodadSetOrientMatrixScale(int doodad, float x, float y, float z)
         {
-            War3.CallNative(War3.GetNativeFunction("DzDoodadSetOrientMatrixScale"), doodad, x, y, z);
+            War3.CallNative(_dzDoodadSetOrientMatrixScalePtr, doodad, x, y, z);
         }
 
 
@@ -2464,7 +2795,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDoodadSetOrientMatrixResize(int doodad)
         {
-            War3.CallNative(War3.GetNativeFunction("DzDoodadSetOrientMatrixResize"), doodad);
+            War3.CallNative(_dzDoodadSetOrientMatrixResizePtr, doodad);
         }
 
 
@@ -2474,7 +2805,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDoodadSetVisible(int doodad, bool enable)
         {
-            War3.CallNative(War3.GetNativeFunction("DzDoodadSetVisible"), doodad, enable);
+            War3.CallNative(_dzDoodadSetVisiblePtr, doodad, enable);
         }
 
 
@@ -2484,7 +2815,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDoodadSetAnimation(int doodad, string animName, bool animRandom)
         {
-            War3.CallNative(War3.GetNativeFunction("DzDoodadSetAnimation"), doodad, animName, animRandom);
+            War3.CallNative(_dzDoodadSetAnimationPtr, doodad, animName, animRandom);
         }
 
 
@@ -2494,7 +2825,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDoodadSetTimeScale(int doodad, float scale)
         {
-            War3.CallNative(War3.GetNativeFunction("DzDoodadSetTimeScale"), doodad, scale);
+            War3.CallNative(_dzDoodadSetTimeScalePtr, doodad, scale);
         }
 
 
@@ -2504,7 +2835,7 @@ namespace War3Frame.Library.Api
 
         public static float DzDoodadGetTimeScale(int doodad)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzDoodadGetTimeScale"), doodad);
+            return War3.CallNative<float>(_dzDoodadGetTimeScalePtr, doodad);
         }
 
 
@@ -2514,7 +2845,7 @@ namespace War3Frame.Library.Api
 
         public static int DzDoodadGetCurrentAnimationIndex(int doodad)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzDoodadGetCurrentAnimationIndex"), doodad);
+            return War3.CallNative<int>(_dzDoodadGetCurrentAnimationIndexPtr, doodad);
         }
 
 
@@ -2524,7 +2855,7 @@ namespace War3Frame.Library.Api
 
         public static int DzDoodadGetAnimationCount(int doodad)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzDoodadGetAnimationCount"), doodad);
+            return War3.CallNative<int>(_dzDoodadGetAnimationCountPtr, doodad);
         }
 
 
@@ -2534,7 +2865,7 @@ namespace War3Frame.Library.Api
 
         public static string DzDoodadGetAnimationName(int doodad, int index)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzDoodadGetAnimationName"), doodad, index);
+            return War3.CallNative<string>(_dzDoodadGetAnimationNamePtr, doodad, index);
         }
 
 
@@ -2544,7 +2875,7 @@ namespace War3Frame.Library.Api
 
         public static int DzDoodadGetAnimationTime(int doodad, int index)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzDoodadGetAnimationTime"), doodad, index);
+            return War3.CallNative<int>(_dzDoodadGetAnimationTimePtr, doodad, index);
         }
 
 
@@ -2554,7 +2885,7 @@ namespace War3Frame.Library.Api
 
         public static void DzUnlockOpCodeLimit(bool enable)
         {
-            War3.CallNative(War3.GetNativeFunction("DzUnlockOpCodeLimit"), enable);
+            War3.CallNative(_dzUnlockOpCodeLimitPtr, enable);
         }
 
 
@@ -2564,7 +2895,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetClipboard(string content)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetClipboard"), content);
+            return War3.CallNative<bool>(_dzSetClipboardPtr, content);
         }
 
 
@@ -2574,7 +2905,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDoodadRemove(int doodad)
         {
-            War3.CallNative(War3.GetNativeFunction("DzDoodadRemove"), doodad);
+            War3.CallNative(_dzDoodadRemovePtr, doodad);
         }
 
 
@@ -2584,7 +2915,7 @@ namespace War3Frame.Library.Api
 
         public static void DzRemovePlayerTechResearched(JPlayer whichPlayer, int techid, int removelevels)
         {
-            War3.CallNative(War3.GetNativeFunction("DzRemovePlayerTechResearched"), whichPlayer.Handle, techid, removelevels);
+            War3.CallNative(_dzRemovePlayerTechResearchedPtr, whichPlayer.Handle, techid, removelevels);
         }
 
 
@@ -2594,7 +2925,7 @@ namespace War3Frame.Library.Api
 
         public static JAbility DzUnitFindAbility(JUnit whichUnit, int abilcode)
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzUnitFindAbility"), whichUnit.Handle, abilcode);
+            var handle = War3.CallNative<int>(_dzUnitFindAbilityPtr, whichUnit.Handle, abilcode);
             return new(handle);
         }
 
@@ -2605,7 +2936,7 @@ namespace War3Frame.Library.Api
 
         public static void DzAbilitySetStringData(JAbility whichAbility, string key, string value)
         {
-            War3.CallNative(War3.GetNativeFunction("DzAbilitySetStringData"), whichAbility.Handle, key, value);
+            War3.CallNative(_dzAbilitySetStringDataPtr, whichAbility.Handle, key, value);
         }
 
 
@@ -2615,7 +2946,7 @@ namespace War3Frame.Library.Api
 
         public static void DzAbilitySetEnable(JAbility whichAbility, bool enable, bool hideUI)
         {
-            War3.CallNative(War3.GetNativeFunction("DzAbilitySetEnable"), whichAbility.Handle, enable, hideUI);
+            War3.CallNative(_dzAbilitySetEnablePtr, whichAbility.Handle, enable, hideUI);
         }
 
 
@@ -2625,7 +2956,7 @@ namespace War3Frame.Library.Api
 
         public static void DzUnitSetMoveType(JUnit whichUnit, string moveType)
         {
-            War3.CallNative(War3.GetNativeFunction("DzUnitSetMoveType"), whichUnit.Handle, moveType);
+            War3.CallNative(_dzUnitSetMoveTypePtr, whichUnit.Handle, moveType);
         }
 
 
@@ -2635,7 +2966,7 @@ namespace War3Frame.Library.Api
 
         public static float DzFrameGetWidth(int frame)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzFrameGetWidth"), frame);
+            return War3.CallNative<float>(_dzFrameGetWidthPtr, frame);
         }
 
 
@@ -2645,17 +2976,17 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetAnimateByIndex(int frame, int index, int flag)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetAnimateByIndex"), frame, index, flag);
+            War3.CallNative(_dzFrameSetAnimateByIndexPtr, frame, index, flag);
         }
 
         public static void DzSetUnitDataCacheInteger(int uid, int id, int index, int v)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetUnitDataCacheInteger"), uid, id, index, v);
+            War3.CallNative(_dzSetUnitDataCacheIntegerPtr, uid, id, index, v);
         }
 
         public static void DzUnitUIAddLevelArrayInteger(int uid, int id, int lv, int v)
         {
-            War3.CallNative(War3.GetNativeFunction("DzUnitUIAddLevelArrayInteger"), uid, id, lv, v);
+            War3.CallNative(_dzUnitUIAddLevelArrayIntegerPtr, uid, id, lv, v);
         }
 
 
@@ -2775,7 +3106,7 @@ namespace War3Frame.Library.Api
 
         public static void DzItemSetModel(JItem whichItem, string file)
         {
-            War3.CallNative(War3.GetNativeFunction("DzItemSetModel"), whichItem.Handle, file);
+            War3.CallNative(_dzItemSetModelPtr, whichItem.Handle, file);
         }
 
 
@@ -2785,7 +3116,7 @@ namespace War3Frame.Library.Api
 
         public static void DzItemSetVertexColor(JItem whichItem, int color)
         {
-            War3.CallNative(War3.GetNativeFunction("DzItemSetVertexColor"), whichItem.Handle, color);
+            War3.CallNative(_dzItemSetVertexColorPtr, whichItem.Handle, color);
         }
 
 
@@ -2795,7 +3126,7 @@ namespace War3Frame.Library.Api
 
         public static void DzItemSetAlpha(JItem whichItem, int color)
         {
-            War3.CallNative(War3.GetNativeFunction("DzItemSetAlpha"), whichItem.Handle, color);
+            War3.CallNative(_dzItemSetAlphaPtr, whichItem.Handle, color);
         }
 
 
@@ -2805,7 +3136,7 @@ namespace War3Frame.Library.Api
 
         public static void DzItemSetPortrait(JItem whichItem, string modelPath)
         {
-            War3.CallNative(War3.GetNativeFunction("DzItemSetPortrait"), whichItem.Handle, modelPath);
+            War3.CallNative(_dzItemSetPortraitPtr, whichItem.Handle, modelPath);
         }
 
 
@@ -2815,7 +3146,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameHookHpBar(Action func)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameHookHpBar"), func);
+            War3.CallNative(_dzFrameHookHpBarPtr, func);
         }
 
 
@@ -2825,7 +3156,7 @@ namespace War3Frame.Library.Api
 
         public static JUnit DzFrameGetTriggerHpBarUnit()
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetTriggerHpBarUnit"));
+            var handle = War3.CallNative<int>(_dzFrameGetTriggerHpBarUnitPtr);
             return new(handle);
         }
 
@@ -2836,7 +3167,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetTriggerHpBar()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetTriggerHpBar"));
+            return War3.CallNative<int>(_dzFrameGetTriggerHpBarPtr);
         }
 
 
@@ -2846,7 +3177,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetUnitHpBar(JUnit whichUnit)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetUnitHpBar"), whichUnit.Handle);
+            return War3.CallNative<int>(_dzFrameGetUnitHpBarPtr, whichUnit.Handle);
         }
 
 
@@ -2856,7 +3187,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetCursorFrame()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetCursorFrame"));
+            return War3.CallNative<int>(_dzGetCursorFramePtr);
         }
 
 
@@ -2866,7 +3197,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzFrameGetPointValid(int frame, int anchor)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzFrameGetPointValid"), frame, anchor);
+            return War3.CallNative<bool>(_dzFrameGetPointValidPtr, frame, anchor);
         }
 
 
@@ -2876,7 +3207,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetPointRelative(int frame, int anchor)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetPointRelative"), frame, anchor);
+            return War3.CallNative<int>(_dzFrameGetPointRelativePtr, frame, anchor);
         }
 
 
@@ -2886,7 +3217,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetPointRelativePoint(int frame, int anchor)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetPointRelativePoint"), frame, anchor);
+            return War3.CallNative<int>(_dzFrameGetPointRelativePointPtr, frame, anchor);
         }
 
 
@@ -2896,7 +3227,7 @@ namespace War3Frame.Library.Api
 
         public static float DzFrameGetPointX(int frame, int anchor)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzFrameGetPointX"), frame, anchor);
+            return War3.CallNative<float>(_dzFrameGetPointXPtr, frame, anchor);
         }
 
 
@@ -2906,7 +3237,7 @@ namespace War3Frame.Library.Api
 
         public static float DzFrameGetPointY(int frame, int anchor)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzFrameGetPointY"), frame, anchor);
+            return War3.CallNative<float>(_dzFrameGetPointYPtr, frame, anchor);
         }
         /*  
               public static bool DzIsLeapYear(int year)
@@ -3070,7 +3401,7 @@ namespace War3Frame.Library.Api
 
         public static void DzWriteLog(string msg)
         {
-            War3.CallNative(War3.GetNativeFunction("DzWriteLog"), msg);
+            War3.CallNative(_dzWriteLogPtr, msg);
         }
 
 
@@ -3080,7 +3411,7 @@ namespace War3Frame.Library.Api
 
         public static string DzTextTagGetFont()
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzTextTagGetFont"));
+            return War3.CallNative<string>(_dzTextTagGetFontPtr);
         }
 
 
@@ -3090,7 +3421,7 @@ namespace War3Frame.Library.Api
 
         public static void DzTextTagSetFont(string fileName)
         {
-            War3.CallNative(War3.GetNativeFunction("DzTextTagSetFont"), fileName);
+            War3.CallNative(_dzTextTagSetFontPtr, fileName);
         }
 
 
@@ -3100,7 +3431,7 @@ namespace War3Frame.Library.Api
 
         public static void DzTextTagSetStartAlpha(JTextTag t, int alpha)
         {
-            War3.CallNative(War3.GetNativeFunction("DzTextTagSetStartAlpha"), t.Handle, alpha);
+            War3.CallNative(_dzTextTagSetStartAlphaPtr, t.Handle, alpha);
         }
 
 
@@ -3110,7 +3441,7 @@ namespace War3Frame.Library.Api
 
         public static int DzTextTagGetShadowColor(JTextTag t)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzTextTagGetShadowColor"), t.Handle);
+            return War3.CallNative<int>(_dzTextTagGetShadowColorPtr, t.Handle);
         }
 
 
@@ -3120,7 +3451,7 @@ namespace War3Frame.Library.Api
 
         public static void DzTextTagSetShadowColor(JTextTag t, int color)
         {
-            War3.CallNative(War3.GetNativeFunction("DzTextTagSetShadowColor"), t.Handle, color);
+            War3.CallNative(_dzTextTagSetShadowColorPtr, t.Handle, color);
         }
 
 
@@ -3130,7 +3461,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGroupGetCount(JGroup g)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGroupGetCount"), g.Handle);
+            return War3.CallNative<int>(_dzGroupGetCountPtr, g.Handle);
         }
 
 
@@ -3140,7 +3471,7 @@ namespace War3Frame.Library.Api
 
         public static JUnit DzGroupGetUnitAt(JGroup g, int index)
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGroupGetUnitAt"), g.Handle, index);
+            var handle = War3.CallNative<int>(_dzGroupGetUnitAtPtr, g.Handle, index);
             return new(handle);
         }
 
@@ -3151,7 +3482,7 @@ namespace War3Frame.Library.Api
 
         public static JUnit DzUnitCreateIllusion(JPlayer p, int unitId, float x, float y, float face)
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzUnitCreateIllusion"), p.Handle, unitId, x, y, face);
+            var handle = War3.CallNative<int>(_dzUnitCreateIllusionPtr, p.Handle, unitId, x, y, face);
             return new(handle);
         }
 
@@ -3162,7 +3493,7 @@ namespace War3Frame.Library.Api
 
         public static JUnit DzUnitCreateIllusionFromUnit(JUnit u)
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzUnitCreateIllusionFromUnit"), u.Handle);
+            var handle = War3.CallNative<int>(_dzUnitCreateIllusionFromUnitPtr, u.Handle);
             return new(handle);
         }
 
@@ -3173,7 +3504,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzStringContains(string s, string whichString, bool caseSensitive)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzStringContains"), s, whichString, caseSensitive);
+            return War3.CallNative<bool>(_dzStringContainsPtr, s, whichString, caseSensitive);
         }
 
 
@@ -3183,7 +3514,7 @@ namespace War3Frame.Library.Api
 
         public static int DzStringFind(string s, string whichString, int off, bool caseSensitive)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzStringFind"), s, whichString, off, caseSensitive);
+            return War3.CallNative<int>(_dzStringFindPtr, s, whichString, off, caseSensitive);
         }
 
 
@@ -3193,7 +3524,7 @@ namespace War3Frame.Library.Api
 
         public static int DzStringFindFirstOf(string s, string whichString, int off, bool caseSensitive)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzStringFindFirstOf"), s, whichString, off, caseSensitive);
+            return War3.CallNative<int>(_dzStringFindFirstOfPtr, s, whichString, off, caseSensitive);
         }
 
 
@@ -3203,7 +3534,7 @@ namespace War3Frame.Library.Api
 
         public static int DzStringFindFirstNotOf(string s, string whichString, int off, bool caseSensitive)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzStringFindFirstNotOf"), s, whichString, off, caseSensitive);
+            return War3.CallNative<int>(_dzStringFindFirstNotOfPtr, s, whichString, off, caseSensitive);
         }
 
 
@@ -3213,7 +3544,7 @@ namespace War3Frame.Library.Api
 
         public static int DzStringFindLastOf(string s, string whichString, int off, bool caseSensitive)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzStringFindLastOf"), s, whichString, off, caseSensitive);
+            return War3.CallNative<int>(_dzStringFindLastOfPtr, s, whichString, off, caseSensitive);
         }
 
 
@@ -3223,7 +3554,7 @@ namespace War3Frame.Library.Api
 
         public static int DzStringFindLastNotOf(string s, string whichString, int off, bool caseSensitive)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzStringFindLastNotOf"), s, whichString, off, caseSensitive);
+            return War3.CallNative<int>(_dzStringFindLastNotOfPtr, s, whichString, off, caseSensitive);
         }
 
 
@@ -3233,7 +3564,7 @@ namespace War3Frame.Library.Api
 
         public static string DzStringTrimLeft(string s)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzStringTrimLeft"), s);
+            return War3.CallNative<string>(_dzStringTrimLeftPtr, s);
         }
 
 
@@ -3243,7 +3574,7 @@ namespace War3Frame.Library.Api
 
         public static string DzStringTrimRight(string s)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzStringTrimRight"), s);
+            return War3.CallNative<string>(_dzStringTrimRightPtr, s);
         }
 
 
@@ -3253,7 +3584,7 @@ namespace War3Frame.Library.Api
 
         public static string DzStringTrim(string s)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzStringTrim"), s);
+            return War3.CallNative<string>(_dzStringTrimPtr, s);
         }
 
 
@@ -3263,7 +3594,7 @@ namespace War3Frame.Library.Api
 
         public static string DzStringReverse(string s)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzStringReverse"), s);
+            return War3.CallNative<string>(_dzStringReversePtr, s);
         }
 
 
@@ -3273,7 +3604,7 @@ namespace War3Frame.Library.Api
 
         public static string DzStringReplace(string s, string whichString, string replaceWith, bool caseSensitive)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzStringReplace"), s, whichString, replaceWith, caseSensitive);
+            return War3.CallNative<string>(_dzStringReplacePtr, s, whichString, replaceWith, caseSensitive);
         }
 
 
@@ -3283,7 +3614,7 @@ namespace War3Frame.Library.Api
 
         public static string DzStringInsert(string s, int whichPosition, string whichString)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzStringInsert"), s, whichPosition, whichString);
+            return War3.CallNative<string>(_dzStringInsertPtr, s, whichPosition, whichString);
         }
 
 
@@ -3293,7 +3624,7 @@ namespace War3Frame.Library.Api
 
         public static int DzBitGet(int i, int byteIndex)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzBitGet"), i, byteIndex);
+            return War3.CallNative<int>(_dzBitGetPtr, i, byteIndex);
         }
 
 
@@ -3303,7 +3634,7 @@ namespace War3Frame.Library.Api
 
         public static int DzBitSet(int i, int byteIndex, int byteValue)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzBitSet"), i, byteIndex, byteValue);
+            return War3.CallNative<int>(_dzBitSetPtr, i, byteIndex, byteValue);
         }
 
 
@@ -3313,7 +3644,7 @@ namespace War3Frame.Library.Api
 
         public static int DzBitGetByte(int i, int byteIndex)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzBitGetByte"), i, byteIndex);
+            return War3.CallNative<int>(_dzBitGetBytePtr, i, byteIndex);
         }
 
 
@@ -3323,7 +3654,7 @@ namespace War3Frame.Library.Api
 
         public static int DzBitSetByte(int i, int byteIndex, int byteValue)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzBitSetByte"), i, byteIndex, byteValue);
+            return War3.CallNative<int>(_dzBitSetBytePtr, i, byteIndex, byteValue);
         }
 
 
@@ -3333,7 +3664,7 @@ namespace War3Frame.Library.Api
 
         public static int DzBitNot(int i)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzBitNot"), i);
+            return War3.CallNative<int>(_dzBitNotPtr, i);
         }
 
 
@@ -3343,7 +3674,7 @@ namespace War3Frame.Library.Api
 
         public static int DzBitAnd(int a, int b)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzBitAnd"), a, b);
+            return War3.CallNative<int>(_dzBitAndPtr, a, b);
         }
 
 
@@ -3353,7 +3684,7 @@ namespace War3Frame.Library.Api
 
         public static int DzBitOr(int a, int b)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzBitOr"), a, b);
+            return War3.CallNative<int>(_dzBitOrPtr, a, b);
         }
 
 
@@ -3363,7 +3694,7 @@ namespace War3Frame.Library.Api
 
         public static int DzBitXor(int a, int b)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzBitXor"), a, b);
+            return War3.CallNative<int>(_dzBitXorPtr, a, b);
         }
 
 
@@ -3373,7 +3704,7 @@ namespace War3Frame.Library.Api
 
         public static int DzBitShiftLeft(int i, int bitsToShift)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzBitShiftLeft"), i, bitsToShift);
+            return War3.CallNative<int>(_dzBitShiftLeftPtr, i, bitsToShift);
         }
 
 
@@ -3383,7 +3714,7 @@ namespace War3Frame.Library.Api
 
         public static int DzBitShiftRight(int i, int bitsToShift)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzBitShiftRight"), i, bitsToShift);
+            return War3.CallNative<int>(_dzBitShiftRightPtr, i, bitsToShift);
         }
 
 
@@ -3393,7 +3724,7 @@ namespace War3Frame.Library.Api
 
         public static int DzBitToInt(int b1, int b2, int b3, int b4)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzBitToInt"), b1, b2, b3, b4);
+            return War3.CallNative<int>(_dzBitToIntPtr, b1, b2, b3, b4);
         }
 
 
@@ -3403,7 +3734,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzQueueGroupImmediateOrderById(JGroup whichGroup, int order)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzQueueGroupImmediateOrderById"), whichGroup.Handle, order);
+            return War3.CallNative<bool>(_dzQueueGroupImmediateOrderByIdPtr, whichGroup.Handle, order);
         }
 
 
@@ -3413,12 +3744,12 @@ namespace War3Frame.Library.Api
 
         public static bool DzQueueGroupPointOrderById(JGroup whichGroup, int order, float x, float y)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzQueueGroupPointOrderById"), whichGroup.Handle, order, x, y);
+            return War3.CallNative<bool>(_dzQueueGroupPointOrderByIdPtr, whichGroup.Handle, order, x, y);
         }
 
         public static bool DzQueueGroupTargetOrderById(JGroup whichGroup, int order, JWidget targetWidget)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzQueueGroupTargetOrderById"), whichGroup.Handle, order, targetWidget.Handle);
+            return War3.CallNative<bool>(_dzQueueGroupTargetOrderByIdPtr, whichGroup.Handle, order, targetWidget.Handle);
         }
 
 
@@ -3428,7 +3759,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzQueueIssueImmediateOrderById(JUnit whichUnit, int order)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzQueueIssueImmediateOrderById"), whichUnit.Handle, order);
+            return War3.CallNative<bool>(_dzQueueIssueImmediateOrderByIdPtr, whichUnit.Handle, order);
         }
 
 
@@ -3438,22 +3769,22 @@ namespace War3Frame.Library.Api
 
         public static bool DzQueueIssuePointOrderById(JUnit whichUnit, int order, float x, float y)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzQueueIssuePointOrderById"), whichUnit.Handle, order, x, y);
+            return War3.CallNative<bool>(_dzQueueIssuePointOrderByIdPtr, whichUnit.Handle, order, x, y);
         }
 
         public static bool DzQueueIssueTargetOrderById(JUnit whichUnit, int order, JWidget targetWidget)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzQueueIssueTargetOrderById"), whichUnit.Handle, order, targetWidget.Handle);
+            return War3.CallNative<bool>(_dzQueueIssueTargetOrderByIdPtr, whichUnit.Handle, order, targetWidget.Handle);
         }
 
         public static bool DzQueueIssueInstantPointOrderById(JUnit whichUnit, int order, float x, float y, JWidget instantTargetWidget)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzQueueIssueInstantPointOrderById"), whichUnit.Handle, order, x, y, instantTargetWidget.Handle);
+            return War3.CallNative<bool>(_dzQueueIssueInstantPointOrderByIdPtr, whichUnit.Handle, order, x, y, instantTargetWidget.Handle);
         }
 
         public static bool DzQueueIssueInstantTargetOrderById(JUnit whichUnit, int order, JWidget targetWidget, JWidget instantTargetWidget)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzQueueIssueInstantTargetOrderById"), whichUnit.Handle, order, targetWidget.Handle, instantTargetWidget.Handle);
+            return War3.CallNative<bool>(_dzQueueIssueInstantTargetOrderByIdPtr, whichUnit.Handle, order, targetWidget.Handle, instantTargetWidget.Handle);
         }
 
 
@@ -3463,7 +3794,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzQueueIssueBuildOrderById(JUnit whichPeon, int unitId, float x, float y)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzQueueIssueBuildOrderById"), whichPeon.Handle, unitId, x, y);
+            return War3.CallNative<bool>(_dzQueueIssueBuildOrderByIdPtr, whichPeon.Handle, unitId, x, y);
         }
 
 
@@ -3473,7 +3804,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzQueueIssueNeutralImmediateOrderById(JPlayer forWhichPlayer, JUnit neutralStructure, int unitId)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzQueueIssueNeutralImmediateOrderById"), forWhichPlayer.Handle, neutralStructure.Handle, unitId);
+            return War3.CallNative<bool>(_dzQueueIssueNeutralImmediateOrderByIdPtr, forWhichPlayer.Handle, neutralStructure.Handle, unitId);
         }
 
 
@@ -3483,12 +3814,12 @@ namespace War3Frame.Library.Api
 
         public static bool DzQueueIssueNeutralPointOrderById(JPlayer forWhichPlayer, JUnit neutralStructure, int unitId, float x, float y)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzQueueIssueNeutralPointOrderById"), forWhichPlayer.Handle, neutralStructure.Handle, unitId, x, y);
+            return War3.CallNative<bool>(_dzQueueIssueNeutralPointOrderByIdPtr, forWhichPlayer.Handle, neutralStructure.Handle, unitId, x, y);
         }
 
         public static bool DzQueueIssueNeutralTargetOrderById(JPlayer forWhichPlayer, JUnit neutralStructure, int unitId, JWidget target)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzQueueIssueNeutralTargetOrderById"), forWhichPlayer.Handle, neutralStructure.Handle, unitId, target.Handle);
+            return War3.CallNative<bool>(_dzQueueIssueNeutralTargetOrderByIdPtr, forWhichPlayer.Handle, neutralStructure.Handle, unitId, target.Handle);
         }
 
 
@@ -3498,7 +3829,7 @@ namespace War3Frame.Library.Api
 
         public static int DzUnitOrdersCount(JUnit u)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzUnitOrdersCount"), u.Handle);
+            return War3.CallNative<int>(_dzUnitOrdersCountPtr, u.Handle);
         }
 
 
@@ -3508,7 +3839,7 @@ namespace War3Frame.Library.Api
 
         public static void DzUnitOrdersClear(JUnit u, bool onlyQueued)
         {
-            War3.CallNative(War3.GetNativeFunction("DzUnitOrdersClear"), u.Handle, onlyQueued);
+            War3.CallNative(_dzUnitOrdersClearPtr, u.Handle, onlyQueued);
         }
 
 
@@ -3518,7 +3849,7 @@ namespace War3Frame.Library.Api
 
         public static void DzUnitOrdersExec(JUnit u)
         {
-            War3.CallNative(War3.GetNativeFunction("DzUnitOrdersExec"), u.Handle);
+            War3.CallNative(_dzUnitOrdersExecPtr, u.Handle);
         }
 
 
@@ -3528,7 +3859,7 @@ namespace War3Frame.Library.Api
 
         public static void DzUnitOrdersForceStop(JUnit u, bool clearQueue)
         {
-            War3.CallNative(War3.GetNativeFunction("DzUnitOrdersForceStop"), u.Handle, clearQueue);
+            War3.CallNative(_dzUnitOrdersForceStopPtr, u.Handle, clearQueue);
         }
 
 
@@ -3538,7 +3869,7 @@ namespace War3Frame.Library.Api
 
         public static void DzUnitOrdersReverse(JUnit u)
         {
-            War3.CallNative(War3.GetNativeFunction("DzUnitOrdersReverse"), u.Handle);
+            War3.CallNative(_dzUnitOrdersReversePtr, u.Handle);
         }
 
 
@@ -3548,7 +3879,7 @@ namespace War3Frame.Library.Api
 
         public static int DzXlsxOpen(string filePath)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzXlsxOpen"), filePath);
+            return War3.CallNative<int>(_dzXlsxOpenPtr, filePath);
         }
 
 
@@ -3558,7 +3889,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzXlsxClose(int docHandle)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzXlsxClose"), docHandle);
+            return War3.CallNative<bool>(_dzXlsxClosePtr, docHandle);
         }
 
 
@@ -3568,7 +3899,7 @@ namespace War3Frame.Library.Api
 
         public static int DzXlsxWorksheetGetRowCount(int docHandle, string sheetName)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzXlsxWorksheetGetRowCount"), docHandle, sheetName);
+            return War3.CallNative<int>(_dzXlsxWorksheetGetRowCountPtr, docHandle, sheetName);
         }
 
 
@@ -3578,7 +3909,7 @@ namespace War3Frame.Library.Api
 
         public static int DzXlsxWorksheetGetColumnCount(int docHandle, string sheetName)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzXlsxWorksheetGetColumnCount"), docHandle, sheetName);
+            return War3.CallNative<int>(_dzXlsxWorksheetGetColumnCountPtr, docHandle, sheetName);
         }
 
 
@@ -3588,7 +3919,7 @@ namespace War3Frame.Library.Api
 
         public static int DzXlsxWorksheetGetCellType(int docHandle, string sheetName, int row, int column)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzXlsxWorksheetGetCellType"), docHandle, sheetName, row, column);
+            return War3.CallNative<int>(_dzXlsxWorksheetGetCellTypePtr, docHandle, sheetName, row, column);
         }
 
 
@@ -3598,7 +3929,7 @@ namespace War3Frame.Library.Api
 
         public static string DzXlsxWorksheetGetCellString(int docHandle, string sheetName, int row, int column)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzXlsxWorksheetGetCellString"), docHandle, sheetName, row, column);
+            return War3.CallNative<string>(_dzXlsxWorksheetGetCellStringPtr, docHandle, sheetName, row, column);
         }
 
 
@@ -3608,7 +3939,7 @@ namespace War3Frame.Library.Api
 
         public static int DzXlsxWorksheetGetCellInteger(int docHandle, string sheetName, int row, int column)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzXlsxWorksheetGetCellInteger"), docHandle, sheetName, row, column);
+            return War3.CallNative<int>(_dzXlsxWorksheetGetCellIntegerPtr, docHandle, sheetName, row, column);
         }
 
 
@@ -3618,7 +3949,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzXlsxWorksheetGetCellBoolean(int docHandle, string sheetName, int row, int column)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzXlsxWorksheetGetCellBoolean"), docHandle, sheetName, row, column);
+            return War3.CallNative<bool>(_dzXlsxWorksheetGetCellBooleanPtr, docHandle, sheetName, row, column);
         }
 
 
@@ -3628,7 +3959,7 @@ namespace War3Frame.Library.Api
 
         public static float DzXlsxWorksheetGetCellFloat(int docHandle, string sheetName, int row, int column)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzXlsxWorksheetGetCellFloat"), docHandle, sheetName, row, column);
+            return War3.CallNative<float>(_dzXlsxWorksheetGetCellFloatPtr, docHandle, sheetName, row, column);
         }
 
 
@@ -3638,7 +3969,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetTexCoord(int frame, float left, float top, float right, float bottom)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetTexCoord"), frame, left, top, right, bottom);
+            War3.CallNative(_dzFrameSetTexCoordPtr, frame, left, top, right, bottom);
         }
 
 
@@ -3648,7 +3979,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityRange(JUnit Unit, int abil_code, float value)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityRange"), Unit.Handle, abil_code, value);
+            return War3.CallNative<bool>(_dzSetUnitAbilityRangePtr, Unit.Handle, abil_code, value);
         }
 
 
@@ -3658,7 +3989,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitAbilityRange(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitAbilityRange"), Unit.Handle, abil_code);
+            return War3.CallNative<float>(_dzGetUnitAbilityRangePtr, Unit.Handle, abil_code);
         }
 
 
@@ -3668,7 +3999,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityArea(JUnit Unit, int abil_code, float value)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityArea"), Unit.Handle, abil_code, value);
+            return War3.CallNative<bool>(_dzSetUnitAbilityAreaPtr, Unit.Handle, abil_code, value);
         }
 
 
@@ -3678,7 +4009,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitAbilityArea(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitAbilityArea"), Unit.Handle, abil_code);
+            return War3.CallNative<float>(_dzGetUnitAbilityAreaPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3688,7 +4019,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityCool(JUnit Unit, int abil_code, float cool, float max_cool)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityCool"), Unit.Handle, abil_code, cool, max_cool);
+            return War3.CallNative<bool>(_dzSetUnitAbilityCoolPtr, Unit.Handle, abil_code, cool, max_cool);
         }
 
 
@@ -3698,7 +4029,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitAbilityCool(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitAbilityCool"), Unit.Handle, abil_code);
+            return War3.CallNative<float>(_dzGetUnitAbilityCoolPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3708,7 +4039,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitAbilityMaxCool(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitAbilityMaxCool"), Unit.Handle, abil_code);
+            return War3.CallNative<float>(_dzGetUnitAbilityMaxCoolPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3718,7 +4049,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityDataA(JUnit Unit, int abil_code, float value)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityDataA"), Unit.Handle, abil_code, value);
+            return War3.CallNative<bool>(_dzSetUnitAbilityDataAPtr, Unit.Handle, abil_code, value);
         }
 
 
@@ -3728,7 +4059,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitAbilityDataA(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitAbilityDataA"), Unit.Handle, abil_code);
+            return War3.CallNative<float>(_dzGetUnitAbilityDataAPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3738,7 +4069,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityDataB(JUnit Unit, int abil_code, float value)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityDataB"), Unit.Handle, abil_code, value);
+            return War3.CallNative<bool>(_dzSetUnitAbilityDataBPtr, Unit.Handle, abil_code, value);
         }
 
 
@@ -3748,7 +4079,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitAbilityDataB(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitAbilityDataB"), Unit.Handle, abil_code);
+            return War3.CallNative<float>(_dzGetUnitAbilityDataBPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3758,7 +4089,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityDataC(JUnit Unit, int abil_code, float value)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityDataC"), Unit.Handle, abil_code, value);
+            return War3.CallNative<bool>(_dzSetUnitAbilityDataCPtr, Unit.Handle, abil_code, value);
         }
 
 
@@ -3768,7 +4099,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitAbilityDataC(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitAbilityDataC"), Unit.Handle, abil_code);
+            return War3.CallNative<float>(_dzGetUnitAbilityDataCPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3778,7 +4109,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityDataD(JUnit Unit, int abil_code, float value)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityDataD"), Unit.Handle, abil_code, value);
+            return War3.CallNative<bool>(_dzSetUnitAbilityDataDPtr, Unit.Handle, abil_code, value);
         }
 
 
@@ -3788,7 +4119,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitAbilityDataD(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitAbilityDataD"), Unit.Handle, abil_code);
+            return War3.CallNative<float>(_dzGetUnitAbilityDataDPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3798,7 +4129,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityDataE(JUnit Unit, int abil_code, float value)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityDataE"), Unit.Handle, abil_code, value);
+            return War3.CallNative<bool>(_dzSetUnitAbilityDataEPtr, Unit.Handle, abil_code, value);
         }
 
 
@@ -3808,7 +4139,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitAbilityDataE(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitAbilityDataE"), Unit.Handle, abil_code);
+            return War3.CallNative<float>(_dzGetUnitAbilityDataEPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3818,7 +4149,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityButtonPos(JUnit Unit, int abil_code, int x, int y)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityButtonPos"), Unit.Handle, abil_code, x, y);
+            return War3.CallNative<bool>(_dzSetUnitAbilityButtonPosPtr, Unit.Handle, abil_code, x, y);
         }
 
 
@@ -3828,7 +4159,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityHotkey(JUnit Unit, int abil_code, string key)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityHotkey"), Unit.Handle, abil_code, key);
+            return War3.CallNative<bool>(_dzSetUnitAbilityHotkeyPtr, Unit.Handle, abil_code, key);
         }
 
 
@@ -3838,7 +4169,7 @@ namespace War3Frame.Library.Api
 
         public static string DzConvertTargs2Str(int targs)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzConvertTargs2Str"), targs);
+            return War3.CallNative<string>(_dzConvertTargs2StrPtr, targs);
         }
 
 
@@ -3848,7 +4179,7 @@ namespace War3Frame.Library.Api
 
         public static int DzConvertStr2Targs(string targs)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzConvertStr2Targs"), targs);
+            return War3.CallNative<int>(_dzConvertStr2TargsPtr, targs);
         }
 
 
@@ -3858,7 +4189,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityTargs(JUnit Unit, int abil_code, int value)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityTargs"), Unit.Handle, abil_code, value);
+            return War3.CallNative<bool>(_dzSetUnitAbilityTargsPtr, Unit.Handle, abil_code, value);
         }
 
 
@@ -3868,7 +4199,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetUnitAbilityTargs(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetUnitAbilityTargs"), Unit.Handle, abil_code);
+            return War3.CallNative<int>(_dzGetUnitAbilityTargsPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3878,7 +4209,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityCost(JUnit Unit, int abil_code, int value)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityCost"), Unit.Handle, abil_code, value);
+            return War3.CallNative<bool>(_dzSetUnitAbilityCostPtr, Unit.Handle, abil_code, value);
         }
 
 
@@ -3888,7 +4219,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetUnitAbilityCost(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetUnitAbilityCost"), Unit.Handle, abil_code);
+            return War3.CallNative<int>(_dzGetUnitAbilityCostPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3898,7 +4229,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityReqLevel(JUnit Unit, int abil_code, int value)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityReqLevel"), Unit.Handle, abil_code, value);
+            return War3.CallNative<bool>(_dzSetUnitAbilityReqLevelPtr, Unit.Handle, abil_code, value);
         }
 
 
@@ -3908,7 +4239,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetUnitAbilityReqLevel(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetUnitAbilityReqLevel"), Unit.Handle, abil_code);
+            return War3.CallNative<int>(_dzGetUnitAbilityReqLevelPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3918,7 +4249,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityUnitId(JUnit Unit, int abil_code, int value)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityUnitId"), Unit.Handle, abil_code, value);
+            return War3.CallNative<bool>(_dzSetUnitAbilityUnitIdPtr, Unit.Handle, abil_code, value);
         }
 
 
@@ -3928,7 +4259,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetUnitAbilityUnitId(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetUnitAbilityUnitId"), Unit.Handle, abil_code);
+            return War3.CallNative<int>(_dzGetUnitAbilityUnitIdPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3938,7 +4269,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityBuildOrderId(JUnit Unit, int abil_code, int value)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityBuildOrderId"), Unit.Handle, abil_code, value);
+            return War3.CallNative<bool>(_dzSetUnitAbilityBuildOrderIdPtr, Unit.Handle, abil_code, value);
         }
 
 
@@ -3948,7 +4279,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetUnitAbilityBuildOrderId(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetUnitAbilityBuildOrderId"), Unit.Handle, abil_code);
+            return War3.CallNative<int>(_dzGetUnitAbilityBuildOrderIdPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3958,7 +4289,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityBuildModel(JUnit Unit, int abil_code, string model_path, float model_scale)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityBuildModel"), Unit.Handle, abil_code, model_path, model_scale);
+            return War3.CallNative<bool>(_dzSetUnitAbilityBuildModelPtr, Unit.Handle, abil_code, model_path, model_scale);
         }
 
 
@@ -3968,7 +4299,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzUnitHasAbility(JUnit Unit, int abil_code)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzUnitHasAbility"), Unit.Handle, abil_code);
+            return War3.CallNative<bool>(_dzUnitHasAbilityPtr, Unit.Handle, abil_code);
         }
 
 
@@ -3978,7 +4309,7 @@ namespace War3Frame.Library.Api
 
         public static int KKCreateCommandButton()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("KKCreateCommandButton"));
+            return War3.CallNative<int>(_kKCreateCommandButtonPtr);
         }
 
 
@@ -3988,7 +4319,7 @@ namespace War3Frame.Library.Api
 
         public static void KKDestroyCommandButton(int btn)
         {
-            War3.CallNative(War3.GetNativeFunction("KKDestroyCommandButton"), btn);
+            War3.CallNative(_kKDestroyCommandButtonPtr, btn);
         }
 
 
@@ -3998,7 +4329,7 @@ namespace War3Frame.Library.Api
 
         public static void KKCommandButtonClick(int btn, int mouse_type)
         {
-            War3.CallNative(War3.GetNativeFunction("KKCommandButtonClick"), btn, mouse_type);
+            War3.CallNative(_kKCommandButtonClickPtr, btn, mouse_type);
         }
 
 
@@ -4008,7 +4339,7 @@ namespace War3Frame.Library.Api
 
         public static bool KKCommandTargetClick(int mouse_type, JWidget target)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("KKCommandTargetClick"), mouse_type, target.Handle);
+            return War3.CallNative<bool>(_kKCommandTargetClickPtr, mouse_type, target.Handle);
         }
 
 
@@ -4018,7 +4349,7 @@ namespace War3Frame.Library.Api
 
         public static bool KKCommandTerrainClick(int mouse_type, float x, float y, float z)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("KKCommandTerrainClick"), mouse_type, x, y, z);
+            return War3.CallNative<bool>(_kKCommandTerrainClickPtr, mouse_type, x, y, z);
         }
 
 
@@ -4028,7 +4359,7 @@ namespace War3Frame.Library.Api
 
         public static void KKSetCommandUnitAbility(int btn, JUnit Unit, int abil_code)
         {
-            War3.CallNative(War3.GetNativeFunction("KKSetCommandUnitAbility"), btn, Unit.Handle, abil_code);
+            War3.CallNative(_kKSetCommandUnitAbilityPtr, btn, Unit.Handle, abil_code);
         }
 
 
@@ -4038,7 +4369,7 @@ namespace War3Frame.Library.Api
 
         public static int DzItemGetVertexColor(JItem Item)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzItemGetVertexColor"), Item.Handle);
+            return War3.CallNative<int>(_dzItemGetVertexColorPtr, Item.Handle);
         }
 
 
@@ -4048,7 +4379,7 @@ namespace War3Frame.Library.Api
 
         public static void DzItemSetSize(JItem Item, float size)
         {
-            War3.CallNative(War3.GetNativeFunction("DzItemSetSize"), Item.Handle, size);
+            War3.CallNative(_dzItemSetSizePtr, Item.Handle, size);
         }
 
 
@@ -4058,7 +4389,7 @@ namespace War3Frame.Library.Api
 
         public static float DzItemGetSize(JItem Item)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzItemGetSize"), Item.Handle);
+            return War3.CallNative<float>(_dzItemGetSizePtr, Item.Handle);
         }
 
 
@@ -4068,7 +4399,7 @@ namespace War3Frame.Library.Api
 
         public static void DzItemMatRotateX(JItem Item, float x)
         {
-            War3.CallNative(War3.GetNativeFunction("DzItemMatRotateX"), Item.Handle, x);
+            War3.CallNative(_dzItemMatRotateXPtr, Item.Handle, x);
         }
 
 
@@ -4078,7 +4409,7 @@ namespace War3Frame.Library.Api
 
         public static void DzItemMatRotateY(JItem Item, float y)
         {
-            War3.CallNative(War3.GetNativeFunction("DzItemMatRotateY"), Item.Handle, y);
+            War3.CallNative(_dzItemMatRotateYPtr, Item.Handle, y);
         }
 
 
@@ -4088,7 +4419,7 @@ namespace War3Frame.Library.Api
 
         public static void DzItemMatRotateZ(JItem Item, float z)
         {
-            War3.CallNative(War3.GetNativeFunction("DzItemMatRotateZ"), Item.Handle, z);
+            War3.CallNative(_dzItemMatRotateZPtr, Item.Handle, z);
         }
 
 
@@ -4098,7 +4429,7 @@ namespace War3Frame.Library.Api
 
         public static void DzItemMatScale(JItem Item, float x, float y, float z)
         {
-            War3.CallNative(War3.GetNativeFunction("DzItemMatScale"), Item.Handle, x, y, z);
+            War3.CallNative(_dzItemMatScalePtr, Item.Handle, x, y, z);
         }
 
 
@@ -4108,7 +4439,7 @@ namespace War3Frame.Library.Api
 
         public static void DzItemMatReset(JItem Item)
         {
-            War3.CallNative(War3.GetNativeFunction("DzItemMatReset"), Item.Handle);
+            War3.CallNative(_dzItemMatResetPtr, Item.Handle);
         }
 
 
@@ -4118,13 +4449,13 @@ namespace War3Frame.Library.Api
 
         public static JItem DzGetLastSelectedItem()
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetLastSelectedItem"));
+            var handle = War3.CallNative<int>(_dzGetLastSelectedItemPtr);
             return new(handle);
         }
 
         public static void DzSetPariticle2Size(JAgent Widget, float scale)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetPariticle2Size"), Widget.Handle, scale);
+            War3.CallNative(_dzSetPariticle2SizePtr, Widget.Handle, scale);
         }
 
 
@@ -4134,7 +4465,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetUnitCollisionSize(JUnit Unit, float size)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetUnitCollisionSize"), Unit.Handle, size);
+            War3.CallNative(_dzSetUnitCollisionSizePtr, Unit.Handle, size);
         }
 
 
@@ -4144,12 +4475,12 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitCollisionSize(JUnit Unit)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitCollisionSize"), Unit.Handle);
+            return War3.CallNative<float>(_dzGetUnitCollisionSizePtr, Unit.Handle);
         }
 
         public static void DzSetWidgetTexture(JAgent Handle, string TexturePath, int ReplaceId)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetWidgetTexture"), Handle.Handle, TexturePath, ReplaceId);
+            War3.CallNative(_dzSetWidgetTexturePtr, Handle.Handle, TexturePath, ReplaceId);
         }
 
 
@@ -4159,7 +4490,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetUnitSelectScale(JUnit Unit, float scale)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetUnitSelectScale"), Unit.Handle, scale);
+            War3.CallNative(_dzSetUnitSelectScalePtr, Unit.Handle, scale);
         }
 
 
@@ -4169,7 +4500,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetUnitHitIgnore(JUnit Unit, bool ignore)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetUnitHitIgnore"), Unit.Handle, ignore);
+            War3.CallNative(_dzSetUnitHitIgnorePtr, Unit.Handle, ignore);
         }
 
 
@@ -4179,7 +4510,7 @@ namespace War3Frame.Library.Api
 
         public static void DzEffectBindEffect(JAgent Handle, string AttachName, JEffect eff)
         {
-            War3.CallNative(War3.GetNativeFunction("DzEffectBindEffect"), Handle.Handle, AttachName, eff.Handle);
+            War3.CallNative(_dzEffectBindEffectPtr, Handle.Handle, AttachName, eff.Handle);
         }
 
 
@@ -4229,7 +4560,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetIgnoreTrackEvents(int frame, bool ignore)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetIgnoreTrackEvents"), frame, ignore);
+            War3.CallNative(_dzFrameSetIgnoreTrackEventsPtr, frame, ignore);
         }
 
 
@@ -4239,7 +4570,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameAddModel(int parent_frame)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameAddModel"), parent_frame);
+            return War3.CallNative<int>(_dzFrameAddModelPtr, parent_frame);
         }
 
 
@@ -4249,7 +4580,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModel2(int model_frame, string model_file, int team_color_id)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModel2"), model_frame, model_file, team_color_id);
+            War3.CallNative(_dzFrameSetModel2Ptr, model_frame, model_file, team_color_id);
         }
 
 
@@ -4259,7 +4590,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameAddModelEffect(int model_frame, string attach_point, string model_file)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameAddModelEffect"), model_frame, attach_point, model_file);
+            return War3.CallNative<int>(_dzFrameAddModelEffectPtr, model_frame, attach_point, model_file);
         }
 
 
@@ -4269,7 +4600,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameRemoveModelEffect(int model_frame, int effect_frame)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameRemoveModelEffect"), model_frame, effect_frame);
+            War3.CallNative(_dzFrameRemoveModelEffectPtr, model_frame, effect_frame);
         }
 
 
@@ -4279,7 +4610,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelAnimationByIndex(int model_frame, int anim_index)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelAnimationByIndex"), model_frame, anim_index);
+            War3.CallNative(_dzFrameSetModelAnimationByIndexPtr, model_frame, anim_index);
         }
 
 
@@ -4289,7 +4620,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelAnimation(int model_frame, string animation)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelAnimation"), model_frame, animation);
+            War3.CallNative(_dzFrameSetModelAnimationPtr, model_frame, animation);
         }
 
 
@@ -4299,7 +4630,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelCameraSource(int model_frame, float x, float y, float z)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelCameraSource"), model_frame, x, y, z);
+            War3.CallNative(_dzFrameSetModelCameraSourcePtr, model_frame, x, y, z);
         }
 
 
@@ -4309,7 +4640,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelCameraTarget(int model_frame, float x, float y, float z)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelCameraTarget"), model_frame, x, y, z);
+            War3.CallNative(_dzFrameSetModelCameraTargetPtr, model_frame, x, y, z);
         }
 
 
@@ -4319,7 +4650,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelSize(int model_frame, float size)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelSize"), model_frame, size);
+            War3.CallNative(_dzFrameSetModelSizePtr, model_frame, size);
         }
 
 
@@ -4329,7 +4660,7 @@ namespace War3Frame.Library.Api
 
         public static float DzFrameGetModelSize(int model_frame)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzFrameGetModelSize"), model_frame);
+            return War3.CallNative<float>(_dzFrameGetModelSizePtr, model_frame);
         }
 
 
@@ -4339,7 +4670,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelPosition(int model_frame, float x, float y, float z)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelPosition"), model_frame, x, y, z);
+            War3.CallNative(_dzFrameSetModelPositionPtr, model_frame, x, y, z);
         }
 
 
@@ -4349,7 +4680,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelX(int model_frame, float x)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelX"), model_frame, x);
+            War3.CallNative(_dzFrameSetModelXPtr, model_frame, x);
         }
 
 
@@ -4359,7 +4690,7 @@ namespace War3Frame.Library.Api
 
         public static float DzFrameGetModelX(int model_frame)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzFrameGetModelX"), model_frame);
+            return War3.CallNative<float>(_dzFrameGetModelXPtr, model_frame);
         }
 
 
@@ -4369,7 +4700,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelY(int model_frame, float y)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelY"), model_frame, y);
+            War3.CallNative(_dzFrameSetModelYPtr, model_frame, y);
         }
 
 
@@ -4379,7 +4710,7 @@ namespace War3Frame.Library.Api
 
         public static float DzFrameGetModelY(int model_frame)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzFrameGetModelY"), model_frame);
+            return War3.CallNative<float>(_dzFrameGetModelYPtr, model_frame);
         }
 
 
@@ -4389,7 +4720,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelZ(int model_frame, float z)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelZ"), model_frame, z);
+            War3.CallNative(_dzFrameSetModelZPtr, model_frame, z);
         }
 
 
@@ -4399,7 +4730,7 @@ namespace War3Frame.Library.Api
 
         public static float DzFrameGetModelZ(int model_frame)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzFrameGetModelZ"), model_frame);
+            return War3.CallNative<float>(_dzFrameGetModelZPtr, model_frame);
         }
 
 
@@ -4409,7 +4740,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelSpeed(int model_frame, float speed)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelSpeed"), model_frame, speed);
+            War3.CallNative(_dzFrameSetModelSpeedPtr, model_frame, speed);
         }
 
 
@@ -4419,7 +4750,7 @@ namespace War3Frame.Library.Api
 
         public static float DzFrameGetModelSpeed(int model_frame)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzFrameGetModelSpeed"), model_frame);
+            return War3.CallNative<float>(_dzFrameGetModelSpeedPtr, model_frame);
         }
 
 
@@ -4429,7 +4760,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelScale(int model_frame, float x, float y, float z)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelScale"), model_frame, x, y, z);
+            War3.CallNative(_dzFrameSetModelScalePtr, model_frame, x, y, z);
         }
 
 
@@ -4439,7 +4770,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelMatReset(int model_frame)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelMatReset"), model_frame);
+            War3.CallNative(_dzFrameSetModelMatResetPtr, model_frame);
         }
 
 
@@ -4449,7 +4780,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelRotateX(int model_frame, float x)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelRotateX"), model_frame, x);
+            War3.CallNative(_dzFrameSetModelRotateXPtr, model_frame, x);
         }
 
 
@@ -4459,7 +4790,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelRotateY(int model_frame, float y)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelRotateY"), model_frame, y);
+            War3.CallNative(_dzFrameSetModelRotateYPtr, model_frame, y);
         }
 
 
@@ -4469,7 +4800,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelRotateZ(int model_frame, float z)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelRotateZ"), model_frame, z);
+            War3.CallNative(_dzFrameSetModelRotateZPtr, model_frame, z);
         }
 
 
@@ -4479,7 +4810,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelColor(int model_frame, int color)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelColor"), model_frame, color);
+            War3.CallNative(_dzFrameSetModelColorPtr, model_frame, color);
         }
 
 
@@ -4489,7 +4820,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetModelColor(int model_frame)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetModelColor"), model_frame);
+            return War3.CallNative<int>(_dzFrameGetModelColorPtr, model_frame);
         }
 
 
@@ -4499,7 +4830,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelTexture(int model_frame, string texture_file, int replace_texutre_id)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelTexture"), model_frame, texture_file, replace_texutre_id);
+            War3.CallNative(_dzFrameSetModelTexturePtr, model_frame, texture_file, replace_texutre_id);
         }
 
 
@@ -4509,7 +4840,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetModelParticle2Size(int model_frame, float scale)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetModelParticle2Size"), model_frame, scale);
+            War3.CallNative(_dzFrameSetModelParticle2SizePtr, model_frame, scale);
         }
 
 
@@ -4519,7 +4850,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetGlueUI()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetGlueUI"));
+            return War3.CallNative<int>(_dzGetGlueUIPtr);
         }
 
 
@@ -4529,7 +4860,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetMouse()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetMouse"));
+            return War3.CallNative<int>(_dzFrameGetMousePtr);
         }
 
 
@@ -4539,7 +4870,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetContext(int frame)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetContext"), frame);
+            return War3.CallNative<int>(_dzFrameGetContextPtr, frame);
         }
 
 
@@ -4549,7 +4880,7 @@ namespace War3Frame.Library.Api
 
         public static string DzFrameGetName(int frame)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzFrameGetName"), frame);
+            return War3.CallNative<string>(_dzFrameGetNamePtr, frame);
         }
 
 
@@ -4559,7 +4890,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetNameContext(int frame, string name, int context)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetNameContext"), frame, name, context);
+            War3.CallNative(_dzFrameSetNameContextPtr, frame, name, context);
         }
 
 
@@ -4569,7 +4900,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetTextFontSpacing(int text_frame, float spacing)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetTextFontSpacing"), text_frame, spacing);
+            War3.CallNative(_dzFrameSetTextFontSpacingPtr, text_frame, spacing);
         }
 
 
@@ -4579,7 +4910,7 @@ namespace War3Frame.Library.Api
 
         public static int KKCommandGetCooldownModel(int cmd_btn)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("KKCommandGetCooldownModel"), cmd_btn);
+            return War3.CallNative<int>(_kKCommandGetCooldownModelPtr, cmd_btn);
         }
 
 
@@ -4589,7 +4920,7 @@ namespace War3Frame.Library.Api
 
         public static void KKCommandSetCooldownModelSize(int cmd_btn, float size)
         {
-            War3.CallNative(War3.GetNativeFunction("KKCommandSetCooldownModelSize"), cmd_btn, size);
+            War3.CallNative(_kKCommandSetCooldownModelSizePtr, cmd_btn, size);
         }
 
 
@@ -4599,7 +4930,7 @@ namespace War3Frame.Library.Api
 
         public static void KKCommandSetCooldownModelSize2(int cmd_btn, float width, float height)
         {
-            War3.CallNative(War3.GetNativeFunction("KKCommandSetCooldownModelSize2"), cmd_btn, width, height);
+            War3.CallNative(_kKCommandSetCooldownModelSize2Ptr, cmd_btn, width, height);
         }
 
 
@@ -4609,7 +4940,7 @@ namespace War3Frame.Library.Api
 
         public static JItem DzGetPlayerLastSelectedItem(JPlayer p)
         {
-            var handle = War3.CallNative<int>(War3.GetNativeFunction("DzGetPlayerLastSelectedItem"), p.Handle);
+            var handle = War3.CallNative<int>(_dzGetPlayerLastSelectedItemPtr, p.Handle);
             return new(handle);
         }
 
@@ -4620,7 +4951,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetCacheModelCount()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetCacheModelCount"));
+            return War3.CallNative<int>(_dzGetCacheModelCountPtr);
         }
 
 
@@ -4630,7 +4961,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetMaxFps(int max_fps)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetMaxFps"), max_fps);
+            War3.CallNative(_dzSetMaxFpsPtr, max_fps);
         }
 
 
@@ -4640,7 +4971,7 @@ namespace War3Frame.Library.Api
 
         public static void DzEnableDrawSkillPanel(JUnit u, bool is_enable)
         {
-            War3.CallNative(War3.GetNativeFunction("DzEnableDrawSkillPanel"), u.Handle, is_enable);
+            War3.CallNative(_dzEnableDrawSkillPanelPtr, u.Handle, is_enable);
         }
 
 
@@ -4650,7 +4981,7 @@ namespace War3Frame.Library.Api
 
         public static void DzEnableDrawSkillPanelByPlayer(JPlayer p, bool is_enable)
         {
-            War3.CallNative(War3.GetNativeFunction("DzEnableDrawSkillPanelByPlayer"), p.Handle, is_enable);
+            War3.CallNative(_dzEnableDrawSkillPanelByPlayerPtr, p.Handle, is_enable);
         }
 
 
@@ -4660,7 +4991,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetEffectFogVisible(JEffect eff, bool is_visible)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetEffectFogVisible"), eff.Handle, is_visible);
+            War3.CallNative(_dzSetEffectFogVisiblePtr, eff.Handle, is_visible);
         }
 
 
@@ -4670,7 +5001,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetEffectMaskVisible(JEffect eff, bool is_visible)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetEffectMaskVisible"), eff.Handle, is_visible);
+            War3.CallNative(_dzSetEffectMaskVisiblePtr, eff.Handle, is_visible);
         }
 
 
@@ -4680,7 +5011,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameBindWidget(int frame, JWidget u, float world_x, float world_y, float world_z, float screen_x, float screen_y, bool fog_visible, bool unit_visible, bool dead_visible)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameBindWidget"), frame, u.Handle, world_x, world_y, world_z, screen_x, screen_y, fog_visible, unit_visible, dead_visible);
+            War3.CallNative(_dzFrameBindWidgetPtr, frame, u.Handle, world_x, world_y, world_z, screen_x, screen_y, fog_visible, unit_visible, dead_visible);
         }
 
 
@@ -4690,7 +5021,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameBindWorldPos(int frame, float world_x, float world_y, float world_z, float screen_x, float screen_y, bool fog_visible)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameBindWorldPos"), frame, world_x, world_y, world_z, screen_x, screen_y, fog_visible);
+            War3.CallNative(_dzFrameBindWorldPosPtr, frame, world_x, world_y, world_z, screen_x, screen_y, fog_visible);
         }
 
 
@@ -4700,7 +5031,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameUnBind(int frame)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameUnBind"), frame);
+            War3.CallNative(_dzFrameUnBindPtr, frame);
         }
 
 
@@ -4720,7 +5051,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDisableUnitPreselectUi()
         {
-            War3.CallNative(War3.GetNativeFunction("DzDisableUnitPreselectUi"));
+            War3.CallNative(_dzDisableUnitPreselectUiPtr);
         }
 
 
@@ -4730,7 +5061,7 @@ namespace War3Frame.Library.Api
 
         public static void DzDisableItemPreselectUi()
         {
-            War3.CallNative(War3.GetNativeFunction("DzDisableItemPreselectUi"));
+            War3.CallNative(_dzDisableItemPreselectUiPtr);
         }
 
 
@@ -4740,7 +5071,7 @@ namespace War3Frame.Library.Api
 
         public static int DzFrameGetLowerLevelFrame()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzFrameGetLowerLevelFrame"));
+            return War3.CallNative<int>(_dzFrameGetLowerLevelFramePtr);
         }
 
 
@@ -4750,7 +5081,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetCheckBoxState(int check_box_frame, bool check)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetCheckBoxState"), check_box_frame, check);
+            War3.CallNative(_dzFrameSetCheckBoxStatePtr, check_box_frame, check);
         }
 
 
@@ -4760,7 +5091,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzFrameGetCheckBoxState(int check_box_frame)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzFrameGetCheckBoxState"), check_box_frame);
+            return War3.CallNative<bool>(_dzFrameGetCheckBoxStatePtr, check_box_frame);
         }
 
 
@@ -4770,7 +5101,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzFrameIsFocus(int frame)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzFrameIsFocus"), frame);
+            return War3.CallNative<bool>(_dzFrameIsFocusPtr, frame);
         }
 
 
@@ -4780,7 +5111,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetEditBoxActive(int frame, bool is_active)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetEditBoxActive"), frame, is_active);
+            War3.CallNative(_dzFrameSetEditBoxActivePtr, frame, is_active);
         }
 
 
@@ -4790,7 +5121,7 @@ namespace War3Frame.Library.Api
 
         public static void DzFrameSetEditBoxDisableIme(int frame, bool is_disable)
         {
-            War3.CallNative(War3.GetNativeFunction("DzFrameSetEditBoxDisableIme"), frame, is_disable);
+            War3.CallNative(_dzFrameSetEditBoxDisableImePtr, frame, is_disable);
         }
 
 
@@ -4800,7 +5131,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzIsWindowMode()
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzIsWindowMode"));
+            return War3.CallNative<bool>(_dzIsWindowModePtr);
         }
 
 
@@ -4810,7 +5141,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzIsWindowActive()
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzIsWindowActive"));
+            return War3.CallNative<bool>(_dzIsWindowActivePtr);
         }
 
 
@@ -4820,7 +5151,7 @@ namespace War3Frame.Library.Api
 
         public static void DzWindowSetPoint(int x, int y)
         {
-            War3.CallNative(War3.GetNativeFunction("DzWindowSetPoint"), x, y);
+            War3.CallNative(_dzWindowSetPointPtr, x, y);
         }
 
 
@@ -4830,7 +5161,7 @@ namespace War3Frame.Library.Api
 
         public static void DzWindowSetSize(int width, int height)
         {
-            War3.CallNative(War3.GetNativeFunction("DzWindowSetSize"), width, height);
+            War3.CallNative(_dzWindowSetSizePtr, width, height);
         }
 
 
@@ -4840,7 +5171,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetSystemMetricsWidth()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetSystemMetricsWidth"));
+            return War3.CallNative<int>(_dzGetSystemMetricsWidthPtr);
         }
 
 
@@ -4850,7 +5181,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetSystemMetricsHeight()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetSystemMetricsHeight"));
+            return War3.CallNative<int>(_dzGetSystemMetricsHeightPtr);
         }
 
 
@@ -4860,7 +5191,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetDoodadsCount()
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetDoodadsCount"));
+            return War3.CallNative<int>(_dzGetDoodadsCountPtr);
         }
 
 
@@ -4870,7 +5201,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetDoodadsMatScale(int doodads_index, float x, float y, float z)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetDoodadsMatScale"), doodads_index, x, y, z);
+            War3.CallNative(_dzSetDoodadsMatScalePtr, doodads_index, x, y, z);
         }
 
 
@@ -4880,7 +5211,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetDoodadsMatRotateX(int doodads_index, float x)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetDoodadsMatRotateX"), doodads_index, x);
+            War3.CallNative(_dzSetDoodadsMatRotateXPtr, doodads_index, x);
         }
 
 
@@ -4890,7 +5221,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetDoodadsMatRotateY(int doodads_index, float y)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetDoodadsMatRotateY"), doodads_index, y);
+            War3.CallNative(_dzSetDoodadsMatRotateYPtr, doodads_index, y);
         }
 
 
@@ -4900,7 +5231,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetDoodadsMatRotateZ(int doodads_index, float z)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetDoodadsMatRotateZ"), doodads_index, z);
+            War3.CallNative(_dzSetDoodadsMatRotateZPtr, doodads_index, z);
         }
 
 
@@ -4910,7 +5241,7 @@ namespace War3Frame.Library.Api
 
         public static void DzSetDoodadsMatReset(int doodads_index)
         {
-            War3.CallNative(War3.GetNativeFunction("DzSetDoodadsMatReset"), doodads_index);
+            War3.CallNative(_dzSetDoodadsMatResetPtr, doodads_index);
         }
 
 
@@ -4920,7 +5251,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityArt(JUnit u, int abil_id, string art_path)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityArt"), u.Handle, abil_id, art_path);
+            return War3.CallNative<bool>(_dzSetUnitAbilityArtPtr, u.Handle, abil_id, art_path);
         }
 
 
@@ -4930,7 +5261,7 @@ namespace War3Frame.Library.Api
 
         public static string DzGetUnitAbilityArt(JUnit u, int abil_id)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzGetUnitAbilityArt"), u.Handle, abil_id);
+            return War3.CallNative<string>(_dzGetUnitAbilityArtPtr, u.Handle, abil_id);
         }
 
 
@@ -4940,7 +5271,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityTip(JUnit u, int abil_id, string tip)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityTip"), u.Handle, abil_id, tip);
+            return War3.CallNative<bool>(_dzSetUnitAbilityTipPtr, u.Handle, abil_id, tip);
         }
 
 
@@ -4950,7 +5281,7 @@ namespace War3Frame.Library.Api
 
         public static string DzGetUnitAbilityTip(JUnit u, int abil_id)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzGetUnitAbilityTip"), u.Handle, abil_id);
+            return War3.CallNative<string>(_dzGetUnitAbilityTipPtr, u.Handle, abil_id);
         }
 
 
@@ -4960,7 +5291,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityUberTip(JUnit u, int abil_id, string ubertip)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityUberTip"), u.Handle, abil_id, ubertip);
+            return War3.CallNative<bool>(_dzSetUnitAbilityUberTipPtr, u.Handle, abil_id, ubertip);
         }
 
 
@@ -4970,7 +5301,7 @@ namespace War3Frame.Library.Api
 
         public static string DzGetUnitAbilityUberTip(JUnit u, int abil_id)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzGetUnitAbilityUberTip"), u.Handle, abil_id);
+            return War3.CallNative<string>(_dzGetUnitAbilityUberTipPtr, u.Handle, abil_id);
         }
 
 
@@ -4980,7 +5311,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityUpdate(JUnit u, int abil_id)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityUpdate"), u.Handle, abil_id);
+            return War3.CallNative<bool>(_dzSetUnitAbilityUpdatePtr, u.Handle, abil_id);
         }
 
 
@@ -4990,7 +5321,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityOrderId(JUnit u, int abil_id, int order_id)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityOrderId"), u.Handle, abil_id, order_id);
+            return War3.CallNative<bool>(_dzSetUnitAbilityOrderIdPtr, u.Handle, abil_id, order_id);
         }
 
 
@@ -5000,7 +5331,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetUnitAbilityOrderId(JUnit u, int abil_id)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetUnitAbilityOrderId"), u.Handle, abil_id);
+            return War3.CallNative<int>(_dzGetUnitAbilityOrderIdPtr, u.Handle, abil_id);
         }
 
 
@@ -5010,7 +5341,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilitySpellBookList(JUnit u, int abil_id, string abil_list, bool save_cooldown)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilitySpellBookList"), u.Handle, abil_id, abil_list, save_cooldown);
+            return War3.CallNative<bool>(_dzSetUnitAbilitySpellBookListPtr, u.Handle, abil_id, abil_list, save_cooldown);
         }
 
 
@@ -5020,7 +5351,7 @@ namespace War3Frame.Library.Api
 
         public static string DzGetUnitAbilitySpellBookList(JUnit u, int abil_id)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzGetUnitAbilitySpellBookList"), u.Handle, abil_id);
+            return War3.CallNative<string>(_dzGetUnitAbilitySpellBookListPtr, u.Handle, abil_id);
         }
 
 
@@ -5030,7 +5361,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityMissileArt(JUnit u, int abil_id, string missile_art)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityMissileArt"), u.Handle, abil_id, missile_art);
+            return War3.CallNative<bool>(_dzSetUnitAbilityMissileArtPtr, u.Handle, abil_id, missile_art);
         }
 
 
@@ -5040,7 +5371,7 @@ namespace War3Frame.Library.Api
 
         public static string DzGetUnitAbilityMissileArt(JUnit u, int abil_id)
         {
-            return War3.CallNative<string>(War3.GetNativeFunction("DzGetUnitAbilityMissileArt"), u.Handle, abil_id);
+            return War3.CallNative<string>(_dzGetUnitAbilityMissileArtPtr, u.Handle, abil_id);
         }
 
 
@@ -5050,7 +5381,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityMissileSpeed(JUnit u, int abil_id, float missile_speed)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityMissileSpeed"), u.Handle, abil_id, missile_speed);
+            return War3.CallNative<bool>(_dzSetUnitAbilityMissileSpeedPtr, u.Handle, abil_id, missile_speed);
         }
 
 
@@ -5060,7 +5391,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitAbilityMissileSpeed(JUnit u, int abil_id)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitAbilityMissileSpeed"), u.Handle, abil_id);
+            return War3.CallNative<float>(_dzGetUnitAbilityMissileSpeedPtr, u.Handle, abil_id);
         }
 
 
@@ -5070,7 +5401,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityMissileArc(JUnit u, int abil_id, float missile_arc)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityMissileArc"), u.Handle, abil_id, missile_arc);
+            return War3.CallNative<bool>(_dzSetUnitAbilityMissileArcPtr, u.Handle, abil_id, missile_arc);
         }
 
 
@@ -5080,7 +5411,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitAbilityMissileArc(JUnit u, int abil_id)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitAbilityMissileArc"), u.Handle, abil_id);
+            return War3.CallNative<float>(_dzGetUnitAbilityMissileArcPtr, u.Handle, abil_id);
         }
 
 
@@ -5090,7 +5421,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityMissileHoming(JUnit u, int abil_id, bool missile_homing)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityMissileHoming"), u.Handle, abil_id, missile_homing);
+            return War3.CallNative<bool>(_dzSetUnitAbilityMissileHomingPtr, u.Handle, abil_id, missile_homing);
         }
 
 
@@ -5100,7 +5431,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzGetUnitAbilityMissileHoming(JUnit u, int abil_id)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzGetUnitAbilityMissileHoming"), u.Handle, abil_id);
+            return War3.CallNative<bool>(_dzGetUnitAbilityMissileHomingPtr, u.Handle, abil_id);
         }
 
 
@@ -5110,7 +5441,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityMissileCount(JUnit u, int abil_id, int missile_count)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityMissileCount"), u.Handle, abil_id, missile_count);
+            return War3.CallNative<bool>(_dzSetUnitAbilityMissileCountPtr, u.Handle, abil_id, missile_count);
         }
 
 
@@ -5120,7 +5451,7 @@ namespace War3Frame.Library.Api
 
         public static int DzGetUnitAbilityMissileCount(JUnit u, int abil_id)
         {
-            return War3.CallNative<int>(War3.GetNativeFunction("DzGetUnitAbilityMissileCount"), u.Handle, abil_id);
+            return War3.CallNative<int>(_dzGetUnitAbilityMissileCountPtr, u.Handle, abil_id);
         }
 
 
@@ -5130,7 +5461,7 @@ namespace War3Frame.Library.Api
 
         public static bool DzSetUnitAbilityMissileDamage(JUnit u, int abil_id, float damage, float max_damage, JAttackType atktp, JDamageType dmgtp)
         {
-            return War3.CallNative<bool>(War3.GetNativeFunction("DzSetUnitAbilityMissileDamage"), u.Handle, abil_id, damage, max_damage, atktp.Handle, dmgtp.Handle);
+            return War3.CallNative<bool>(_dzSetUnitAbilityMissileDamagePtr, u.Handle, abil_id, damage, max_damage, atktp.Handle, dmgtp.Handle);
         }
 
 
@@ -5140,7 +5471,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitAbilityMissileDamage(JUnit u, int abil_id)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitAbilityMissileDamage"), u.Handle, abil_id);
+            return War3.CallNative<float>(_dzGetUnitAbilityMissileDamagePtr, u.Handle, abil_id);
         }
 
 
@@ -5150,7 +5481,7 @@ namespace War3Frame.Library.Api
 
         public static float DzGetUnitAbilityMissileMaxDamage(JUnit u, int abil_id)
         {
-            return War3.CallNative<float>(War3.GetNativeFunction("DzGetUnitAbilityMissileMaxDamage"), u.Handle, abil_id);
+            return War3.CallNative<float>(_dzGetUnitAbilityMissileMaxDamagePtr, u.Handle, abil_id);
         }
 
     }
