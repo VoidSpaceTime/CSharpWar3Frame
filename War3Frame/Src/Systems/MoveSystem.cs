@@ -7,8 +7,12 @@ using System.Text;
 
 namespace War3Frame.Src.Systems
 {
-/*    public class MoveSystem : QuerySystem<Position>
+/*    public class MoveSystem : QuerySystem<Position, Move>
     {
+        public MoveSystem()
+        {
+            Filter.WithoutAnyTags(Tags.Get<Dead>());
+        }
         protected override void OnUpdate()
         {
             Query.ForEachEntity((ref Position position, Entity entity) =>

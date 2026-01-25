@@ -5,7 +5,7 @@ using System.Text;
 
 namespace War3Frame
 {
-    public static class Game
+    public static partial class Game
     {
         // Native AOT 入口
         [UnmanagedCallersOnly(EntryPoint = "main")]

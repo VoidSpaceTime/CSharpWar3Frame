@@ -5,6 +5,9 @@ using System.Text;
 
 namespace War3Frame
 {
+    public struct HealthDirty : ITag;
+    public struct ManaDirty : ITag;
+
     public struct Health : IComponent
     {
         public float current;     // 当前生命值
@@ -35,7 +38,10 @@ namespace War3Frame
     public struct Defend : IComponent
     {
         public float armor;       // 护甲
-        public float magicResist; // 魔抗
+    }
+    public struct MagicResist : IComponent
+    {
+        public float magicResist; // 魔法抗性
     }
     /// 暴击属性（可选）
     public struct Crit : IComponent
@@ -56,22 +62,7 @@ namespace War3Frame
     }
     public struct Visible : IComponent
     {
-        public struct visibleRange;
+        public float visibleRange;
     }
-    public struct Skill : IComponent
-    {
-        public float cost; //消耗
-        public float costPercent; //消耗比
 
-        public float amass; //蓄力
-        public float amassPercent; // 蓄力比
-
-        public float castChant; // 吟唱
-        public float castChantPercent; // 吟唱比
-
-        public float castDistance; //施法距离
-        public float castRange; //施法范围
-
-        public float cooldown; //技能cd
-    }
 }

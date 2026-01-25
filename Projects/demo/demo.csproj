@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\War3Frame\War3Frame.csproj" />
+    <TrimmerRootAssembly Include="Friflo.Engine.ECS" />
   </ItemGroup>
 
 </Project>

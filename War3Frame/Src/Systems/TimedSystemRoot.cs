@@ -26,7 +26,7 @@ public class TimedSystemRoot : SystemRoot
     /// <summary>
     /// 默认更新间隔（秒），System 未指定时使用此值，0 表示每帧更新
     /// </summary>
-    public float DefaultInterval { get; set; } = 0;
+    public float DefaultInterval { get; set; } = 0.03125f;
 
     private class TimerInfo
     {
