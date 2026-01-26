@@ -20,10 +20,6 @@
     <PackageReference Include="Friflo.Engine.ECS" Version="3.4.2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Src\Tags\" />
-  </ItemGroup>
-
 
 
 </Project>

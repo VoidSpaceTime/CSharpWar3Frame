@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Friflo.Engine.ECS;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -12,8 +13,20 @@ namespace War3Frame
         Computer,
 
     }
-    public struct Player
+    public enum PlayerTeamState
+    {
+        Allie,
+        Enemy,
+        Neutral,
+    }
+    public struct PlayerNative : IComponent
     {
         public JPlayer player;
+        public int index;
+        public Entity getentity;
+    }
+    public struct PlayerTeam
+    {
+        public Dictionary<Entity, PlayerTeamState> teams;
     }
 }

@@ -14,6 +14,14 @@ namespace War3Frame
         [UnmanagedCallersOnly(EntryPoint = "main")]
         public static int MainAOT()
         {
+            /* AOTInit 注册 Component
+             * 
+             * ECSInit 创建root entityStore
+             * War3Init  初始化原生信息, 
+             * 其他框架初始化
+             * 地图内容初始化
+*/
+
             War3.EnableConsole("war3Debug");
             Console.WriteLine("Hello World!");
 
