@@ -13,7 +13,7 @@ namespace War3Frame
         public static int C2I(string idChar)
         {
             if (idChar is null) throw new ArgumentNullException(nameof(idChar));
-            if (idChar.Length == 0) throw new ArgumentException("idChar must be non-empty", nameof(idChar));
+            if (idChar.Length == 0) return 0;
 
             return c.GetOrAdd(idChar, s =>
             {

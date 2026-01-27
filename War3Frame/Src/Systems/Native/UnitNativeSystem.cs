@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+
 namespace War3Frame
 {
     public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem

@@ -65,7 +65,7 @@ namespace War3Frame.Src.Factories
     /// </summary>
     public static class UnitTemplates
     {
-        private static readonly Dictionary<string, UnitTemplate> _templates = new();
+        private static readonly SortedDictionary<string, UnitTemplate> _templates = new();
         static UnitTemplates()
         {
             // ========== 步兵 ==========

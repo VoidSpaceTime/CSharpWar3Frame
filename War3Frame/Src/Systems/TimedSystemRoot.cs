@@ -21,7 +21,7 @@ public interface ITimedSystem
 /// </summary>
 public class TimedSystemRoot : SystemRoot
 {
-    private readonly Dictionary<BaseSystem, TimerInfo> _timerInfos = new();
+    private readonly SortedDictionary<BaseSystem, TimerInfo> _timerInfos = new();
 
     /// <summary>
     /// 默认更新间隔（秒），System 未指定时使用此值，0 表示每帧更新

@@ -21,12 +21,10 @@ namespace War3Frame
     }
     public struct PlayerNative : IComponent
     {
+        public string name;
+        public int color;
         public JPlayer player;
         public int index;
         public Entity getentity;
-    }
-    public struct PlayerTeam
-    {
-        public Dictionary<Entity, PlayerTeamState> teams;
     }
 }

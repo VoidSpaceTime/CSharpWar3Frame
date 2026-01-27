@@ -234,7 +234,7 @@ namespace War3FrameBuild.CommandManager
                                 }
                             case "AddImage":
                                 {
-                                var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("image", GetArgumentString(arguments[0]), commandManager.IsSkip);
+                                    var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("image", GetArgumentString(arguments[0]), commandManager.IsSkip);
                                     newArguments.Add(arguments[0].Expression);
                                     if (status is true && arguments.Count < 3)
                                     {
@@ -421,7 +421,7 @@ namespace War3FrameBuild.CommandManager
                                                 .ToList();
 
                                             var listCreation = SyntaxFactory.ObjectCreationExpression(
-                                                    SyntaxFactory.ParseTypeName("List<(string pickPath, int duration)>") )
+                                                    SyntaxFactory.ParseTypeName("List<(string pickPath, int duration)>"))
                                                 .WithInitializer(SyntaxFactory.InitializerExpression(
                                                     SyntaxKind.CollectionInitializerExpression,
                                                     SyntaxFactory.SeparatedList(tupleExprs)));
@@ -548,21 +548,21 @@ namespace War3FrameBuild.CommandManager
             if (File.Exists(sourcePath))
             {
                 // 复制assets文件到temp
-                    if (!skipDetect)
+                if (!skipDetect)
+                {
+                    pickPath = Path.Combine(support.Path, analyser);
+                    var dstPath = Path.Combine(BuildDstPath, "resource", support.Path, analyser);
+                    var dstFolder = Directory.GetParent(dstPath).FullName;
+                    if (!Directory.Exists(dstFolder))
                     {
-                        pickPath = Path.Combine(support.Path, analyser);
-                        var dstPath = Path.Combine(BuildDstPath, "resource", support.Path, analyser);
-                        var dstFolder = Directory.GetParent(dstPath).FullName;
-                        if (!Directory.Exists(dstFolder))
-                        {
-                            Directory.CreateDirectory(dstFolder);
-                        }
-                        File.Copy(sourcePath, dstPath, true);
-                        if (ext is ".mdl" or ".mdx")
-                        {
-                            CopyTexturesToResourceSync(sourcePath, Directory.GetParent(dstPath).FullName);
-                        }
+                        Directory.CreateDirectory(dstFolder);
                     }
+                    File.Copy(sourcePath, dstPath, true);
+                    if (ext is ".mdl" or ".mdx")
+                    {
+                        CopyTexturesToResourceSync(sourcePath, Directory.GetParent(dstPath).FullName);
+                    }
+                }
             }
             else // 否则projects资源文件
             {
