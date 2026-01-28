@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>War3Frame</RootNamespace>
+    <AssemblyName>GameLogic</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

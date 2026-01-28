@@ -22,13 +22,28 @@ namespace War3Frame
              * 地图内容初始化
 */
 
-            War3.EnableConsole("war3Debug");
-            Console.WriteLine("Hello World!");
+            Main(true);
 
-            var aot = new NativeAOT();
-            aot.RegisterComponent<Position>();
-            aot.RegisterComponent<Velocity>();
-            aot.CreateSchema();
+            return 0;
+        }
+        public static int MainJIT()
+        {
+            Main(false);
+            return 0;
+        }
+
+        public static void Main(bool isAot)
+        {
+
+            War3.EnableConsole("war3Debug");
+            Console.WriteLine("Hello World! isAot: " + isAot.ToString());
+            if (isAot)
+            {
+                var aot = new NativeAOT();
+                aot.RegisterComponent<Position>();
+                aot.RegisterComponent<Velocity>();
+                aot.CreateSchema();
+            }
             var world = new EntityStore();
 
             // 使用 TimedSystemRoot
@@ -58,10 +73,7 @@ namespace War3Frame
                 root.Update(new(TICK_RATE, TimeSpan));
                 TimeSpan += TICK_RATE;
             });
-
-            return 0;
         }
-
         public struct Velocity : IComponent { public Vector3 value; public JUnit unit; }
 
         // 使用原生 QuerySystem，频率由 TimedSystemRoot 控制

@@ -20,5 +20,18 @@ namespace War3Frame
             );
             return entity;
         }
+
+        public static Entity CreateEffectAttach(this EntityStore store,
+                   string modelAlias,
+                   float x, float y, float z)
+        {
+
+            // 创建 Entity + 基础组件
+            var entity = store.CreateEntity(
+                new UnitState { isAlive = true },
+                new Position { x = x, y = y }
+            );
+            return entity;
+        }
     }
 }

@@ -1,6 +1,6 @@
 ﻿# 魔兽争霸3客户端文件路径
 # Warcraft 3 client file path
-war3: "D:/Game/war3/war3Dev"
+war3: "G:/Games/War3"
 
 # 项目根目录（设置空则自动定为exe工具执行所在目录）
 # Framework root directory (set empty to automatically specify the directory where the exe tool is executed)

@@ -3,9 +3,9 @@
 
     public static partial class AssetsInit
     { 
-        public static Library.Assets Init()
+        public static Assets Init()
         {
-            Library.Assets AssetsList = new();
+            Assets AssetsList = new();
             FontInit(AssetsList);
             SoundsInit(AssetsList);
             ModeOriginInit(AssetsList);

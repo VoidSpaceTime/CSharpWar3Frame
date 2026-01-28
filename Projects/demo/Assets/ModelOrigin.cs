@@ -2,7 +2,7 @@
 {
     public partial class AssetsInit
     {
-        public static void ModeOriginInit(Library.Assets assets)
+        public static void ModeOriginInit(Assets assets)
         {
 
             //原生资源

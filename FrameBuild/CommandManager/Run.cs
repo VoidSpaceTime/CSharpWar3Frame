@@ -55,9 +55,6 @@ namespace War3FrameBuild.CommandManager
         }
         private async Task PackupMap(string modeLni, string dstW3xFire)
         {
-
-
-
             if (File.Exists(dstW3xFire))
                 File.Delete(dstW3xFire);
 
@@ -126,7 +123,7 @@ namespace War3FrameBuild.CommandManager
             }
             if (!isCache)
             {
-                if (BuildMode == BuildModeEnum.Release)
+                if (BuildMode is BuildModeEnum.Release)
                 {
                     Log.Debug("准备发布打包");
                     Directory.Delete(BuildDstPath, true);
@@ -148,13 +145,32 @@ namespace War3FrameBuild.CommandManager
                 // 需要增加对callback 的处理
                 // 调试模式下, 不进行打包, 发布模式调整为AOT编译dll
                 var callBackFile = Path.Combine(BuildDstPath, "map", "callback");
+                var pickDllName = "GameLogic";
+                if (BuildMode is not BuildModeEnum.Release)
+                {
+                    var testDll = Path.Combine(BuildDstPath, "map", "ProxyNetRuntime.dll");
+                    pickDllName = "ProxyNetRuntime";
+                    if (!File.Exists(testDll))
+                    {
+                        var tlDll = Path.Combine(Template, "ProxyNetRuntime.dll");
+                        if (File.Exists(tlDll))
+                        {
+                            File.Copy(tlDll, testDll, true);
+                        }
+                        else
+                        {
+                            throw new Exception("jitDll丢失");
+                        }
+                    }
+
+                }
                 if (File.Exists(callBackFile))
                 {
                     var content = File.ReadAllText(callBackFile);
                     var patternPath = "string ModulePath = .*";
                     var patternName = "string ModuleName = .*";
                     var replacementPath = $"string ModulePath = \"{Path.Combine(BuildDstPath, "map").Replace("\\", "/").Replace("/", "\\\\")}\"";
-                    var replacementName = $"string ModuleName = \"{ProjectName}.dll\"";
+                    var replacementName = $"string ModuleName = \"{pickDllName}.dll\"";
                     var res = Regex.Replace(content, patternPath, replacementPath);
                     res = Regex.Replace(res, patternName, replacementName);
                     // 需要调整测试/打包路径   打包的话丢map目录下,
@@ -169,7 +185,7 @@ namespace War3FrameBuild.CommandManager
                     var patternPath = "string ModulePath = .*";
                     var patternName = "string ModuleName = .*";
                     var replacementPath = $"string ModulePath = \"{Path.Combine(BuildDstPath, "map").Replace("\\", "/").Replace("/", "\\\\")}\"";
-                    var replacementName = $"string ModuleName = \"{ProjectName}.dll\"";
+                    var replacementName = $"string ModuleName = \"{pickDllName}.dll\"";
                     var res = Regex.Replace(content, patternPath, replacementPath);
                     res = Regex.Replace(res, patternName, replacementName);
                     // 需要调整测试/打包路径   打包的话丢map目录下,
@@ -181,6 +197,8 @@ namespace War3FrameBuild.CommandManager
                     Log.Error("CallBack 文件丢失");
                     return false;
                 }
+
+
                 Log.Verbose("构建地图完毕：" + BuildMode.ToString());
 
             }
@@ -196,10 +214,10 @@ namespace War3FrameBuild.CommandManager
         }
         private async Task PublishProject(bool isNative, string projectsPath, string pubilshDir)
         {
-            // 目前只会 AOT 打包
-            isNative = true;
-            // -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false 
-            var aotCommand = isNative ? "-p:PublishAot=true -r win-x86 -p:DebugType=None -p:DebugSymbols=false " : "";
+            /*// 目前只会 AOT 打包
+            isNative = true;*/
+            // -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false -p:PublishSingleFile=true
+            var aotCommand = isNative ? " -p:PublishAot=true -r win-x86 -p:DebugType=None -p:DebugSymbols=false " : "";
             string command = @$"publish {projectsPath} -c Release --self-contained true {aotCommand}  -o {pubilshDir}";
 
             var psi = new ProcessStartInfo("dotnet", command)
@@ -264,6 +282,18 @@ namespace War3FrameBuild.CommandManager
 
             var projectsPath = Path.Combine(Projects, ProjectName, $"{ProjectName}.csproj");
             var pubilshDir = Path.Combine(BuildDstPath, "map");
+            if (BuildMode is not BuildModeEnum.Release)
+            {
+                var jitPluginDir = Path.Combine(Config.War3, "JITPlugins");
+                if (Directory.Exists(jitPluginDir))
+                {
+                    Directory.Delete(jitPluginDir, true);
+                }
+                Directory.CreateDirectory(jitPluginDir);
+                pubilshDir = jitPluginDir;
+                File.Copy(Path.Combine(Template, "GameLogic.runtimeconfig.json"), Path.Combine(Config.War3, "JITPlugins", "GameLogic.runtimeconfig.json"), true);
+
+            }
 
             // 打包dll->
             await PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir);

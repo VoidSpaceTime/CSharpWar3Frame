@@ -2,7 +2,7 @@
 {
     public partial class AssetsInit
     {
-        public static void SoundsInit(Library.Assets assets)
+        public static void SoundsInit(Assets assets)
         {
             //【 打击音效 】
 

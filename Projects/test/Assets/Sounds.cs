@@ -4,7 +4,7 @@ namespace War3Frame
 {
     public partial class AssetsInit
     {
-        public static void SoundsInit(Library.Assets assets)
+        public static void SoundsInit(Assets assets)
         {
             //【 打击音效 】
             // 武器声音：metal_slice_medium，每种材质多段

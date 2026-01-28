@@ -1,6 +1,6 @@
 ﻿globals
 	string ModulePath = "F:\\Downloads\\CSharpWar3Map\\.build\\Debug"
-	string ModuleName = "CSharpWrapper.dll"
+	string ModuleName = "ProxyNetRuntime.dll"
 	integer Int
 	integer l__Int
 	code Code
@@ -406,7 +406,7 @@ function main takes nothing returns nothing
 	endif
 
 	// 不希望玩家重新加载地图来重加载内置，应该地图结束时就退出游戏！
-	// 导出war3map.dll到插件目录并且加载插�?
+	// 导出war3map.dll到插件目录并且加载插件
 	set moduleName = MyI2S(GetCurrentProcessId()) + ".dll"
 	set moduleName = "plugins\\" + moduleName
 	call CreateDirectoryA(GetStringAddress("plugins\\"), 0)

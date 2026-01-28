@@ -14,10 +14,10 @@
   <Folder Name="/War3Builder/">
     <Project Path="CSharpWar3Frame/CSharpWar3FrameConsole.csproj" />
     <Project Path="FrameBuild/War3FrameBuild.csproj" Id="f6a68a3d-602b-4229-b268-4ca0821bb6d3" />
+    <Project Path="ProxyNetRuntime/ProxyNetRuntime.csproj" Id="e5cb3b23-ffcd-4a14-a7c6-ad30c27ad807" />
   </Folder>
   <Folder Name="/War3Builder/Common/">
     <Project Path="FastMDX/FastMDX.csproj" />
     <Project Path="ModelFormat/ModelFormat.csproj" Id="433f4c35-c1a6-4fc7-afe0-e003ce3990e6" />
   </Folder>
-  <Project Path="CSharpWrapper/CSharpWrapper.vcxproj" Id="f60f6206-2a32-4e4b-981e-0265df0d1fe8" />
 </Solution>
