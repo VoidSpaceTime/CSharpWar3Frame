@@ -14,7 +14,6 @@
   <Folder Name="/War3Builder/">
     <Project Path="CSharpWar3Frame/CSharpWar3FrameConsole.csproj" />
     <Project Path="FrameBuild/War3FrameBuild.csproj" Id="f6a68a3d-602b-4229-b268-4ca0821bb6d3" />
-    <Project Path="ProxyNetRuntime/ProxyNetRuntime.csproj" Id="e5cb3b23-ffcd-4a14-a7c6-ad30c27ad807" />
   </Folder>
   <Folder Name="/War3Builder/Common/">
     <Project Path="FastMDX/FastMDX.csproj" />

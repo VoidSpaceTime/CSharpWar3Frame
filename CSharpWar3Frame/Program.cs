@@ -11,6 +11,7 @@ namespace CSharpWar3FrameConsole
     {
         public static ConfigPath PathConfig { get; set; }
         public static CommandManager CommandManager { get; set; }
+
         static async Task Main(string[] args)
         {
             Console.InputEncoding = System.Text.Encoding.UTF8;
@@ -22,13 +23,13 @@ namespace CSharpWar3FrameConsole
             {
                 return;
             }
+
             PathConfig = pathConfig;
             CommandManager = new CommandManager(PathConfig, args[1]); // 项目名后续传入
             // 命令注册
             CommendRegister(args);
-
-
         }
+
         private static void CommendRegister(string[] args)
         {
             // 命令解析调用
@@ -39,6 +40,7 @@ namespace CSharpWar3FrameConsole
             WECommand(rootCommand);
             rootCommand.Parse(args).Invoke();
         }
+
         private static void NewCommand(RootCommand rootCommand)
         {
             var newCommand = new Command("new", "创建新项目");
@@ -55,6 +57,7 @@ namespace CSharpWar3FrameConsole
             newCommand.Add(projectArg);
             rootCommand.Subcommands.Add(newCommand);
         }
+
         private static void RunCommand(RootCommand rootCommand)
         {
             // run 子命令
@@ -99,7 +102,7 @@ namespace CSharpWar3FrameConsole
                 if (modeResults.Length == 0)
                 {
                     // 默认本地模式
-                    selectedMode = BuildModeEnum.Test;
+                    selectedMode = BuildModeEnum.Build;
                 }
                 else
                 {
@@ -119,16 +122,16 @@ namespace CSharpWar3FrameConsole
                     Log.Error("错误：不能同时指定多个模式（例如 -l 与 -t 等不能一起使用）。");
                     return;
                 }
+
                 CommandManager.BuildMode = selectedMode;
                 CommandManager.BuildDstPath = Path.Combine(CommandManager.Temp, selectedMode.ToString(), project);
                 await CommandManager.Run(isCache, isSemi);
 
 
-
                 Console.WriteLine($"运行项目: {project}");
             });
-
         }
+
         private static void WECommand(RootCommand rootCommand)
         {
             var weCommand = new Command("we", "启动WE编辑器");
@@ -138,7 +141,6 @@ namespace CSharpWar3FrameConsole
             {
                 var demo = parseResult.GetValue(projectArg);
                 await CommandManager.WE();
-
             });
             weCommand.Add(projectArg);
             rootCommand.Subcommands.Add(weCommand);
