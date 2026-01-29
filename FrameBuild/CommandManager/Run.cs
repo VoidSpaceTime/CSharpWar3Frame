@@ -246,11 +246,11 @@ namespace War3FrameBuild.CommandManager
                     return;
                 }
 
-                // 异步读取输出，避免子进程因输出缓冲区满而阻塞
+                /*// 异步读取输出，避免子进程因输出缓冲区满而阻塞
                 proc.OutputDataReceived += (s, e) => { if (e.Data != null) { stdoutSb.AppendLine(e.Data); Log.Debug(e.Data); } };
                 proc.ErrorDataReceived += (s, e) => { if (e.Data != null) { stderrSb.AppendLine(e.Data); Log.Warning(e.Data); } };
                 proc.BeginOutputReadLine();
-                proc.BeginErrorReadLine();
+                proc.BeginErrorReadLine();*/
             }
             catch (Exception ex)
             {
