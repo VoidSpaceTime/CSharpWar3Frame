@@ -11,7 +11,7 @@ namespace War3Frame
         public const float TICK_RATE = 0.01f; // War3 中心计时器频率
 
         // Native AOT 入口
-        [UnmanagedCallersOnly(EntryPoint = "main")]
+        //[UnmanagedCallersOnly(EntryPoint = "main")]
         public static int MainAOT()
         {
             /* AOTInit 注册 Component
@@ -26,6 +26,8 @@ namespace War3Frame
 
             return 0;
         }
+        // 使用 Cdecl 调用约定，导出名为 "main"（不带装饰符）
+        [UnmanagedCallersOnly(EntryPoint = "main", CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
         public static int MainJIT()
         {
             Main(false);
@@ -34,7 +36,6 @@ namespace War3Frame
 
         public static void Main(bool isAot)
         {
-
             War3.EnableConsole("war3Debug");
             Console.WriteLine("Hello World! isAot: " + isAot.ToString());
             if (isAot)

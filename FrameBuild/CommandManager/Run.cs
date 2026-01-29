@@ -145,24 +145,28 @@ namespace War3FrameBuild.CommandManager
                 // 需要增加对callback 的处理
                 // 调试模式下, 不进行打包, 发布模式调整为AOT编译dll
                 var callBackFile = Path.Combine(BuildDstPath, "map", "callback");
-                var pickDllName = "GameLogic";
+                //var pickDllName = "GameLogic";
+                //if (BuildMode is not BuildModeEnum.Release)
+                //{
+                //    var testDll = Path.Combine(BuildDstPath, "map", "ProxyNetRuntime.dll");
+                //    pickDllName = "ProxyNetRuntime";
+                //    if (!File.Exists(testDll))
+                //    {
+                //        var tlDll = Path.Combine(Template, "ProxyNetRuntime.dll");
+                //        if (File.Exists(tlDll))
+                //        {
+                //            File.Copy(tlDll, testDll, true);
+                //        }
+                //        else
+                //        {
+                //            throw new Exception("jitDll丢失");
+                //        }
+                //    }
+                //}
+                var pickDllName = ProjectName;
                 if (BuildMode is not BuildModeEnum.Release)
                 {
-                    var testDll = Path.Combine(BuildDstPath, "map", "ProxyNetRuntime.dll");
-                    pickDllName = "ProxyNetRuntime";
-                    if (!File.Exists(testDll))
-                    {
-                        var tlDll = Path.Combine(Template, "ProxyNetRuntime.dll");
-                        if (File.Exists(tlDll))
-                        {
-                            File.Copy(tlDll, testDll, true);
-                        }
-                        else
-                        {
-                            throw new Exception("jitDll丢失");
-                        }
-                    }
-
+                    pickDllName = $"{ProjectName}NE";
                 }
                 if (File.Exists(callBackFile))
                 {
@@ -216,9 +220,9 @@ namespace War3FrameBuild.CommandManager
         {
             /*// 目前只会 AOT 打包
             isNative = true;*/
-            // -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false -p:PublishSingleFile=true
-            var aotCommand = isNative ? " -p:PublishAot=true -r win-x86 -p:DebugType=None -p:DebugSymbols=false " : "";
-            string command = @$"publish {projectsPath} -c Release --self-contained true {aotCommand}  -o {pubilshDir}";
+            // -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false -p:PublishSingleFile=true --self-contained true
+            var aotCommand = isNative ? " -p:PublishAot=true -p:DebugType=None -p:DebugSymbols=false " : "";
+            string command = @$"publish {projectsPath} -c Release -r win-x86  {aotCommand}  -o {pubilshDir}";
 
             var psi = new ProcessStartInfo("dotnet", command)
             {
@@ -266,6 +270,29 @@ namespace War3FrameBuild.CommandManager
             {
                 Log.Information("dotnet publish 完成");
             }
+
+            // DNNE: 复制 native DLL 到输出目录
+            if (!isNative)
+            {
+                // 获取项目目录和项目名
+                var projectDir = Path.GetDirectoryName(projectsPath)!;
+                var projectName = Path.GetFileNameWithoutExtension(projectsPath);
+
+                // DNNE 生成的 native DLL 路径
+                var dnneNativeDll = Path.Combine(projectDir, "obj", "Release", "net10.0", "win-x86", "dnne", "bin", $"{projectName}NE.dll");
+
+                if (File.Exists(dnneNativeDll))
+                {
+                    var destDll = Path.Combine(pubilshDir, $"{projectName}NE.dll");
+                    File.Copy(dnneNativeDll, destDll, true);
+                    Log.Information($"DNNE native DLL 已复制: {destDll}");
+                }
+                else
+                {
+                    Log.Warning($"DNNE native DLL 未找到: {dnneNativeDll}");
+                }
+            }
+
             return;
         }
         public async Task<bool> Run(bool isCache, bool isSemi)
@@ -282,18 +309,18 @@ namespace War3FrameBuild.CommandManager
 
             var projectsPath = Path.Combine(Projects, ProjectName, $"{ProjectName}.csproj");
             var pubilshDir = Path.Combine(BuildDstPath, "map");
-            if (BuildMode is not BuildModeEnum.Release)
-            {
-                var jitPluginDir = Path.Combine(Config.War3, "JITPlugins");
-                if (Directory.Exists(jitPluginDir))
-                {
-                    Directory.Delete(jitPluginDir, true);
-                }
-                Directory.CreateDirectory(jitPluginDir);
-                pubilshDir = jitPluginDir;
-                File.Copy(Path.Combine(Template, "GameLogic.runtimeconfig.json"), Path.Combine(Config.War3, "JITPlugins", "GameLogic.runtimeconfig.json"), true);
+            /*            if (BuildMode is not BuildModeEnum.Release)
+                        {
+                            var jitPluginDir = Path.Combine(Config.War3, "JITPlugins");
+                            if (Directory.Exists(jitPluginDir))
+                            {
+                                Directory.Delete(jitPluginDir, true);
+                            }
+                            Directory.CreateDirectory(jitPluginDir);
+                            pubilshDir = jitPluginDir;
+                            File.Copy(Path.Combine(Template, "GameLogic.runtimeconfig.json"), Path.Combine(Config.War3, "JITPlugins", "GameLogic.runtimeconfig.json"), true);
 
-            }
+                        }*/
 
             // 打包dll->
             await PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir);
