@@ -83,7 +83,7 @@ namespace War3FrameBuild.CommandManager
             Log.Verbose($"打包地图，耗时：{(DateTime.Now - startTime).TotalSeconds.ToString()}");
 
         }
-        private async Task<bool> BuildMap(bool isCache, bool isSemi)
+        private async Task<bool> BuildMap(bool isCache, bool noTest)
         {
 
 
@@ -295,32 +295,28 @@ namespace War3FrameBuild.CommandManager
 
             return;
         }
-        public async Task<bool> Run(bool isCache, bool isSemi)
+        public async Task<bool> Run(bool isCache, bool noTest)
         {
             var startTIme = DateTime.Now;
-            var dstW3xFire = Path.Combine(BuildDstPath, "pack.w3x");
+            var dstW3xFire = Path.Combine(Config.War3, "Maps", "Test", $"{ProjectName}.w3x");
+            if (!Directory.Exists(Path.Combine(Config.War3, "Maps")))
+            {
+                Directory.CreateDirectory(Path.Combine(Config.War3, "Maps"));
+                if (!Directory.Exists(Path.Combine(Config.War3, "Maps", "Test")))
+                {
+                    Directory.CreateDirectory(Path.Combine(Config.War3, "Maps", "Test"));
+                }
+            }
             var modeLni = "slk";
             if (BuildMode is BuildModeEnum.Test)
             {
                 modeLni = "obj";
             }
-            await BuildMap(isCache, isSemi);
+            await BuildMap(isCache, noTest);
 
 
             var projectsPath = Path.Combine(Projects, ProjectName, $"{ProjectName}.csproj");
             var pubilshDir = Path.Combine(BuildDstPath, "map");
-            /*            if (BuildMode is not BuildModeEnum.Release)
-                        {
-                            var jitPluginDir = Path.Combine(Config.War3, "JITPlugins");
-                            if (Directory.Exists(jitPluginDir))
-                            {
-                                Directory.Delete(jitPluginDir, true);
-                            }
-                            Directory.CreateDirectory(jitPluginDir);
-                            pubilshDir = jitPluginDir;
-                            File.Copy(Path.Combine(Template, "GameLogic.runtimeconfig.json"), Path.Combine(Config.War3, "JITPlugins", "GameLogic.runtimeconfig.json"), true);
-
-                        }*/
 
             // 打包dll->
             await PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir);
@@ -339,7 +335,7 @@ namespace War3FrameBuild.CommandManager
             if (File.Exists(Path.Combine(Config.War3, "version.dll")))
                 File.Delete(Path.Combine(Config.War3, "version.dll"));
 
-            if (isSemi)
+            if (noTest)
             {
                 return true;
             }
@@ -352,7 +348,6 @@ namespace War3FrameBuild.CommandManager
             {
                 Log.Warning(">>> 请先关闭当前war3!!! <<<");
             }
-            //Task.Delay(200).Wait();
 
             RunTest(dstW3xFire, 0);
             Log.Information($"本次执行时间: {(DateTime.Now - startTIme).TotalSeconds.ToString()}");

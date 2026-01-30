@@ -34,7 +34,7 @@ namespace CSharpWar3FrameConsole
             // --- 通用参数 (不设置 SetName，则两个组都能用) ---
 
             // -t / --test
-            [Option('t', "test", HelpText = "关闭测试")]
+            [Option('n', "noTest", HelpText = "关闭测试")]
             public bool NoRunTests { get; set; }
             [Option('c', "cache", HelpText = "启用缓存构建")]
             public bool CacheBuild { get; set; }
