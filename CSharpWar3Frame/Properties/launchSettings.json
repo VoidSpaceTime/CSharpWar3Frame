@@ -2,7 +2,7 @@
   "profiles": {
     "CSharpWar3FrameConsole": {
       "commandName": "Project",
-      "commandLineArgs": "run test -b"
+      "commandLineArgs": "multi 3"
     }
   }
 }

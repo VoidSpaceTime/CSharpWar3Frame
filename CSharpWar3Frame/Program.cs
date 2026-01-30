@@ -1,149 +1,161 @@
-﻿using Serilog;
+﻿// 或者
 
-// 或者
-using System.CommandLine;
+using System.Diagnostics;
+using CommandLine;
+using Friflo.Json.Burst;
+using Serilog;
 using War3FrameBuild;
 using War3FrameBuild.CommandManager;
 
 namespace CSharpWar3FrameConsole
 {
-    internal class Program
+    internal static class Program
     {
         public static ConfigPath PathConfig { get; set; }
         public static CommandManager CommandManager { get; set; }
+        [Verb("run", HelpText = "运行项目")]
+        class RunOptions
+        {
+            // 1. 位置参数
+            [Value(0, MetaName = "ProjectName", Required = true, HelpText = "项目名称")]
+            public string ProjectName { get; set; }
 
-        static async Task Main(string[] args)
+            // --- 互斥参数组 ---
+
+            // 选项 A: -b / --build (归属于 "DebugSet" 组)
+            [Option('b', "build", SetName = "DebugSet", HelpText = "构建项目 (Debug模式)")]
+            public bool BuildDebug { get; set; }
+
+            // 选项 B: -r / --release (归属于 "ReleaseSet" 组)
+            // 这里的 SetName 必须和上面不同，解析器才会认为它们是互斥的
+            [Option('r', "release", SetName = "ReleaseSet", HelpText = "构建项目 (Release模式)")]
+            public bool BuildRelease { get; set; }
+
+            // --- 通用参数 (不设置 SetName，则两个组都能用) ---
+
+            // -t / --test
+            [Option('t', "test", HelpText = "关闭测试")]
+            public bool NoRunTests { get; set; }
+            [Option('c', "cache", HelpText = "启用缓存构建")]
+            public bool CacheBuild { get; set; }
+
+            // --- 辅助属性：将两个 Bool 转换成一个 Enum (推荐做法) ---
+            // 这样你在业务逻辑里就不用写 if(b) else if(r) 了
+            public BuildModeEnum CurrentBuildMode
+            {
+                get
+                {
+                    if (BuildRelease) return BuildModeEnum.Release;
+                    if (BuildDebug) return BuildModeEnum.Build;
+                    return BuildModeEnum.Build;
+                }
+            }
+        }
+        [Verb("we", HelpText = "WE编辑运行项目")]
+        class WeOptions
+        {
+            [Value(0, MetaName = "ProjectName", Required = true, HelpText = "项目名称")]
+            public string ProjectName { get; set; }
+
+        }
+        [Verb("new", HelpText = "新建项目")]
+        class NewOptions
+        {
+            [Value(0, MetaName = "ProjectName", Required = true, HelpText = "项目名称")]
+            public string ProjectName { get; set; }
+        }
+        [Verb("multi", HelpText = "新建项目")]
+        class MultiOptions
+        {
+            [Value(0, Default = 2, Required = false, HelpText = "项目名称")]
+            public int Count { get; set; } = 2;
+        }
+        async static Task Main(string[] args)
         {
             Console.InputEncoding = System.Text.Encoding.UTF8;
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             // 日志和配置初始化
             ApplicationBuilderExtensions.LogRegister();
             var configFlag = ApplicationBuilderExtensions.ConfigLoad(out var pathConfig);
-            if (!configFlag && pathConfig != null)
+            if (!configFlag && pathConfig is null)
             {
                 return;
             }
 
-            PathConfig = pathConfig;
-            CommandManager = new CommandManager(PathConfig, args[1]); // 项目名后续传入
-            // 命令注册
-            CommendRegister(args);
-        }
 
-        private static void CommendRegister(string[] args)
-        {
-            // 命令解析调用
-            var rootCommand = new RootCommand("lik CLI");
 
-            NewCommand(rootCommand);
-            RunCommand(rootCommand);
-            WECommand(rootCommand);
-            rootCommand.Parse(args).Invoke();
-        }
 
-        private static void NewCommand(RootCommand rootCommand)
-        {
-            var newCommand = new Command("new", "创建新项目");
-            var projectArg = new Argument<string>("project");
-
-            // 设置处理函数
-            newCommand.SetAction(parseResult =>
-            {
-                var demo = parseResult.GetValue(projectArg);
-
-                CommandManager.New();
-                //Log.Verbose($"新建项目: {demo}");
-            });
-            newCommand.Add(projectArg);
-            rootCommand.Subcommands.Add(newCommand);
-        }
-
-        private static void RunCommand(RootCommand rootCommand)
-        {
-            // run 子命令
-            var run = new Command("run", "运行指定项目");
-            var projectArg = new Argument<string>("project") { Description = "要运行的项目名" };
-            // 为每个模式创建 Option<bool>，注册三种别名：-x, -x`, -x!
-            //var optLocal = new Option<bool>(aliases: new[] { "-l", "-l`", "-l!" }, name: "本地模式");
-            var optDebug = new Option<bool>(aliases: new[] { "-t", "-t`", "-t!" }, name: "调试模式");
-            var optBuild = new Option<bool>(aliases: new[] { "-b", "-b`", "-b!" }, name: "构建模式");
-            //var optDist = new Option<bool>(aliases: new[] { "-d", "-d`", "-d!" }, name: "发行模式");
-            var optProd = new Option<bool>(aliases: new[] { "-r", "-r`", "-r!" }, name: "成品模式");
-
-            run.Add(projectArg);
-            rootCommand.Subcommands.Add(run);
-            //run.Options.Add(optLocal);
-            run.Options.Add(optDebug);
-            run.Options.Add(optBuild);
-            //run.Options.Add(optDist);
-            run.Options.Add(optProd);
-            // 设置处理函数
-            run.SetAction(async parseResult =>
-            {
-                var project = parseResult.GetValue(projectArg);
-                // 查找哪个模式选项被指定（如果用户指定多个模式，视为错误）
-                var modeResults = new[]
+            // 关键点：泛型里填入 <RunOptions, WeOptions>
+            // 库会根据用户输入的第一个词（run 或 we）自动匹配到对应的类
+            Parser.Default.ParseArguments<RunOptions, WeOptions, NewOptions, MultiOptions>(args)
+                .WithParsed<RunOptions>(async opts =>
                 {
-                new { Name = BuildModeEnum.Test,  Option = optDebug },
-                new { Name = BuildModeEnum.Build,  Option = optBuild },
-                new { Name = BuildModeEnum.Release,Option = optProd }
-                }
-                .Select(m => new
+                    CommandManager = new CommandManager(pathConfig, opts.ProjectName, opts.CurrentBuildMode); // 项目名后续传入
+                    await RunCommand(opts);
+                }) // 如果匹配到 run
+                .WithParsed<WeOptions>(async opts =>
                 {
-                    m.Name,
-                    Result = parseResult.GetResult(m.Option),
+                    CommandManager = new CommandManager(pathConfig, opts.ProjectName); // 项目名后续传入
+                    await WeCommand(opts);
+                })   // 如果匹配到 we
+                .WithParsed<NewOptions>(async opts =>
+                {
+                    CommandManager = new CommandManager(pathConfig, opts.ProjectName); // 项目名后续传入
+                    await NewCommand(opts);
+                })   // 如果匹配到 we
+                .WithParsed<MultiOptions>(ops =>
+                {
+                    CommandManager = new CommandManager(pathConfig, ""); // 项目名后续传入
+                    MultiCommand(ops);
                 })
-                .Where(x => x.Result.IdentifierToken != null)
-                .ToArray();
-
-                BuildModeEnum selectedMode;
-                bool isCache = false;
-                bool isSemi = false;
-                if (modeResults.Length == 0)
-                {
-                    // 默认本地模式
-                    selectedMode = BuildModeEnum.Build;
-                }
-                else
-                {
-                    selectedMode = modeResults.First().Name;
-                    // 读取实际使用的 token 来判断是否带 ~ 或 !
-                    var tokens = modeResults.First().Result.IdentifierToken.Value;
-                    if (modeResults.Length > 0)
-                    {
-
-                        if (tokens.TrimEnd().Contains("`")) isCache = true;
-                        if (tokens.TrimEnd().Contains("!")) isSemi = true;
-                    }
-                }
-
-                if (modeResults.Length > 1)
-                {
-                    Log.Error("错误：不能同时指定多个模式（例如 -l 与 -t 等不能一起使用）。");
-                    return;
-                }
-
-                CommandManager.BuildMode = selectedMode;
-                CommandManager.BuildDstPath = Path.Combine(CommandManager.Temp, selectedMode.ToString(), project);
-                await CommandManager.Run(isCache, isSemi);
-
-
-                Console.WriteLine($"运行项目: {project}");
-            });
+                .WithNotParsed((e) => throw new Exception("无匹配命令:" + e.ToString()));                     // 如果都没匹配上
         }
 
-        private static void WECommand(RootCommand rootCommand)
+
+        private static async Task NewCommand(NewOptions options)
         {
-            var weCommand = new Command("we", "启动WE编辑器");
-            var projectArg = new Argument<string>("project");
-            // 设置处理函数
-            weCommand.SetAction(async parseResult =>
+            CommandManager.New();
+            //Log.Verbose($"新建项目: {demo}");
+        }
+
+        private static async Task RunCommand(RunOptions options)
+        {
+            await CommandManager.Run(options.CacheBuild, options.NoRunTests);
+            Console.WriteLine($"运行项目: {options.ProjectName}");
+
+        }
+
+        private static async Task WeCommand(WeOptions options)
+        {
+            CommandManager.ProjectName = options.ProjectName;
+            await CommandManager.WE();
+
+        }
+        static void MultiCommand(MultiOptions options)
+        {
+            for (int i = 0; i < options.Count; i++)
             {
-                var demo = parseResult.GetValue(projectArg);
-                await CommandManager.WE();
-            });
-            weCommand.Add(projectArg);
-            rootCommand.Subcommands.Add(weCommand);
+                Log.Information("启动魔兽争霸III");
+                var path = Path.Combine(CommandManager.Config.We, "bin", "YDWEConfig.exe");
+                var psi = new ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = false,
+                };
+                psi.ArgumentList.Add("-launchwar3");
+                Task.Delay(1000);
+                //var bo3 = File.Exists(Path.Combine(Config.We, "bin", "WEConfig.exe"));
+
+                using var war3Psi = Process.Start(psi);
+
+                var war3Count = Process.GetProcesses()
+                           .Count(p => string.Equals(p.ProcessName, "war3", StringComparison.OrdinalIgnoreCase));
+                Log.Information($"当前魔兽争霸III进程数量: {war3Count}");
+                if (i < war3Count)
+                {
+                    i--;
+                }
+            }
         }
     }
 }
