@@ -1,31 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <RootNamespace>War3Frame</RootNamespace>
-    <AssemblyName>GameLogic</AssemblyName>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>War3Frame</RootNamespace>
+		<!-- DNNE 配置 -->
+		<RuntimeIdentifier>win-x86</RuntimeIdentifier>
+		<EnableDynamicLoading>true</EnableDynamicLoading>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<!-- 让 DNNE 生成的 native DLL 复制到输出目录 -->
+		<DnneAddGeneratedBinaryToProject>true</DnneAddGeneratedBinaryToProject>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <IsAotCompatible>True</IsAotCompatible>
-  </PropertyGroup>
+	<ItemGroup>
+		<Folder Include="Library\" />
+		<Folder Include="Scripts\Setup\" />
+		<Folder Include="Scripts\Template\" />
+		<Folder Include="Scripts\Process\" />
+	</ItemGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <IsAotCompatible>True</IsAotCompatible>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <Folder Include="Library\" />
-    <Folder Include="Scripts\Setup\" />
-    <Folder Include="Scripts\Template\" />
-    <Folder Include="Scripts\Process\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\War3Frame\War3Frame.csproj" />
-    <TrimmerRootAssembly Include="Friflo.Engine.ECS" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="DNNE" Version="2.0.8" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\War3Frame\War3Frame.csproj" />
+		<TrimmerRootAssembly Include="Friflo.Engine.ECS" />
+	</ItemGroup>
 
 </Project>

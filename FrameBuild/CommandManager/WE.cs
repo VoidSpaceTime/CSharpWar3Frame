@@ -9,8 +9,8 @@ namespace War3FrameBuild.CommandManager
     {
         public async Task WE()
         {
-            var weExe = new string[] { "KKWE.exe", "WE.exe" }.Where(p=>File.Exists(Path.Combine(Config.We, p))).FirstOrDefault();
-           
+            var weExe = new string[] { "KKWE.exe", "WE.exe" }.Where(p => File.Exists(Path.Combine(Config.We, p))).FirstOrDefault();
+
             if (ProjectName == string.Empty)
             {
                 var psi = new ProcessStartInfo
@@ -20,7 +20,7 @@ namespace War3FrameBuild.CommandManager
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                 };
-                var weProcess = Process.Start(psi);
+                using var weProcess = Process.Start(psi);
                 return;
             }
             if (Directory.Exists(Path.Combine(Projects, ProjectName)) is false)
@@ -75,20 +75,20 @@ namespace War3FrameBuild.CommandManager
             if (Directory.Exists(projectAssetsPath))
             {
                 Log.Information($"尝试加载项目 {ProjectName} 中的terrain资源");
-                string allText = "";
+                var allText = new List<string>();
                 foreach (var item in Directory.EnumerateFiles(projectAssetsPath))
                 {
-                    var text = await File.ReadAllTextAsync(item);
-                    allText.Replace("\r\n", "\n");
-                    allText.Replace("\r", "\n");
-                    allText = Regex.Replace(allText, @"//(.*)", string.Empty, RegexOptions.Multiline);
-                    allText = Regex.Replace(allText, @"/\*.*?\*/", string.Empty, RegexOptions.Singleline);
+                    var text = File.ReadAllText(item);
+                    text = text.Replace("\r\n", "\n");
+                    text = text.Replace("\r", "\n");
+                    text = Regex.Replace(text, @"//(.*)", string.Empty, RegexOptions.Multiline);
+                    text = Regex.Replace(text, @"/\*.*?\*/", string.Empty, RegexOptions.Singleline);
 
-                    allText += text;
 
+                    allText.AddRange(text.Split("\n").Where(t => t.Contains("AssetsList.AddTerrain")));
                 }
-                var process = allText.Split("\n")
-                    .Where(t => t.TrimStart().StartsWith("AssetsList.AddTerrain"))
+                var process = allText
+
                     .Select(e =>
                     {
                         var m = Regex.Matches(e, @"""[^""]*""");
@@ -98,14 +98,15 @@ namespace War3FrameBuild.CommandManager
                 {
                     Log.Error("地形贴图冲突[调用过" + process.First() + "的贴图，确保项目只引用过一次的地形贴图]");
                 }
-                terrain = process.First();
 
-                if (terrain == "")
+                if (process.Count() < 1)
                 {
                     Log.Error($"未找到项目{ProjectName}中引用了terrain资源");
                 }
                 else
                 {
+                    terrain = process.First();
+
                     var terrainDir = Path.Combine(Config.Assets, "war3mapTerrain", terrain);
                     if (Directory.Exists(terrainDir))
                     {
@@ -125,6 +126,7 @@ namespace War3FrameBuild.CommandManager
                     }
                 }
             }
+            var distFile = Path.Combine(Temp, $"{ProjectName}.w3x");
             // 打包地图文件
             var w2lProcess = new ProcessStartInfo
             {
@@ -135,7 +137,9 @@ namespace War3FrameBuild.CommandManager
             };
             w2lProcess.ArgumentList.Add("obj");
             w2lProcess.ArgumentList.Add(tempW3xDir);
-            w2lProcess.ArgumentList.Add(tempW3xFile);
+            w2lProcess.ArgumentList.Add(distFile);
+            Log.Debug(tempW3xDir);
+            Log.Debug(distFile);
             using var w2l = new Process { StartInfo = w2lProcess, EnableRaisingEvents = true };
             if (!w2l.Start())
             {
@@ -143,21 +147,32 @@ namespace War3FrameBuild.CommandManager
                 return;
             }
             // 创建标记文件
-            File.Copy(Path.Combine(Template, "lni", "x.we"), tempWEFlie);
-            var weProc = new ProcessStartInfo(Path.Combine(Config.We, "we.exe"), ["-loadfile", tempW3xFile])
+            var wePath = new string[] { "we.exe", "kkwe.exe" }.Where(p => File.Exists(Path.Combine(Config.We, p))).FirstOrDefault("");
+            if (wePath is not "")
             {
-                FileName = Path.Combine(Config.We, "we.exe"),
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-            using var we = new Process { StartInfo = w2lProcess, EnableRaisingEvents = true };
-            if (!we.Start())
-            {
-                Log.Error($"we启动失败: {we.StandardError.ReadToEnd()}");
-                return;
+                File.Copy(Path.Combine(Template, "lni", "x.we"), tempWEFlie);
+                var weProc = new ProcessStartInfo
+                {
+                    FileName = Path.Combine(Config.We, wePath),
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                weProc.ArgumentList.Add("-loadfile");
+                weProc.ArgumentList.Add(distFile);
+                Task.Delay(500).Wait();
+                using var we = new Process { StartInfo = weProc, EnableRaisingEvents = true };
+                if (!we.Start())
+                {
+                    Log.Error($"we启动失败: {we.StandardError.ReadToEnd()}");
+                    return;
+                }
+                Log.Verbose("WE编辑器启动成功");
             }
-            Log.Verbose("WE编辑器启动成功");
+            else
+            {
+                throw new Exception("WE编辑器不存在，请检查配置文件中的We路径是否正确");
+            }
         }
     }
 }
