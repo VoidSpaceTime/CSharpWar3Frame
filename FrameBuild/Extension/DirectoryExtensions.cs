@@ -1,79 +1,65 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxTokenParser;
+﻿namespace War3FrameBuild.Extension;
 
-namespace War3FrameBuild.Extension
+public static class DirectoryExtensions
 {
-    public static class DirectoryExtensions
+    public static void CopyDir(string sourceDir, string targetDir)
     {
-        public static void CopyDir(string sourceDir, string targetDir)
+        if (string.IsNullOrEmpty(sourceDir))
+            throw new ArgumentException("sourceDir is null or empty", nameof(sourceDir));
+        if (string.IsNullOrEmpty(targetDir))
+            throw new ArgumentException("targetDir is null or empty", nameof(targetDir));
+
+        // normalize full paths
+        var sourceFull = Path.GetFullPath(sourceDir)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var targetFull = Path.GetFullPath(targetDir)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        // don't attempt to copy into the same directory or into a subdirectory of the source
+        if (string.Equals(sourceFull, targetFull, StringComparison.OrdinalIgnoreCase) ||
+            targetFull.StartsWith(sourceFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // ensure source exists
+        if (!Directory.Exists(sourceFull))
+            throw new DirectoryNotFoundException($"Source directory not found: {sourceFull}");
+
+        // create target if missing
+        if (!Directory.Exists(targetFull))
+            Directory.CreateDirectory(targetFull);
+
+        // enumerate entries in source
+        var entries = Directory.GetFileSystemEntries(sourceFull);
+        foreach (var entry in entries)
         {
-            if (string.IsNullOrEmpty(sourceDir)) throw new ArgumentException("sourceDir is null or empty", nameof(sourceDir));
-            if (string.IsNullOrEmpty(targetDir)) throw new ArgumentException("targetDir is null or empty", nameof(targetDir));
+            var entryFull = Path.GetFullPath(entry);
 
-            // normalize full paths
-            var sourceFull = Path.GetFullPath(sourceDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            var targetFull = Path.GetFullPath(targetDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            // skip entries that are inside the target directory to avoid infinite recursion
+            if (string.Equals(entryFull, targetFull, StringComparison.OrdinalIgnoreCase) ||
+                entryFull.StartsWith(targetFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                continue;
 
-            // don't attempt to copy into the same directory or into a subdirectory of the source
-            if (string.Equals(sourceFull, targetFull, StringComparison.OrdinalIgnoreCase) ||
-                targetFull.StartsWith(sourceFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-            {
-                return;
-            }
+            var name = Path.GetFileName(entryFull);
+            var destPath = Path.Combine(targetFull, name);
 
-            // ensure source exists
-            if (!Directory.Exists(sourceFull))
-                throw new DirectoryNotFoundException($"Source directory not found: {sourceFull}");
-
-            // create target if missing
-            if (!Directory.Exists(targetFull))
-                Directory.CreateDirectory(targetFull);
-
-            // enumerate entries in source
-            var entries = Directory.GetFileSystemEntries(sourceFull);
-            foreach (var entry in entries)
-            {
-                var entryFull = Path.GetFullPath(entry);
-
-                // skip entries that are inside the target directory to avoid infinite recursion
-                if (string.Equals(entryFull, targetFull, StringComparison.OrdinalIgnoreCase) ||
-                    entryFull.StartsWith(targetFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                var name = Path.GetFileName(entryFull);
-                var destPath = Path.Combine(targetFull, name);
-
-                if (Directory.Exists(entryFull))
-                {
-                    CopyDir(entryFull, destPath);
-                }
-                else
-                {
-                    File.Copy(entryFull, destPath, true);
-                }
-            }
+            if (Directory.Exists(entryFull))
+                CopyDir(entryFull, destPath);
+            else
+                File.Copy(entryFull, destPath, true);
         }
-        // helper: 在起始目录向上查找相对文件（返回找到的完整路径或 null）
+    }
+    // helper: 在起始目录向上查找相对文件（返回找到的完整路径或 null）
 
-        public static string FindFileUpwards(string startDir, int maxLevels)
+    public static string FindFileUpwards(string startDir, int maxLevels)
+    {
+        var dir = new DirectoryInfo(startDir);
+        for (var i = 0; i <= maxLevels && dir != null; i++)
         {
-            var dir = new DirectoryInfo(startDir);
-            for (int i = 0; i <= maxLevels && dir != null; i++)
-            {
-                var candidate = dir.FullName;
-                dir = dir.Parent;
-            }
-            if (dir is null) { return string.Empty; }
-            return dir.FullName;
-
+            var candidate = dir.FullName;
+            dir = dir.Parent;
         }
 
+        if (dir is null) return string.Empty;
+        return dir.FullName;
     }
 }

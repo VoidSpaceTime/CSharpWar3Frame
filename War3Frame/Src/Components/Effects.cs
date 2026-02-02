@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace War3Frame;
 
-namespace War3Frame
+public enum EffectType
 {
-    public enum EffectType
-    {
-        Target,
-        Point,
-        Attach,
-    }
-    public struct EffectNative
-    {
-        public JEffect effect;
-    }
+    Target,
+    Point,
+    Attach
+}
 
+public struct EffectNative
+{
+    public JEffect effect;
 }

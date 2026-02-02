@@ -1,20 +1,31 @@
-﻿namespace FastMDX {
-    class StructArrayParser<T> : IBlockParser where T : unmanaged {
-        internal delegate ref T[] _getRef(MDX mdx);
+﻿namespace FastMDX;
 
-        _getRef Get;
+internal class StructArrayParser<T> : IBlockParser where T : unmanaged
+{
+    private readonly _getRef Get;
 
-        internal StructArrayParser(_getRef get) => Get = get;
-
-        public unsafe void ReadFrom(MDX mdx, DataStream ds, uint blockSize) {
-            if((blockSize % sizeof(T)) > 0)
-                throw new ParsingException();
-
-            Get(mdx) = ds.ReadStructArray<T>(blockSize / (uint)sizeof(T));
-        }
-
-        public void WriteTo(MDX mdx, DataStream ds) => ds.WriteStructArray(Get(mdx), false);
-
-        public bool HasData(MDX mdx) => Get(mdx)?.Length > 0;
+    internal StructArrayParser(_getRef get)
+    {
+        Get = get;
     }
+
+    public unsafe void ReadFrom(MDX mdx, DataStream ds, uint blockSize)
+    {
+        if (blockSize % sizeof(T) > 0)
+            throw new ParsingException();
+
+        Get(mdx) = ds.ReadStructArray<T>(blockSize / (uint)sizeof(T));
+    }
+
+    public void WriteTo(MDX mdx, DataStream ds)
+    {
+        ds.WriteStructArray(Get(mdx), false);
+    }
+
+    public bool HasData(MDX mdx)
+    {
+        return Get(mdx)?.Length > 0;
+    }
+
+    internal delegate ref T[] _getRef(MDX mdx);
 }

@@ -1,12 +1,4 @@
-﻿using Friflo.Engine.ECS;
-using Friflo.Engine.ECS.Systems;
-using System;
-using System.Collections.Generic;
-using System.Numerics;
-using System.Text;
-
-namespace War3Frame.Src.Systems
-{
+﻿namespace War3Frame.Src.Systems;
 /*    public class MoveSystem : QuerySystem<Position, Move>
     {
         public MoveSystem()
@@ -25,4 +17,3 @@ namespace War3Frame.Src.Systems
             });
         }
     }*/
-}

@@ -1,15 +1,14 @@
-namespace War3Frame
+namespace War3Frame;
+
+public static partial class AssetsInit
 {
-    public static partial class AssetsInit
+    public static Assets Init()
     {
-        public static Assets Init()
-        {
-            Assets AssetsList = new();
-            FontInit(AssetsList);
-            SoundsInit(AssetsList);
-            ModeOriginInit(AssetsList);
-            ImageBuffInit(AssetsList);
-            return AssetsList;
-        }
+        Assets AssetsList = new();
+        FontInit(AssetsList);
+        SoundsInit(AssetsList);
+        ModeOriginInit(AssetsList);
+        ImageBuffInit(AssetsList);
+        return AssetsList;
     }
 }

@@ -1,10 +1,18 @@
-using System;
 using System.Runtime.InteropServices;
 
 namespace War3Frame
 {
     public partial class War3
     {
+        private static Lazy<uint> NativeCodeId = new(() =>
+        {
+            var vm = GetMainJassVM();
+            SetNativeFunction("IsNoDefeatCheat", Marshal.GetFunctionPointerForDelegate<Action>(NativeCodeCallback));
+            return vm.GetJassHashedId("IsNoDefeatCheat");
+        });
+
+        private static List<Action> NativeCodeDelegates = [];
+
         private static nint GetNativeTable()
         {
             unsafe
@@ -47,8 +55,10 @@ namespace War3Frame
                             }
                         }
                     }
+
                     addr = *(nint*)(addr + 0x0C);
                 }
+
                 return 0;
             }
         }
@@ -62,6 +72,7 @@ namespace War3Frame
                 {
                     return *(nint*)(addr + 0x1C);
                 }
+
                 return 0;
             }
         }
@@ -78,7 +89,6 @@ namespace War3Frame
             }
         }
 
-        private delegate void NativeFunctionCallback(string name, nint func);
         private static unsafe uint ForEachNativeFunction(NativeFunctionCallback callback)
         {
             uint count = 0;
@@ -95,6 +105,7 @@ namespace War3Frame
                 count++;
                 nextTable = *(nint*)(nextTable + 0x14);
             }
+
             return count;
         }
 
@@ -124,14 +135,6 @@ namespace War3Frame
                 Marshal.FreeHGlobal(address);
             }
         }
-
-        private static Lazy<uint> NativeCodeId = new(() =>
-        {
-            var vm = GetMainJassVM();
-            SetNativeFunction("IsNoDefeatCheat", Marshal.GetFunctionPointerForDelegate<Action>(NativeCodeCallback));
-            return vm.GetJassHashedId("IsNoDefeatCheat");
-        });
-        private static List<Action> NativeCodeDelegates = [];
 
         private static void NativeCodeCallback()
         {
@@ -181,11 +184,13 @@ namespace War3Frame
                 return GetMainJassVM().CreateOpcodeId(opcodes);
             }
         }
+
         private static uint CreateNativeCode(Action func)
         {
             NativeCodeDelegates.Add(func);
             return CreateNativeCode(NativeCodeDelegates.Count - 1);
         }
+
         public static void CallNative(nint func, params object[] args)
         {
             unsafe
@@ -219,9 +224,10 @@ namespace War3Frame
                                 values[i] = (int)CreateNativeCode(v);
                                 break;
                             default:
-                                throw new InvalidCastException($"²»Ö§³Ö½«ÀàÐÍ {args[i].GetType().Name} ×ª»»Îª Int32");
+                                throw new InvalidCastException($"ï¿½ï¿½Ö§ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½ {args[i].GetType().Name} ×ªï¿½ï¿½Îª Int32");
                         }
                     }
+
                     CallCdeclFunction(func, values);
                     foreach (var s in jstr)
                     {
@@ -230,6 +236,7 @@ namespace War3Frame
                 }
             }
         }
+
         public static T CallNative<T>(nint func, params object[] args)
         {
             unsafe
@@ -247,7 +254,7 @@ namespace War3Frame
                             case int v:
                                 values[i] = v;
                                 break;
-                            case nint v :
+                            case nint v:
                                 values[i] = Convert.ToInt32(v);
                                 break;
                             case float v:
@@ -266,7 +273,7 @@ namespace War3Frame
                                 values[i] = (int)CreateNativeCode(v);
                                 break;
                             default:
-                                throw new InvalidCastException($"²»Ö§³Ö½«ÀàÐÍ {args[i].GetType().Name} ×ª»»Îª Int32");
+                                throw new InvalidCastException($"ï¿½ï¿½Ö§ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½ {args[i].GetType().Name} ×ªï¿½ï¿½Îª Int32");
                         }
                     }
 
@@ -307,7 +314,7 @@ namespace War3Frame
                 }
                 else
                 {
-                    throw new InvalidCastException($"²»Ö§³Ö½«·µ»ØÀàÐÍ {typeof(T).Name} ×ª»»Îª T");
+                    throw new InvalidCastException($"ï¿½ï¿½Ö§ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ {typeof(T).Name} ×ªï¿½ï¿½Îª T");
                 }
             }
         }
@@ -317,73 +324,80 @@ namespace War3Frame
             switch (args.Length)
             {
                 case 0:
-                    {
-                        var fn = (delegate* unmanaged[Cdecl]<int>)(func);
-                        return fn();
-                    }
+                {
+                    var fn = (delegate* unmanaged[Cdecl]<int>)(func);
+                    return fn();
+                }
                 case 1:
-                    {
-                        var fn = (delegate* unmanaged[Cdecl]<int, int>)(func);
-                        return fn(args[0]);
-                    }
+                {
+                    var fn = (delegate* unmanaged[Cdecl]<int, int>)(func);
+                    return fn(args[0]);
+                }
                 case 2:
-                    {
-                        var fn = (delegate* unmanaged[Cdecl]<int, int, int>)(func);
-                        return fn(args[0], args[1]);
-                    }
+                {
+                    var fn = (delegate* unmanaged[Cdecl]<int, int, int>)(func);
+                    return fn(args[0], args[1]);
+                }
                 case 3:
-                    {
-                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int>)(func);
-                        return fn(args[0], args[1], args[2]);
-                    }
+                {
+                    var fn = (delegate* unmanaged[Cdecl]<int, int, int, int>)(func);
+                    return fn(args[0], args[1], args[2]);
+                }
                 case 4:
-                    {
-                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int>)(func);
-                        return fn(args[0], args[1], args[2], args[3]);
-                    }
+                {
+                    var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int>)(func);
+                    return fn(args[0], args[1], args[2], args[3]);
+                }
                 case 5:
-                    {
-                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int>)(func);
-                        return fn(args[0], args[1], args[2], args[3], args[4]);
-                    }
+                {
+                    var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int>)(func);
+                    return fn(args[0], args[1], args[2], args[3], args[4]);
+                }
                 case 6:
-                    {
-                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int>)(func);
-                        return fn(args[0], args[1], args[2], args[3], args[4], args[5]);
-                    }
+                {
+                    var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int>)(func);
+                    return fn(args[0], args[1], args[2], args[3], args[4], args[5]);
+                }
                 case 7:
-                    {
-                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int>)(func);
-                        return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
-                    }
+                {
+                    var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int>)(func);
+                    return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
+                }
                 case 8:
-                    {
-                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int>)(func);
-                        return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
-                    }
+                {
+                    var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int>)(func);
+                    return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
+                }
                 case 9:
-                    {
-                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int, int>)(func);
-                        return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
-                    }
+                {
+                    var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int, int>)(func);
+                    return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+                }
                 case 10:
-                    {
-                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int, int, int>)(func);
-                        return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
-                    }
+                {
+                    var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int, int, int>)(func);
+                    return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
+                }
                 case 11:
-                    {
-                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int, int, int, int>)(func);
-                        return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10]);
-                    }
+                {
+                    var fn =
+                        (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int, int, int, int>)(func);
+                    return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9],
+                        args[10]);
+                }
                 case 12:
-                    {
-                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int, int, int, int, int>)(func);
-                        return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11]);
-                    }
+                {
+                    var fn =
+                        (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int, int, int, int, int>)
+                        (func);
+                    return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9],
+                        args[10], args[11]);
+                }
                 default:
-                    throw new NotSupportedException($"ÔÝÊ±²»Ö§³Ö {args.Length} ¸ö²ÎÊýµÄµ÷ÓÃ");
+                    throw new NotSupportedException($"ï¿½ï¿½Ê±ï¿½ï¿½Ö§ï¿½ï¿½ {args.Length} ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½ï¿½ï¿½");
             }
         }
+
+        private delegate void NativeFunctionCallback(string name, nint func);
     }
 }
