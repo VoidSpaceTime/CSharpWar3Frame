@@ -10,11 +10,16 @@ public struct RealDead : ITag
 {
 }
 
-public struct UnitOwner : IComponent
+public struct UnitOwner : ILinkComponent
 {
-    public Entity GetRelationKey()
+    public Entity GetIndexedValue()
     {
         return player;
+    }
+
+    public UnitOwner(Entity player)
+    {
+        this.player = player;
     }
 
     public Entity player;

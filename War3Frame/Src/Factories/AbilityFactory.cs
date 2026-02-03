@@ -50,7 +50,7 @@ public static class AbilityFactory
         );
 
         // 5. 添加关系到单位
-        ability.AddComponent(new AbilityOwnerRelation(unit));
+        ability.AddComponent(new AbilityOwner(unit));
 
         // 6. 更新单位的槽位计数
         container.currentCount++;
@@ -155,7 +155,7 @@ public static class AbilityFactory
     /// <returns>技能 Entity，如果槽位为空则返回 null</returns>
     public static Entity? GetAbilityAtSlot(Entity unit, int slotIndex)
     {
-        var links = unit.GetIncomingLinks<AbilityOwnerRelation>();
+        var links = unit.GetIncomingLinks<AbilityOwner>();
         foreach (var link in links)
         {
             var abilityEntity = link.Entity;
@@ -185,7 +185,7 @@ public static class AbilityFactory
     public static List<Entity> GetAllAbilities(Entity unit)
     {
         var abilities = new List<Entity>();
-        var links = unit.GetIncomingLinks<AbilityOwnerRelation>();
+        var links = unit.GetIncomingLinks<AbilityOwner>();
         foreach (var link in links) abilities.Add(link.Entity);
         return abilities;
     }

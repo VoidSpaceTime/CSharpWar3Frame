@@ -18,7 +18,7 @@ public struct AbilitySlotIndex : IComponent
 ///     技能所有者关系 - 使用 Friflo Link 关联技能到单位
 ///     通过这个关系可以查询单位拥有的所有技能
 /// </summary>
-public struct AbilityOwnerRelation : ILinkComponent
+public struct AbilityOwner : ILinkComponent
 {
     public Entity GetIndexedValue()
     {
@@ -28,7 +28,7 @@ public struct AbilityOwnerRelation : ILinkComponent
     /// <summary>拥有此技能的单位 Entity</summary>
     public Entity owner;
 
-    public AbilityOwnerRelation(Entity owner)
+    public AbilityOwner(Entity owner)
     {
         this.owner = owner;
     }
