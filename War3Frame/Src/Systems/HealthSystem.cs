@@ -1,29 +1,26 @@
-﻿using Friflo.Engine.ECS.Systems;
+﻿using Friflo.Engine.ECS;
+using Friflo.Engine.ECS.Systems;
+using War3Frame.Components.Attribute;
 
 namespace War3Frame.Src.Systems;
 
-public class HealthSystem : QuerySystem<Health>, ITimedSystem
+public class HealthSystem : QuerySystem<HealthAttr>, ITimedSystem
 {
-    public float Interval => 0.02f;
+    public float Interval => 0.04f;
 
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref health, entity) =>
+        Query.ForEachEntity((ref HealthAttr hp, Entity unit) =>
         {
-            var update = health.current;
-            if (health.current <= 0)
-            {
-                health.current = -1;
-                return;
-            }
+            // 查找生命恢复属性
+            if (UnitAttrHelper.TryGetAttr(unit, AttributeHelper.HealthRegen, out var regenAttr) ||
+                UnitAttrHelper.TryGetAttr(unit, AttributeHelper.Health, out var healthAttr)) return;
 
-            update += health.regen * Tick.deltaTime;
-            if (update > health.max) update = health.max;
-            if (health.current != update)
-            {
-                health.current = update;
-                entity.AddTag<HealthDirty>();
-            }
+            var regen = regenAttr.Value.GetComponent<AttrValue>().finalValue;
+            var health = healthAttr.Value.GetComponent<AttrValue>().finalValue;
+
+            hp.current += regen * Tick.deltaTime;
+            hp.current = Math.Min(hp.current, health);
         });
     }
 }

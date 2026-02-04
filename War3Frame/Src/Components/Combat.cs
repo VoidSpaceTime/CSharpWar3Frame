@@ -2,24 +2,6 @@
 
 namespace War3Frame;
 
-public struct HealthDirty : ITag;
-
-public struct ManaDirty : ITag;
-
-public struct Health : IComponent
-{
-    public float current; // 当前生命值
-    public float max; // 最大生命值
-    public float regen; // 生命回复
-}
-
-public struct Mana : IComponent
-{
-    public float current; // 当前魔法值
-    public float max; // 最大魔法值
-    public float regen; // 魔法回复
-}
-
 /// 攻击属性（攻击相关的一起）
 public struct Attack : IComponent
 {

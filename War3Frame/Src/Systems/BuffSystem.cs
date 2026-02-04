@@ -71,7 +71,7 @@ public class BuffExpireSystem : QuerySystem<AttrModifier, ModifierTarget>
             var unit = CommandBuffer.EntityStore.GetEntityById(unitId);
             if (!unit.IsNull)
             {
-                unit.AddTag<AttrsDirty>();
+                unit.AddTag<AttrDirty>();
             }
         }
     }

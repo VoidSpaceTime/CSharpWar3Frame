@@ -2,13 +2,9 @@
 
 namespace War3Frame;
 
-public struct Dead : ITag
-{
-}
+public struct UnitDeadTag : ITag;
 
-public struct RealDead : ITag
-{
-}
+public struct UnitFalseDeadTag : ITag;
 
 public struct UnitOwner : ILinkComponent
 {

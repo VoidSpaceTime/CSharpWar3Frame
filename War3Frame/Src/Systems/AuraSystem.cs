@@ -101,7 +101,7 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
                     buffEntity.DeleteEntity();
                     if (!target.target.IsNull)
                     {
-                        target.target.AddTag<AttrsDirty>();
+                        target.target.AddTag<AttrDirty>();
                     }
                 }
             }
@@ -122,7 +122,7 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
             new AuraBuffLink(auraEntity)
         );
 
-        unit.AddTag<AttrsDirty>();
+        unit.AddTag<AttrDirty>();
     }
 
     private bool ShouldAffectUnit(Entity owner, Entity target, AuraConfig config)

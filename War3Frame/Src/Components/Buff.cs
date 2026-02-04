@@ -1,4 +1,5 @@
 using Friflo.Engine.ECS;
+using War3Frame.Components;
 
 namespace War3Frame;
 
@@ -163,7 +164,7 @@ public struct AuraConfig : IComponent
 public struct AuraEffect : IComponent
 {
     /// <summary>属性类型</summary>
-    public AttrType attrType;
+    public int attrType;
 
     /// <summary>修改类型</summary>
     public ModifyType modifyType;

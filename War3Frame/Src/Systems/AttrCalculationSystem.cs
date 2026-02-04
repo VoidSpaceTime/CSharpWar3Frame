@@ -1,79 +1,63 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
+using War3Frame.Components;
 
 namespace War3Frame.Src.Systems;
- 
+
 /// <summary>
 ///     属性计算系统 - 当单位标记为 AttrsDirty 时重新计算属性
 ///     使用 AttrWriterRegistry 自动处理所有已注册的属性类型
 /// </summary>
-public class AttrCalculationSystem : QuerySystem<BaseAttrs>
+public class AttrCalculationSystem : QuerySystem<AttrValue>
 {
     public AttrCalculationSystem()
     {
         // 只处理有 AttrsDirty 标记的单位
-        Filter.AnyTags(Tags.Get<AttrsDirty>());
+        Filter.AnyTags(Tags.Get<AttrDirty>());
     }
 
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref BaseAttrs _, Entity entity) =>
+        Query.ForEachEntity((ref AttrValue attr, Entity attrEntity) =>
         {
-            // 遍历所有已注册的属性写入器
-            foreach (var writer in AttrWriterRegistry.GetAllWriters())
+            // 1. 收集所有指向此属性的修改器
+            var modifiers = attrEntity.GetIncomingLinks<ModifyTarget>();
+
+            float flatSum = 0;
+            float percentAddSum = 0;
+            float percentMulProduct = 1f;
+
+            // 2. 累加修改器
+            foreach (var link in modifiers)
             {
-                // 读取基础值
-                var baseValue = writer.ReadBase(entity);
+                var modEntity = link.Entity;
+                if (!modEntity.TryGetComponent<ModifyValue>(out var mod))
+                    continue;
 
-                // 计算最终值
-                var finalValue = CalculateAttr(entity, writer.AttrType, baseValue);
-
-                // 写入目标组件
-                writer.Write(entity, finalValue);
+                switch (mod.modifyType)
+                {
+                    case ModifyType.Flat:
+                        flatSum += mod.value;
+                        break;
+                    case ModifyType.PercentAdd:
+                        percentAddSum += mod.value;
+                        break;
+                    case ModifyType.PercentMul:
+                        percentMulProduct *= (1 + mod.value);
+                        break;
+                }
             }
 
-            // 移除脏标记
-            entity.RemoveTag<AttrsDirty>();
+            // 3. 计算最终值
+            // 公式: (base + flat) × (1 + percentAdd) × percentMul
+            attr.flatBonus = flatSum;
+            attr.percentBonus = percentAddSum;
+            attr.finalValue = (attr.baseValue + flatSum)
+                              * (1 + percentAddSum)
+                              * percentMulProduct;
+
+            // 4. 移除脏标记
+            attrEntity.RemoveTag<AttrDirty>();
         });
-    }
-
-    /// <summary>
-    ///     计算单个属性的最终值
-    ///     公式: (base + flatSum) * (1 + percentAddSum) * percentMulProduct
-    /// </summary>
-    private static float CalculateAttr(Entity unit, AttrType attrType, float baseValue)
-    {
-        float flatSum = 0f;
-        float percentAddSum = 0f;
-        float percentMulProduct = 1f;
-
-        // 获取指向该单位的所有修改器
-        var modifiers = unit.GetIncomingLinks<ModifierTarget>();
-
-        foreach (var link in modifiers)
-        {
-            var modifierEntity = link.Entity;
-            if (!modifierEntity.TryGetComponent<AttrModifier>(out var mod))
-                continue;
-
-            if (mod.attrType != attrType)
-                continue;
-
-            switch (mod.modifyType)
-            {
-                case ModifyType.Flat:
-                    flatSum += mod.value;
-                    break;
-                case ModifyType.PercentAdd:
-                    percentAddSum += mod.value;
-                    break;
-                case ModifyType.PercentMul:
-                    percentMulProduct *= (1 + mod.value);
-                    break;
-            }
-        }
-
-        // 应用公式
-        return (baseValue + flatSum) * (1 + percentAddSum) * percentMulProduct;
     }
 }

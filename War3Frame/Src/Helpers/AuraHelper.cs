@@ -1,4 +1,5 @@
 using Friflo.Engine.ECS;
+using War3Frame.Components;
 
 namespace War3Frame;
 
@@ -26,7 +27,7 @@ public static class AuraHelper
         Entity owner,
         string auraId,
         float radius,
-        AttrType attrType,
+        int attrType,
         ModifyType modifyType,
         float value,
         bool affectSelf = false,
@@ -51,7 +52,7 @@ public static class AuraHelper
                 modifyType = modifyType,
                 value = value
             },
-            new ModifierTarget(owner)  // 光环挂载在持有者身上
+            new ModifyTarget(owner)  // 光环挂载在持有者身上
         );
 
         aura.AddTag<Aura>();
@@ -64,7 +65,7 @@ public static class AuraHelper
     /// </summary>
     public static void RemoveAura(Entity owner, string auraId)
     {
-        var modifiers = owner.GetIncomingLinks<ModifierTarget>();
+        var modifiers = owner.GetIncomingLinks<ModifyTarget>();
 
         foreach (var link in modifiers)
         {
@@ -87,7 +88,7 @@ public static class AuraHelper
     /// </summary>
     public static void RemoveAllAuras(Entity owner)
     {
-        var modifiers = owner.GetIncomingLinks<ModifierTarget>();
+        var modifiers = owner.GetIncomingLinks<ModifyTarget>();
         var toDelete = new List<Entity>();
 
         foreach (var link in modifiers)
@@ -117,7 +118,7 @@ public static class AuraHelper
         foreach (var link in buffs)
         {
             var buff = link.Entity;
-            if (buff.TryGetComponent<ModifierTarget>(out var target))
+            if (buff.TryGetComponent<ModifyTarget>(out var target))
             {
                 unitsToRefresh.Add(target.target);
             }
@@ -133,7 +134,7 @@ public static class AuraHelper
         {
             if (!unit.IsNull)
             {
-                unit.AddTag<AttrsDirty>();
+                unit.AddTag<AttrDirty>();
             }
         }
     }
@@ -143,7 +144,7 @@ public static class AuraHelper
     /// </summary>
     public static bool HasAura(Entity owner, string auraId)
     {
-        var modifiers = owner.GetIncomingLinks<ModifierTarget>();
+        var modifiers = owner.GetIncomingLinks<ModifyTarget>();
 
         foreach (var link in modifiers)
         {

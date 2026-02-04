@@ -1,4 +1,5 @@
 using Friflo.Engine.ECS;
+using War3Frame.Components;
 
 namespace War3Frame;
 
@@ -38,10 +39,10 @@ public static class BuffHelper
                 attrType = attrType,
                 modifyType = modifyType,
                 value = value,
-                sourceType = ModifierSourceType.Buff
+                sourceType = ModifySourceType.Buff
             },
-            new ModifierTarget(unit),
-            new ModifierSource(source),
+            new ModifyTarget(unit),
+            new ModifySource(source),
             BuffDuration.Create(duration),
             new BuffBehavior
             {
@@ -52,7 +53,7 @@ public static class BuffHelper
         );
 
         buff.AddTag<Buff>();
-        unit.AddTag<AttrsDirty>();
+        unit.AddTag<AttrDirty>();
 
         return buff;
     }
@@ -65,7 +66,7 @@ public static class BuffHelper
         Entity unit,
         Entity source,
         string buffId,
-        AttrType attrType,
+        int attrType,
         ModifyType modifyType,
         float valuePerStack,
         int maxStacks,
@@ -87,10 +88,10 @@ public static class BuffHelper
                 attrType = attrType,
                 modifyType = modifyType,
                 value = valuePerStack,  // 初始值 = 1层
-                sourceType = ModifierSourceType.Buff
+                sourceType = ModifySourceType.Buff
             },
-            new ModifierTarget(unit),
-            new ModifierSource(source),
+            new ModifyTarget(unit),
+            new ModifySource(source),
             BuffDuration.Create(duration),
             BuffStacks.Create(maxStacks, valuePerStack),
             new BuffBehavior
@@ -102,7 +103,7 @@ public static class BuffHelper
         );
 
         buff.AddTag<Buff>();
-        unit.AddTag<AttrsDirty>();
+        unit.AddTag<AttrDirty>();
 
         return buff;
     }
@@ -115,7 +116,7 @@ public static class BuffHelper
         Entity unit,
         Entity source,
         string buffId,
-        AttrType attrType,
+        int attrType,
         ModifyType modifyType,
         float value)
     {
@@ -125,10 +126,10 @@ public static class BuffHelper
                 attrType = attrType,
                 modifyType = modifyType,
                 value = value,
-                sourceType = ModifierSourceType.Buff
+                sourceType = ModifySourceType.Buff
             },
-            new ModifierTarget(unit),
-            new ModifierSource(source),
+            new ModifyTarget(unit),
+            new ModifySource(source),
             BuffDuration.Create(0, permanent: true),
             new BuffBehavior
             {
@@ -138,7 +139,7 @@ public static class BuffHelper
         );
 
         buff.AddTag<Buff>();
-        unit.AddTag<AttrsDirty>();
+        unit.AddTag<AttrDirty>();
 
         return buff;
     }
@@ -156,7 +157,7 @@ public static class BuffHelper
         if (!buff.IsNull)
         {
             buff.DeleteEntity();
-            unit.AddTag<AttrsDirty>();
+            unit.AddTag<AttrDirty>();
         }
     }
 
@@ -165,7 +166,7 @@ public static class BuffHelper
     /// </summary>
     public static void RemoveAllBuffs(Entity unit)
     {
-        var modifiers = unit.GetIncomingLinks<ModifierTarget>();
+        var modifiers = unit.GetIncomingLinks<ModifyTarget>();
         var toDelete = new List<Entity>();
 
         foreach (var link in modifiers)
@@ -183,7 +184,7 @@ public static class BuffHelper
 
         if (toDelete.Count > 0 && !unit.IsNull)
         {
-            unit.AddTag<AttrsDirty>();
+            unit.AddTag<AttrDirty>();
         }
     }
 
@@ -196,7 +197,7 @@ public static class BuffHelper
     /// </summary>
     public static Entity FindBuffByIdOnUnit(Entity unit, string buffId)
     {
-        var modifiers = unit.GetIncomingLinks<ModifierTarget>();
+        var modifiers = unit.GetIncomingLinks<ModifyTarget>();
 
         foreach (var link in modifiers)
         {
@@ -331,9 +332,9 @@ public static class BuffHelper
                 break;
         }
 
-        if (needsRefresh && existing.TryGetComponent<ModifierTarget>(out var target))
+        if (needsRefresh && existing.TryGetComponent<ModifyTarget>(out var target))
         {
-            target.target.AddTag<AttrsDirty>();
+            target.target.AddTag<AttrDirty>();
         }
 
         return existing;
