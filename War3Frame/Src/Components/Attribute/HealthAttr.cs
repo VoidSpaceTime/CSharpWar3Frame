@@ -18,7 +18,4 @@ public struct HealthAttr : IComponent
             => regenAttrEntity.GetComponent<AttrValue>().finalValue; */
 }
 
-public struct HealthRegenAttr : IComponent
-{
-    public float current;
-}
+public struct HealthNativeDirty : ITag;

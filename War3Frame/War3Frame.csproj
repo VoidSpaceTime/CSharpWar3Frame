@@ -20,5 +20,10 @@
         <PackageReference Include="Friflo.Engine.ECS" Version="3.4.2"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\War3Frame.Generator\War3Frame.Generator.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
+    </ItemGroup>
 
 </Project>

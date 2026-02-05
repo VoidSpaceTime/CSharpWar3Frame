@@ -13,12 +13,16 @@ public class ManaSystem : QuerySystem<ManaAttr>
             // 查找生命恢复属性
             if (UnitAttrHelper.TryGetAttr(unit, AttributeHelper.ManaRegen, out var regenAttr) ||
                 UnitAttrHelper.TryGetAttr(unit, AttributeHelper.Mana, out var manaAttr)) return;
-
+            var before = mana.current;
             var regen = regenAttr.Value.GetComponent<AttrValue>().finalValue;
             var attr = manaAttr.Value.GetComponent<AttrValue>().finalValue;
 
             mana.current += regen * Tick.deltaTime;
             mana.current = Math.Min(mana.current, attr);
+            if (!mana.current.Equals(before))
+            {
+                unit.AddTag<ManaNativeDirty>();
+            }
         });
     }
 }

@@ -18,7 +18,6 @@
     <ItemGroup>
         <Folder Include="Library\"/>
         <Folder Include="Scripts\Setup\"/>
-        <Folder Include="Scripts\Template\"/>
         <Folder Include="Scripts\Process\"/>
     </ItemGroup>
 

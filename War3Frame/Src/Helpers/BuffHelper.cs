@@ -18,7 +18,7 @@ public static class BuffHelper
         Entity unit,
         Entity source,
         string buffId,
-        AttrType attrType,
+        int attrTypeId,
         ModifyType modifyType,
         float value,
         float duration,
@@ -32,16 +32,19 @@ public static class BuffHelper
             return HandleExistingBuff(existing, value, duration, refreshBehavior);
         }
 
+        // 获取对应的属性 Entity
+        var attrEntity = UnitAttrHelper.GetAttr(unit, attrTypeId);
+        if (attrEntity == null) return default;
+
         // 创建新 Buff
         var buff = store.CreateEntity(
-            new AttrModifier
+            new ModifyValue
             {
-                attrType = attrType,
                 modifyType = modifyType,
                 value = value,
-                sourceType = ModifySourceType.Buff
+                priority = 0
             },
-            new ModifyTarget(unit),
+            new ModifyTarget(attrEntity.Value),
             new ModifySource(source),
             BuffDuration.Create(duration),
             new BuffBehavior
@@ -53,7 +56,7 @@ public static class BuffHelper
         );
 
         buff.AddTag<Buff>();
-        unit.AddTag<AttrDirty>();
+        attrEntity.Value.AddTag<AttrDirty>();
 
         return buff;
     }
@@ -66,7 +69,7 @@ public static class BuffHelper
         Entity unit,
         Entity source,
         string buffId,
-        int attrType,
+        int attrTypeId,
         ModifyType modifyType,
         float valuePerStack,
         int maxStacks,
@@ -81,16 +84,19 @@ public static class BuffHelper
             return HandleExistingStackableBuff(existing, valuePerStack, duration, refreshBehavior);
         }
 
+        // 获取对应的属性 Entity
+        var attrEntity = UnitAttrHelper.GetAttr(unit, attrTypeId);
+        if (attrEntity == null) return default;
+
         // 创建新 Buff
         var buff = store.CreateEntity(
-            new AttrModifier
+            new ModifyValue
             {
-                attrType = attrType,
                 modifyType = modifyType,
                 value = valuePerStack,  // 初始值 = 1层
-                sourceType = ModifySourceType.Buff
+                priority = 0
             },
-            new ModifyTarget(unit),
+            new ModifyTarget(attrEntity.Value),
             new ModifySource(source),
             BuffDuration.Create(duration),
             BuffStacks.Create(maxStacks, valuePerStack),
@@ -103,7 +109,7 @@ public static class BuffHelper
         );
 
         buff.AddTag<Buff>();
-        unit.AddTag<AttrDirty>();
+        attrEntity.Value.AddTag<AttrDirty>();
 
         return buff;
     }
@@ -116,19 +122,22 @@ public static class BuffHelper
         Entity unit,
         Entity source,
         string buffId,
-        int attrType,
+        int attrTypeId,
         ModifyType modifyType,
         float value)
     {
+        // 获取对应的属性 Entity
+        var attrEntity = UnitAttrHelper.GetAttr(unit, attrTypeId);
+        if (attrEntity == null) return default;
+
         var buff = store.CreateEntity(
-            new AttrModifier
+            new ModifyValue
             {
-                attrType = attrType,
                 modifyType = modifyType,
                 value = value,
-                sourceType = ModifySourceType.Buff
+                priority = 0
             },
-            new ModifyTarget(unit),
+            new ModifyTarget(attrEntity.Value),
             new ModifySource(source),
             BuffDuration.Create(0, permanent: true),
             new BuffBehavior
@@ -139,7 +148,7 @@ public static class BuffHelper
         );
 
         buff.AddTag<Buff>();
-        unit.AddTag<AttrDirty>();
+        attrEntity.Value.AddTag<AttrDirty>();
 
         return buff;
     }
@@ -156,8 +165,12 @@ public static class BuffHelper
         var buff = FindBuffByIdOnUnit(unit, buffId);
         if (!buff.IsNull)
         {
+            // 标记属性需要刷新
+            if (buff.TryGetComponent<ModifyTarget>(out var target) && !target.target.IsNull)
+            {
+                target.target.AddTag<AttrDirty>();
+            }
             buff.DeleteEntity();
-            unit.AddTag<AttrDirty>();
         }
     }
 
@@ -166,14 +179,22 @@ public static class BuffHelper
     /// </summary>
     public static void RemoveAllBuffs(Entity unit)
     {
-        var modifiers = unit.GetIncomingLinks<ModifyTarget>();
+        // 获取单位的所有属性
+        var attrs = UnitAttrHelper.GetAllAttrs(unit);
+        var affectedAttrs = new HashSet<Entity>();
         var toDelete = new List<Entity>();
 
-        foreach (var link in modifiers)
+        foreach (var (typeId, attrEntity) in attrs)
         {
-            if (link.Entity.Tags.Has<Buff>())
+            // 获取指向该属性的所有修改器
+            var modifiers = attrEntity.GetIncomingLinks<ModifyTarget>();
+            foreach (var link in modifiers)
             {
-                toDelete.Add(link.Entity);
+                if (link.Entity.Tags.Has<Buff>())
+                {
+                    toDelete.Add(link.Entity);
+                    affectedAttrs.Add(attrEntity);
+                }
             }
         }
 
@@ -182,9 +203,12 @@ public static class BuffHelper
             buff.DeleteEntity();
         }
 
-        if (toDelete.Count > 0 && !unit.IsNull)
+        foreach (var attr in affectedAttrs)
         {
-            unit.AddTag<AttrDirty>();
+            if (!attr.IsNull)
+            {
+                attr.AddTag<AttrDirty>();
+            }
         }
     }
 
@@ -197,16 +221,21 @@ public static class BuffHelper
     /// </summary>
     public static Entity FindBuffByIdOnUnit(Entity unit, string buffId)
     {
-        var modifiers = unit.GetIncomingLinks<ModifyTarget>();
+        // 遍历单位的所有属性，查找 Buff
+        var attrs = UnitAttrHelper.GetAllAttrs(unit);
 
-        foreach (var link in modifiers)
+        foreach (var (typeId, attrEntity) in attrs)
         {
-            var buffEntity = link.Entity;
-            if (buffEntity.Tags.Has<Buff>() &&
-                buffEntity.TryGetComponent<BuffBehavior>(out var behavior) &&
-                behavior.buffId == buffId)
+            var modifiers = attrEntity.GetIncomingLinks<ModifyTarget>();
+            foreach (var link in modifiers)
             {
-                return buffEntity;
+                var buffEntity = link.Entity;
+                if (buffEntity.Tags.Has<Buff>() &&
+                    buffEntity.TryGetComponent<BuffBehavior>(out var behavior) &&
+                    behavior.buffId == buffId)
+                {
+                    return buffEntity;
+                }
             }
         }
 
@@ -289,7 +318,7 @@ public static class BuffHelper
                         existing.AddComponent(stacks);
 
                         // 更新修改器的值
-                        if (existing.TryGetComponent<AttrModifier>(out var mod))
+                        if (existing.TryGetComponent<ModifyValue>(out var mod))
                         {
                             mod.value = stacks.TotalValue;
                             existing.AddComponent(mod);
@@ -321,7 +350,7 @@ public static class BuffHelper
                     {
                         existing.AddComponent(stacks2);
 
-                        if (existing.TryGetComponent<AttrModifier>(out var mod2))
+                        if (existing.TryGetComponent<ModifyValue>(out var mod2))
                         {
                             mod2.value = stacks2.TotalValue;
                             existing.AddComponent(mod2);

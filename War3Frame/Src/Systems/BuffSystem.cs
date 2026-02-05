@@ -1,5 +1,6 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
+using War3Frame.Components;
 
 namespace War3Frame.Src.Systems;
 
@@ -38,7 +39,7 @@ public class BuffDurationSystem : QuerySystem<BuffDuration>, ITimedSystem
 /// <summary>
 ///     Buff 过期清理系统 - 移除过期的 Buff
 /// </summary>
-public class BuffExpireSystem : QuerySystem<AttrModifier, ModifierTarget>
+public class BuffExpireSystem : QuerySystem<ModifyValue, ModifyTarget>
 {
     public BuffExpireSystem()
     {
@@ -48,12 +49,12 @@ public class BuffExpireSystem : QuerySystem<AttrModifier, ModifierTarget>
     protected override void OnUpdate()
     {
         var toDelete = new List<Entity>();
-        var unitsToRefresh = new HashSet<int>();
+        var attrsToRefresh = new HashSet<int>();
 
-        Query.ForEachEntity((ref AttrModifier mod, ref ModifierTarget target, Entity entity) =>
+        Query.ForEachEntity((ref ModifyValue mod, ref ModifyTarget target, Entity entity) =>
         {
-            // 记录需要刷新属性的单位
-            unitsToRefresh.Add(target.target.Id);
+            // 记录需要刷新的属性 Entity
+            attrsToRefresh.Add(target.target.Id);
 
             // 记录要删除的 Buff
             toDelete.Add(entity);
@@ -65,13 +66,13 @@ public class BuffExpireSystem : QuerySystem<AttrModifier, ModifierTarget>
             entity.DeleteEntity();
         }
 
-        // 刷新受影响单位的属性
-        foreach (var unitId in unitsToRefresh)
+        // 刷新受影响的属性
+        foreach (var attrId in attrsToRefresh)
         {
-            var unit = CommandBuffer.EntityStore.GetEntityById(unitId);
-            if (!unit.IsNull)
+            var attr = CommandBuffer.EntityStore.GetEntityById(attrId);
+            if (!attr.IsNull)
             {
-                unit.AddTag<AttrDirty>();
+                attr.AddTag<AttrDirty>();
             }
         }
     }

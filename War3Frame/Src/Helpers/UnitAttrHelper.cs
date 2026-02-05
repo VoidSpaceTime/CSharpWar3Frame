@@ -5,10 +5,10 @@ namespace War3Frame;
 public static class UnitAttrHelper
 {
     /// <summary>为 Unit 创建属性 Entity 并建立关系</summary>
-    public static Entity CreateAttr(EntityStore store, Entity unit, int typeId, float baseValue)
+    public static Entity CreateAttr(Entity unit, int typeId, float baseValue)
     {
         // 创建属性 Entity
-        var attr = store.CreateEntity(
+        var attr = Game.Store.CreateEntity(
             new AttrTypeId { typeId = typeId },
             new AttrValue { baseValue = baseValue, finalValue = baseValue }
         );

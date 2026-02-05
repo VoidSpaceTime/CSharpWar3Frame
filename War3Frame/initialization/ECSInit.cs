@@ -5,11 +5,10 @@ namespace War3Frame;
 public static partial class Game
 {
     public static TimedSystemRoot Root { get; private set; }
-    public static EntityStore Store { get; private set; }
+    public static EntityStore Store { get; private set; } = new EntityStore();
 
     public static void ECSInit()
     {
-        Store = new EntityStore();
         Root = new TimedSystemRoot(Store);
     }
 }

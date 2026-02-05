@@ -1,5 +1,6 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
+using War3Frame.Components;
 
 namespace War3Frame.Src.Systems;
 
@@ -27,11 +28,11 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
 
             config.timeSinceUpdate = 0;
 
-            // 获取光环持有者
-            if (!auraEntity.TryGetComponent<ModifierTarget>(out var ownerLink))
+            // 获取光环持有者（通过 AuraOwner 组件）
+            if (!auraEntity.TryGetComponent<AuraOwner>(out var ownerLink))
                 return;
 
-            var owner = ownerLink.target;
+            var owner = ownerLink.owner;
             if (owner.IsNull) return;
 
             // 获取持有者位置
@@ -52,16 +53,22 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
         var store = CommandBuffer.EntityStore;
         var radiusSq = config.radius * config.radius;
 
-        // 获取当前受光环影响的单位
+        // 获取当前受光环影响的单位（属性 Entity）
         var currentlyAffected = new HashSet<int>();
         var auraBufs = auraEntity.GetIncomingLinks<AuraBuffLink>();
 
         foreach (var link in auraBufs)
         {
             var buffEntity = link.Entity;
-            if (buffEntity.TryGetComponent<ModifierTarget>(out var target))
+            if (buffEntity.TryGetComponent<ModifyTarget>(out var target))
             {
-                currentlyAffected.Add(target.target.Id);
+                // 从属性 Entity 获取其所有者单位
+                var attrOwnerLinks = target.target.GetIncomingLinks<AttrOwner>();
+                foreach (var ownerLink in attrOwnerLinks)
+                {
+                    currentlyAffected.Add(ownerLink.Entity.Id);
+                    break;
+                }
             }
         }
 
@@ -91,38 +98,51 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
         });
 
         // 移除离开范围的单位的光环效果
+        var toDelete = new List<Entity>();
         foreach (var link in auraBufs)
         {
             var buffEntity = link.Entity;
-            if (buffEntity.TryGetComponent<ModifierTarget>(out var target))
+            if (buffEntity.TryGetComponent<ModifyTarget>(out var target))
             {
-                if (!unitsInRange.Contains(target.target.Id))
+                // 获取属性的所有者单位
+                if (target.target.TryGetComponent<AttrOwner>(out var attrOwner))
                 {
-                    buffEntity.DeleteEntity();
-                    if (!target.target.IsNull)
+                    if (!unitsInRange.Contains(attrOwner.owner.Id))
                     {
-                        target.target.AddTag<AttrDirty>();
+                        toDelete.Add(buffEntity);
+                        if (!target.target.IsNull)
+                        {
+                            target.target.AddTag<AttrDirty>();
+                        }
                     }
                 }
             }
+        }
+
+        foreach (var buff in toDelete)
+        {
+            buff.DeleteEntity();
         }
     }
 
     private void AddAuraBuffToUnit(EntityStore store, Entity auraEntity, Entity unit, AuraEffect effect)
     {
+        // 获取对应的属性 Entity
+        var attrEntity = UnitAttrHelper.GetAttr(unit, effect.attrType);
+        if (attrEntity == null) return;
+
         var buff = store.CreateEntity(
-            new AttrModifier
+            new ModifyValue
             {
-                attrType = effect.attrType,
                 modifyType = effect.modifyType,
                 value = effect.value,
-                sourceType = ModifierSourceType.Aura
+                priority = 0
             },
-            new ModifierTarget(unit),
+            new ModifyTarget(attrEntity.Value),
             new AuraBuffLink(auraEntity)
         );
 
-        unit.AddTag<AttrDirty>();
+        attrEntity.Value.AddTag<AttrDirty>();
     }
 
     private bool ShouldAffectUnit(Entity owner, Entity target, AuraConfig config)
@@ -147,4 +167,15 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
 
         return (0, 0);
     }
+}
+
+/// <summary>
+/// 光环持有者关系
+/// </summary>
+public struct AuraOwner : ILinkComponent
+{
+    public Entity GetIndexedValue() => owner;
+    public Entity owner;
+
+    public AuraOwner(Entity owner) => this.owner = owner;
 }
