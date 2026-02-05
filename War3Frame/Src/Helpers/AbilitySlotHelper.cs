@@ -1,29 +1,31 @@
 using Friflo.Engine.ECS;
 
-namespace War3Frame.Factories;
+namespace War3Frame;
 
 /// <summary>
-///     技能工厂 - 提供技能的创建、移除、交换等操作
+///     技能槽辅助类 - 提供技能槽位的创建、移除、交换等操作
 /// </summary>
-public static class AbilityFactory
+public static class AbilitySlotHelper
 {
+    #region 添加技能
+
     /// <summary>
     ///     为单位添加技能到指定槽位
     /// </summary>
-    /// <param name="store">EntityStore</param>
     /// <param name="unit">目标单位 Entity</param>
-    /// <param name="abilityId">技能类型 ID</param>
+    /// <param name="templateName">技能模板名称</param>
     /// <param name="slotIndex">目标槽位索引</param>
     /// <param name="configure">可选的额外配置</param>
     /// <returns>创建的技能 Entity</returns>
     /// <exception cref="InvalidOperationException">槽位已被占用或超出范围</exception>
     public static Entity AddAbilityToSlot(
-        EntityStore store,
         Entity unit,
         string templateName,
         int slotIndex,
         Action<Entity>? configure = null)
     {
+        var store = unit.Store;
+        
         // 1. 检查单位是否有技能槽容器
         if (!unit.TryGetComponent<AbilitySlotContainer>(out var container))
             throw new InvalidOperationException($"单位 {unit.Id} 没有 AbilitySlotContainer 组件");
@@ -33,7 +35,8 @@ public static class AbilityFactory
             throw new InvalidOperationException($"槽位索引 {slotIndex} 超出范围 [0, {container.maxSlots})");
 
         // 3. 检查槽位是否已被占用
-        if (IsSlotOccupied(unit, slotIndex)) throw new InvalidOperationException($"槽位 {slotIndex} 已被占用");
+        if (IsSlotOccupied(unit, slotIndex))
+            throw new InvalidOperationException($"槽位 {slotIndex} 已被占用");
 
         // 4. 创建技能 Entity
         var ability = store.CreateEntity(
@@ -46,21 +49,42 @@ public static class AbilityFactory
             new AbilitySlotIndex
             {
                 slotIndex = slotIndex
-            }
+            },
+            new AbilityOwner(unit)
         );
 
-        // 5. 添加关系到单位
-        ability.AddComponent(new AbilityOwner(unit));
-
-        // 6. 更新单位的槽位计数
+        // 5. 更新单位的槽位计数
         container.currentCount++;
         unit.AddComponent(container);
 
-        // 7. 应用额外配置
+        // 6. 应用额外配置
         configure?.Invoke(ability);
 
         return ability;
     }
+
+    /// <summary>
+    ///     添加技能到第一个空闲槽位
+    /// </summary>
+    /// <param name="unit">目标单位 Entity</param>
+    /// <param name="templateName">技能模板名称</param>
+    /// <param name="configure">可选的额外配置</param>
+    /// <returns>创建的技能 Entity</returns>
+    /// <exception cref="InvalidOperationException">没有空闲槽位</exception>
+    public static Entity AddAbility(
+        Entity unit,
+        string templateName,
+        Action<Entity>? configure = null)
+    {
+        var freeSlot = GetFirstFreeSlot(unit);
+        if (freeSlot < 0)
+            throw new InvalidOperationException($"单位 {unit.Id} 没有空闲的技能槽位");
+        return AddAbilityToSlot(unit, templateName, freeSlot, configure);
+    }
+
+    #endregion
+
+    #region 移除技能
 
     /// <summary>
     ///     从槽位移除技能
@@ -84,6 +108,29 @@ public static class AbilityFactory
         ability.Value.DeleteEntity();
         return true;
     }
+
+    /// <summary>
+    ///     移除单位的所有技能
+    /// </summary>
+    /// <param name="unit">目标单位 Entity</param>
+    public static void RemoveAllAbilities(Entity unit)
+    {
+        var abilities = GetAllAbilities(unit);
+        foreach (var ability in abilities)
+        {
+            ability.DeleteEntity();
+        }
+
+        if (unit.TryGetComponent<AbilitySlotContainer>(out var container))
+        {
+            container.currentCount = 0;
+            unit.AddComponent(container);
+        }
+    }
+
+    #endregion
+
+    #region 槽位操作
 
     /// <summary>
     ///     交换两个槽位的技能
@@ -147,6 +194,10 @@ public static class AbilityFactory
         }
     }
 
+    #endregion
+
+    #region 查询
+
     /// <summary>
     ///     获取指定槽位的技能
     /// </summary>
@@ -186,7 +237,8 @@ public static class AbilityFactory
     {
         var abilities = new List<Entity>();
         var links = unit.GetIncomingLinks<AbilityOwner>();
-        foreach (var link in links) abilities.Add(link.Entity);
+        foreach (var link in links)
+            abilities.Add(link.Entity);
         return abilities;
     }
 
@@ -207,22 +259,28 @@ public static class AbilityFactory
     }
 
     /// <summary>
-    ///     添加技能到第一个空闲槽位
+    ///     获取已使用的槽位数
     /// </summary>
-    /// <param name="store">EntityStore</param>
     /// <param name="unit">目标单位 Entity</param>
-    /// <param name="templateName">技能模板名称</param>
-    /// <param name="configure">可选的额外配置</param>
-    /// <returns>创建的技能 Entity</returns>
-    /// <exception cref="InvalidOperationException">没有空闲槽位</exception>
-    public static Entity AddAbility(
-        EntityStore store,
-        Entity unit,
-        string templateName,
-        Action<Entity>? configure = null)
+    /// <returns>已使用的槽位数</returns>
+    public static int GetUsedSlotCount(Entity unit)
     {
-        var freeSlot = GetFirstFreeSlot(unit);
-        if (freeSlot < 0) throw new InvalidOperationException($"单位 {unit.Id} 没有空闲的技能槽位");
-        return AddAbilityToSlot(store, unit, templateName, freeSlot, configure);
+        if (unit.TryGetComponent<AbilitySlotContainer>(out var container))
+            return container.currentCount;
+        return 0;
     }
+
+    /// <summary>
+    ///     获取最大槽位数
+    /// </summary>
+    /// <param name="unit">目标单位 Entity</param>
+    /// <returns>最大槽位数</returns>
+    public static int GetMaxSlots(Entity unit)
+    {
+        if (unit.TryGetComponent<AbilitySlotContainer>(out var container))
+            return container.maxSlots;
+        return 0;
+    }
+
+    #endregion
 }

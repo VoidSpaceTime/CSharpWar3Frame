@@ -1,5 +1,4 @@
 namespace War3Frame;
-
 public partial class AssetsInit
 {
     public static void ImageBuffInit(Assets assets)

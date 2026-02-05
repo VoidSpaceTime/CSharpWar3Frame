@@ -15,7 +15,7 @@ public struct AbilitySlotContainer : IComponent
     public int currentCount;
 
     /// <summary>默认 4 槽位</summary>
-    public static AbilitySlotContainer Default => new() { maxSlots = 4, currentCount = 0 };
+    public static AbilitySlotContainer Default => new() { maxSlots = 8, currentCount = 0 };
 
     /// <summary>自定义槽位数</summary>
     public static AbilitySlotContainer WithSlots(int maxSlots)

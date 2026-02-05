@@ -53,7 +53,7 @@ public static partial class UnitTemplate
     }
 
     /// <summary>
-    /// Create a unit from template
+    /// Create a unit from template (Entity only, no native unit)
     /// </summary>
     public static Entity Create(string templateName)
     {
@@ -63,6 +63,31 @@ public static partial class UnitTemplate
         }
 
         var entity = Game.Store.CreateEntity();
+        template.Configure(entity);
+        return entity;
+    }
+
+    /// <summary>
+    /// Create a unit from template with native War3 unit
+    /// </summary>
+    public static Entity Create(string templateName, JPlayer player, float x, float y, float facing = 270)
+    {
+        if (!_templates.TryGetValue(templateName, out var template))
+        {
+            throw new ArgumentException($"Unit template '{templateName}' not found");
+        }
+
+        // 创建原生 War3 单位（使用通用单位类型，后续可以扩展）
+        var native = JassApi.CreateUnit(player, JassApi.C2I("hfoo"), x, y, facing);
+
+        // 创建 Entity + 基础组件
+        var entity = Game.Store.CreateEntity(
+            new UnitNative { unit = native },
+            new UnitState { isAlive = true },
+            new Position { x = x, y = y }
+        );
+
+        // 应用模板配置
         template.Configure(entity);
         return entity;
     }

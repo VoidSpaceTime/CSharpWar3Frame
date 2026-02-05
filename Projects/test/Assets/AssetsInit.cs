@@ -1,5 +1,4 @@
 namespace War3Frame;
-
 public static partial class AssetsInit
 {
     public static Assets Init()
