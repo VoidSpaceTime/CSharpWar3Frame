@@ -1,8 +1,10 @@
 ﻿using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
-using War3Frame.Components.Attribute;
 
-namespace War3Frame;
+namespace War3Frame.Src.Systems;
+
+public struct HealthNativeDirty : ITag { }
+public struct ManaNativeDirty : ITag { }
 
 public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
 {
@@ -10,15 +12,17 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
 
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref native, entity) =>
+        Query.ForEachEntity((ref UnitNative native, Entity entity) =>
         {
             // 同步单位血量              
             if (entity.Tags.Has<HealthNativeDirty>() &&
                 UnitAttrHelper.TryGetAttr(entity, AttributeHelper.Health, out var health))
             {
-                var hpCur = entity.GetComponent<HealthAttr>();
-                var set = (hpCur.current / health.Value.GetComponent<AttrValue>().finalValue) * 10000f;
-                JassApi.SetUnitState(native.unit, new JUnitState(Blizzard.UNIT_STATE_LIFE), set);
+                if (health.TryGetComponent<AttrValue>(out var hpVal))
+                {
+                    var set = (hpVal.current / hpVal.finalValue) * 10000f;
+                    JassApi.SetUnitState(native.unit, new JUnitState(Blizzard.UNIT_STATE_LIFE), set);
+                }
                 entity.RemoveTag<HealthNativeDirty>();
             }
 
@@ -26,9 +30,11 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
             if (entity.Tags.Has<ManaNativeDirty>() &&
                 UnitAttrHelper.TryGetAttr(entity, AttributeHelper.Mana, out var mana))
             {
-                var manaCur = entity.GetComponent<ManaAttr>();
-                var set = (manaCur.current / mana.Value.GetComponent<AttrValue>().finalValue) * 10000f;
-                JassApi.SetUnitState(native.unit, new JUnitState(Blizzard.UNIT_STATE_MANA), set);
+                if (mana.TryGetComponent<AttrValue>(out var manaVal))
+                {
+                    var set = (manaVal.current / manaVal.finalValue) * 10000f;
+                    JassApi.SetUnitState(native.unit, new JUnitState(Blizzard.UNIT_STATE_MANA), set);
+                }
                 entity.RemoveTag<ManaNativeDirty>();
             }
 

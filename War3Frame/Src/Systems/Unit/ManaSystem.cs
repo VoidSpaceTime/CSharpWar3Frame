@@ -1,25 +1,28 @@
 ﻿using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
-using War3Frame.Components.Attribute;
 
 namespace War3Frame.Src.Systems;
 
-public class ManaSystem : QuerySystem<ManaAttr>
+public class ManaSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
 {
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref ManaAttr mana, Entity unit) =>
+        Query.ForEachEntity((ref AttrValue val, ref AttrTypeId type, ref AttrOwner owner, Entity attrEntity) =>
         {
-            // 查找生命恢复属性
-            if (UnitAttrHelper.TryGetAttr(unit, AttributeHelper.ManaRegen, out var regenAttr) ||
-                UnitAttrHelper.TryGetAttr(unit, AttributeHelper.Mana, out var manaAttr)) return;
-            var before = mana.current;
-            var regen = regenAttr.Value.GetComponent<AttrValue>().finalValue;
-            var attr = manaAttr.Value.GetComponent<AttrValue>().finalValue;
+            // 只处理 Mana 属性
+            if (type.typeId != AttributeHelper.Mana) return;
 
-            mana.current += regen * Tick.deltaTime;
-            mana.current = Math.Min(mana.current, attr);
-            if (!mana.current.Equals(before))
+            var unit = owner.owner;
+            if (unit.IsNull) return;
+
+            // 获取魔法恢复属性
+            float regen = UnitAttrHelper.GetFinalValue(unit, AttributeHelper.ManaRegen);
+            
+            var before = val.current;
+            val.current += regen * Tick.deltaTime;
+            val.current = Math.Min(val.current, val.finalValue);
+            
+            if (!val.current.Equals(before))
             {
                 unit.AddTag<ManaNativeDirty>();
             }

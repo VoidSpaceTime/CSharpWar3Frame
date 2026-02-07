@@ -11,7 +11,7 @@ public struct MissileBase : IComponent
     public float acceleration;
 }
 
-public struct MissilMode : IComponent
+public struct MissileMode : IComponent
 {
     public string model;
     public float animateScale;

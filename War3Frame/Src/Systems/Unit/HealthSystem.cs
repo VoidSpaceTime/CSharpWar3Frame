@@ -1,28 +1,28 @@
 ﻿using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
-using War3Frame.Components.Attribute;
 
 namespace War3Frame.Src.Systems;
 
-public class HealthSystem : QuerySystem<HealthAttr>, ITimedSystem
+public class HealthSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
 {
-    public float Interval => 0.04f;
-
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref HealthAttr hp, Entity unit) =>
+        Query.ForEachEntity((ref AttrValue val, ref AttrTypeId type, ref AttrOwner owner, Entity attrEntity) =>
         {
-            // 查找生命恢复属性
-            if (!UnitAttrHelper.TryGetAttr(unit, AttributeHelper.HealthRegen, out var regenEntity) ||
-                !UnitAttrHelper.TryGetAttr(unit, AttributeHelper.Health, out var healthEntity)) return;
-            var before = hp.current;
-            var regen = regenEntity.Value.GetComponent<AttrValue>().finalValue;
-            var health = healthEntity.Value.GetComponent<AttrValue>().finalValue;
+            // 只处理 Health 属性
+            if (type.typeId != AttributeHelper.Health) return;
 
-            hp.current += regen * Tick.deltaTime;
-            hp.current = Math.Min(hp.current, health);
+            var unit = owner.owner;
+            if (unit.IsNull) return;
 
-            if (!hp.current.Equals(before))
+            // 获取生命恢复属性
+            float regen = UnitAttrHelper.GetFinalValue(unit, AttributeHelper.HealthRegen);
+            
+            var before = val.current;
+            val.current += regen * Tick.deltaTime;
+            val.current = Math.Min(val.current, val.finalValue);
+            
+            if (!val.current.Equals(before))
             {
                 unit.AddTag<HealthNativeDirty>();
             }

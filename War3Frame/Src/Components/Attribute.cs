@@ -29,6 +29,8 @@ public struct AttrValue : IComponent
 {
     public float baseValue; // 基础值（模板，不变）
     public float finalValue; // 计算后的最终值
+    
+    public float current; // 当前值（HP/Mana 等资源类属性使用，其他属性忽略）
 
     // 可选：缓存计算中间值，用于调试/UI
     public float flatBonus; // 固定加成总和

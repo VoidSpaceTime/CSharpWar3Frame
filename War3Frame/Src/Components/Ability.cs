@@ -39,20 +39,24 @@ public struct AbilityBase : IComponent
     /// <summary>技能状态</summary>
     public AbilityState state;
 
+    /// <summary>目标类型</summary>
+    public AbilityTargetType targetType;
+
     /// <summary>基础 CD（从模板/等级表获取，升级时更新）</summary>
     public float cooldown;
 
     /// <summary>当前 CD 剩余</summary>
     public float currentCd;
 
-    /// <summary>魔法消耗</summary>
-    public float manaCost;
 
-    /// <summary>施法时间</summary>
+    /// <summary>施法时间（吟唱时间）</summary>
     public float castTime;
 
     /// <summary>施法距离</summary>
     public float castRange;
+
+    /// <summary>持续施法时长（0 表示无持续施法）</summary>
+    public float channelDuration;
 }
 
 // AbilityOwner 和 SkillItem 已移动到 AbilitySlotBinding.cs 中
