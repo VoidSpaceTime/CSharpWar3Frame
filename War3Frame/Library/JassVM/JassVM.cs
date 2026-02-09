@@ -249,4 +249,13 @@ namespace War3Frame
             }
         }
     }
+
+    public static void AddHandleReference(nint handle)
+    {
+        MainJassVM.Value.AddHandleReference(handle);
+    }
+    public static void SubHandleReference(nint handle)
+    {
+        MainJassVM.Value.SubHandleReference(handle);
+    }
 }
