@@ -4,7 +4,7 @@ using War3Frame.Library.Api;
 
 namespace War3Frame;
 
-public class EffectNativeSystem : QuerySystem<EffectNative>
+public class EffectNativeSystem : QuerySystem<EffectNative, EffectBase, EffectDirty>
 {
     protected override void OnUpdate()
     {
@@ -17,27 +17,28 @@ public class EffectNativeSystem : QuerySystem<EffectNative>
 
             if (dirty.flags.HasFlag(EffectDirtyFlags.Color))
             {
-                KKApi.DzSetEffectVertexColor(native.effect, effect.red, effect.green, effect.blue);
+                KKApi.DzSetEffectVertexColor(native.effect,
+                    DzApi.DzGetColor(effect.red, effect.green, effect.blue, effect.alpha));
             }
 
             if (dirty.flags.HasFlag(EffectDirtyFlags.Scale))
             {
-                JassApi.SetEffectScale(native.effect, effect.sizeScale);
+                YDApi.EXSetEffectSize(native.effect, effect.sizeScale);
             }
 
             if (dirty.flags.HasFlag(EffectDirtyFlags.Speed))
             {
-                JassApi.SetEffectSpeed(native.effect, effect.speed);
+                YDApi.EXSetEffectSpeed(native.effect, effect.speed);
             }
 
             if (dirty.flags.HasFlag(EffectDirtyFlags.TeamColor))
             {
-                JassApi.SetEffectTeamColor(native.effect, effect.teamColor);
+                KKApi.DzSetEffectTeamColor(native.effect, effect.teamColor);
             }
 
             if (dirty.flags.HasFlag(EffectDirtyFlags.Visible))
             {
-                JassApi.SetEffectVisible(native.effect, effect.visible);
+                KKApi.DzSetEffectVisible(native.effect, effect.visible);
             }
 
             entity.RemoveComponent<EffectDirty>();

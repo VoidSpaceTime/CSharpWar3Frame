@@ -78,11 +78,12 @@ public static partial class UnitTemplate
         }
 
         // 创建原生 War3 单位（使用通用单位类型，后续可以扩展）
-        var native = JassApi.CreateUnit(player, JassApi.C2I("hfoo"), x, y, facing);
+        var junit = JassApi.CreateUnit(player, JassApi.C2I("hfoo"), x, y, facing);
+        HandleHelper.HandleAdd(junit);
 
         // 创建 Entity + 基础组件
         var entity = Game.Store.CreateEntity(
-            new UnitNative { unit = native },
+            new UnitNative { unit = junit },
             new UnitState { isAlive = true },
             new Position { x = x, y = y }
         );

@@ -708,7 +708,7 @@ public static class DzApi
     /// comment = "返回一个整数，用于设置Frame颜色"
     public static int DzGetColor(int r, int g, int b, int a)
     {
-        return War3.CallNative<int>(_dzGetColorPtr, r, g, b, a);
+        return War3.CallNative<int>(_dzGetColorPtr, a, r, g, b);
     }
 
     public static void DzFrameSetUpdateCallback(string func)

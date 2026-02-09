@@ -39,8 +39,6 @@ public static class EffectHelper
                 duration = duration,
                 effectType = EffectType.Position
             },
-            
-            
             new EffectNative { effect = jeffect },
             new Position { x = x, y = y, z = z }
         );
@@ -74,7 +72,6 @@ public static class EffectHelper
 
         var attachPointStr = GetAttachPointString(attachPoint);
         var handle = JassApi.AddSpecialEffectTarget(model, unitNative.unit, attachPointStr);
-        if (handle.IsNull) return null;
 
         if (duration == 0)
         {
@@ -121,7 +118,7 @@ public static class EffectHelper
 
         if (hideFirst)
         {
-            JassApi.SetEffectVisible(native.effect, false);
+            KKApi.DzSetEffectVisible(native.effect, false);
         }
 
         JassApi.DestroyEffect(native.effect);
@@ -206,8 +203,8 @@ public static class EffectHelper
         if (!entity.TryGetComponent<EffectNative>(out var native)) return;
 
         // 直接调用 API（位置变更通常需要即时生效）
-        JassApi.SetEffectXY(native.effect, x, y);
-        JassApi.SetEffectZ(native.effect, z);
+        YDApi.EXSetEffectXY(native.effect, x, y);
+        YDApi.EXSetEffectZ(native.effect, z);
 
         // 更新 ECS 组件
         if (entity.TryGetComponent<Position>(out var pos))
@@ -230,28 +227,28 @@ public static class EffectHelper
     public static void Reset(Entity entity)
     {
         if (!entity.TryGetComponent<EffectNative>(out var native)) return;
-        KKApi.YDEffectMatReset(native.effect);
+        YDApi.EXEffectMatReset(native.effect);
     }
 
     /// <summary>设置特效 X 轴旋转</summary>
     public static void SetRotateX(Entity entity, float angle)
     {
         if (!entity.TryGetComponent<EffectNative>(out var native)) return;
-        KKApi.YDEffectMatRotateX(native.effect, angle);
+        YDApi.EXEffectMatRotateX(native.effect, angle);
     }
 
     /// <summary>设置特效 Y 轴旋转</summary>
     public static void SetRotateY(Entity entity, float angle)
     {
         if (!entity.TryGetComponent<EffectNative>(out var native)) return;
-        KKApi.YDEffectMatRotateY(native.effect, angle);
+        YDApi.EXEffectMatRotateY(native.effect, angle);
     }
 
     /// <summary>设置特效 Z 轴旋转</summary>
     public static void SetRotateZ(Entity entity, float angle)
     {
         if (!entity.TryGetComponent<EffectNative>(out var native)) return;
-        KKApi.YDEffectMatRotateZ(native.effect, angle);
+        YDApi.EXEffectMatRotateZ(native.effect, angle);
     }
 
     #endregion
