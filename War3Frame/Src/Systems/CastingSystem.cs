@@ -8,10 +8,10 @@ namespace War3Frame.Src.Systems;
 /// <summary>
 /// 施法请求处理系统 - 处理玩家/AI 的施法请求
 /// </summary>
-public class CastRequestSystem : QuerySystem<CastRequest, Position> , ITimedSystem
+public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSystem
 {
     public float Interval { get; } = 0.02f;
-    
+
     protected override void OnUpdate()
     {
         Query.ForEachEntity((ref CastRequest request, ref Position pos, Entity unit) =>
@@ -132,7 +132,7 @@ public class MoveToCastSystem : QuerySystem<CastState>
             // ========================================
             // 检查是否被打断
             // ========================================
-            
+
             // 1. 检查控制效果打断（眩晕/击飞/囚禁）
             if (IsControlled(unit))
             {
@@ -264,7 +264,7 @@ public class CastingSystem : QuerySystem<CastState>, ITimedSystem
                 ExecuteAbility(unit, cast);
 
                 // 检查是否有持续施法
-                if (cast.ability.TryGetComponent<AbilityBase>(out var abilityBase) 
+                if (cast.ability.TryGetComponent<AbilityBase>(out var abilityBase)
                     && abilityBase.channelDuration > 0)
                 {
                     // 进入持续施法阶段
@@ -294,8 +294,15 @@ public class CastingSystem : QuerySystem<CastState>, ITimedSystem
 
     private void ExecuteAbility(Entity unit, CastState cast)
     {
-        // TODO: 这里实现技能效果逻辑
-        // 例如：创建伤害、治疗、Buff 等
+        // 通过 AbilityEffectHelper 创建效果 Entity
+        // 各个 Effect System 会自动处理伤害/治疗/Buff/弹道/AOE
+        AbilityEffectHelper.CreateEffectEntity(
+            unit,
+            cast.ability,
+            cast.targetUnit,
+            cast.targetX,
+            cast.targetY
+        );
     }
 
     private void FinishCast(Entity unit, CastState cast)
