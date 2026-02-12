@@ -11,12 +11,12 @@ public class EffectSystem : QuerySystem<EffectBase>
         {
             if (dirty.flags.HasFlag(EffectDirtyFlags.Color))
                 JassApi.SetEffectColor(native.effect, fx.red, fx.green, fx.blue);
-    
+
             if (dirty.flags.HasFlag(EffectDirtyFlags.Scale))
                 JassApi.SetEffectScale(native.effect, fx.sizeScale);
-    
+
             // ... 其他属性
-    
+
             dirty.flags = EffectDirtyFlags.None;
         });
     }

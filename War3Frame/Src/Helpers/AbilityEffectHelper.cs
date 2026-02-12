@@ -80,6 +80,32 @@ public static class AbilityEffectHelper
             }
         }
 
+        // 线性弹道效果（方向射击，沿途命中）
+        if (ability.TryGetComponent<LinearProjectileData>(out var linear))
+        {
+            // 计算飞行方向（从施法者指向目标点）
+            if (caster.TryGetComponent<Position>(out var casterPos2))
+            {
+                float dx = targetX - casterPos2.x;
+                float dy = targetY - casterPos2.y;
+                float dist = MathF.Sqrt(dx * dx + dy * dy);
+                if (dist > 0)
+                {
+                    linear.dirX = dx / dist;
+                    linear.dirY = dy / dist;
+                }
+
+                effectEntity.AddComponent(new Position
+                {
+                    x = casterPos2.x,
+                    y = casterPos2.y
+                });
+            }
+
+            linear.traveled = 0;
+            effectEntity.AddComponent(linear);
+        }
+
         return effectEntity;
     }
 

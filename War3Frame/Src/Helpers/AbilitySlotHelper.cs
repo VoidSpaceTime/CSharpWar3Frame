@@ -1,4 +1,5 @@
 using Friflo.Engine.ECS;
+using War3Frame.TemplateInit;
 
 namespace War3Frame;
 
@@ -15,6 +16,7 @@ public static class AbilitySlotHelper
     /// <param name="unit">目标单位 Entity</param>
     /// <param name="templateName">技能模板名称</param>
     /// <param name="slotIndex">目标槽位索引</param>
+    /// <param name="level">技能初始等级</param>
     /// <param name="configure">可选的额外配置</param>
     /// <returns>创建的技能 Entity</returns>
     /// <exception cref="InvalidOperationException">槽位已被占用或超出范围</exception>
@@ -22,10 +24,11 @@ public static class AbilitySlotHelper
         Entity unit,
         string templateName,
         int slotIndex,
+        int level = 1,
         Action<Entity>? configure = null)
     {
         var store = unit.Store;
-        
+
         // 1. 检查单位是否有技能槽容器
         if (!unit.TryGetComponent<AbilitySlotContainer>(out var container))
             throw new InvalidOperationException($"单位 {unit.Id} 没有 AbilitySlotContainer 组件");
@@ -38,12 +41,12 @@ public static class AbilitySlotHelper
         if (IsSlotOccupied(unit, slotIndex))
             throw new InvalidOperationException($"槽位 {slotIndex} 已被占用");
 
-        // 4. 创建技能 Entity
+        // 4. 创建技能 Entity（基础组件）
         var ability = store.CreateEntity(
             new AbilityBase
             {
                 templateName = templateName,
-                level = 1,
+                level = level,
                 state = AbilityState.Ready
             },
             new AbilitySlotIndex
@@ -53,11 +56,17 @@ public static class AbilitySlotHelper
             new AbilityOwner(unit)
         );
 
-        // 5. 更新单位的槽位计数
+        // 5. 应用技能模板（自动添加效果组件：伤害、弹道、AOE 等）
+        if (AbilityTemplate.HasTemplate(templateName))
+        {
+            AbilityTemplate.Apply(templateName, ability, level);
+        }
+
+        // 6. 更新单位的槽位计数
         container.currentCount++;
         unit.AddComponent(container);
 
-        // 6. 应用额外配置
+        // 7. 应用额外配置（可覆盖模板默认值）
         configure?.Invoke(ability);
 
         return ability;
@@ -68,18 +77,20 @@ public static class AbilitySlotHelper
     /// </summary>
     /// <param name="unit">目标单位 Entity</param>
     /// <param name="templateName">技能模板名称</param>
+    /// <param name="level">技能初始等级</param>
     /// <param name="configure">可选的额外配置</param>
     /// <returns>创建的技能 Entity</returns>
     /// <exception cref="InvalidOperationException">没有空闲槽位</exception>
     public static Entity AddAbility(
         Entity unit,
         string templateName,
+        int level = 1,
         Action<Entity>? configure = null)
     {
         var freeSlot = GetFirstFreeSlot(unit);
         if (freeSlot < 0)
             throw new InvalidOperationException($"单位 {unit.Id} 没有空闲的技能槽位");
-        return AddAbilityToSlot(unit, templateName, freeSlot, configure);
+        return AddAbilityToSlot(unit, templateName, freeSlot, level, configure);
     }
 
     #endregion

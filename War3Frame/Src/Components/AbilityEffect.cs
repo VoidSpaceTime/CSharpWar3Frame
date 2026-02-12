@@ -220,6 +220,45 @@ public struct ProjectileData : IComponent
 }
 
 /// <summary>
+/// 线性弹道组件 - 朝指定方向飞行，沿途命中所有目标
+/// 与 ProjectileData 的区别：
+///   ProjectileData = 追踪弹道（飞向一个目标）
+///   LinearProjectileData = 方向弹道（朝一个方向飞，沿途伤害）
+/// </summary>
+public struct LinearProjectileData : IComponent
+{
+    /// <summary>弹道特效模型路径</summary>
+    public string model;
+
+    /// <summary>飞行速度</summary>
+    public float speed;
+
+    /// <summary>最大飞行距离</summary>
+    public float maxDistance;
+
+    /// <summary>碰撞半径（检测沿途目标）</summary>
+    public float hitRadius;
+
+    /// <summary>飞行方向 X（归一化）</summary>
+    public float dirX;
+
+    /// <summary>飞行方向 Y（归一化）</summary>
+    public float dirY;
+
+    /// <summary>已飞行距离（运行时，系统自动更新）</summary>
+    public float traveled;
+
+    /// <summary>弹道特效 Entity（运行时由系统填充）</summary>
+    public Entity effectEntity;
+
+    /// <summary>沿途目标筛选</summary>
+    public TargetFilter hitFilter;
+
+    /// <summary>是否可以多次命中同一目标（false = 每个目标只命中一次）</summary>
+    public bool canHitSameTarget;
+}
+
+/// <summary>
 /// 弹道已到达标记 - 由 ProjectileSystem 添加
 /// </summary>
 public struct ProjectileArrived : ITag;
