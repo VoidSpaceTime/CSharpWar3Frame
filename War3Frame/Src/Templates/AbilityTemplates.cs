@@ -37,7 +37,7 @@ public class ArrowShotTemplate : IAbilityTemplate
             maxDistance = 800f,          // 最远飞行 800 距离
             hitRadius = 80f,            // 碰撞半径 80
             hitFilter = TargetFilter.EnemyAlive,
-            canHitSameTarget = false    // 每个目标只命中一次
+            canHitSameTarget = true    // 每个目标只命中一次
         });
 
         // 伤害效果（对命中的每个目标造成伤害）

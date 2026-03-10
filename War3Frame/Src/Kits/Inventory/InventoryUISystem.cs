@@ -68,27 +68,68 @@ public class InventoryUISystem : BaseSystem
     {
         if (args.Length < 3) return;
         var unitEntity = SyncHelper.DecodeEntity(args[1]);
+        if (unitEntity.IsNull) return;
+
         int slotIndex = int.Parse(args[2]);
 
-        // TODO: 执行物品使用逻辑
-        // 查找该单位第 slotIndex 个物品，触发物品效果
+        // 查找该槽位的物品
+        var item = FindItemInSlot(unitEntity, slotIndex);
+        if (item.IsNull) return;
+
+        // TODO: 触发物品使用逻辑 (例如发送 UseItemEvent 或调用 ItemSystem)
+        Console.WriteLine($"[Sync] Player {player.Handle.ToInt32()} used item in slot {slotIndex}");
     }
 
     private void HandleDropItem(JPlayer player, string[] args)
     {
         if (args.Length < 2) return;
         var itemEntity = SyncHelper.DecodeEntity(args[1]);
+        if (itemEntity.IsNull) return;
 
-        // TODO: 执行物品丢弃逻辑
+        // 移除背包关联组件
+        itemEntity.RemoveComponent<ItemOwner>();
+        itemEntity.RemoveComponent<ItemSlotIndex>();
+
+        // TODO: 设置物品位置到单位脚下，使其掉落在世界中
+        Console.WriteLine($"[Sync] Player {player.Handle.ToInt32()} dropped item {itemEntity.Id}");
     }
 
     private void HandleSwapItems(JPlayer player, string[] args)
     {
         if (args.Length < 4) return;
         var unitEntity = SyncHelper.DecodeEntity(args[1]);
+        if (unitEntity.IsNull) return;
+
         int fromSlot = int.Parse(args[2]);
         int toSlot = int.Parse(args[3]);
 
-        // TODO: 执行物品交换逻辑
+        var itemFrom = FindItemInSlot(unitEntity, fromSlot);
+        var itemTo = FindItemInSlot(unitEntity, toSlot);
+
+        if (itemFrom.IsNull) return;
+
+        // 交换 SlotIndex
+        itemFrom.GetComponent<ItemSlotIndex>().index = toSlot;
+
+        if (!itemTo.IsNull)
+        {
+            itemTo.GetComponent<ItemSlotIndex>().index = fromSlot;
+        }
+
+        // 立即刷新 UI (如果本地打开了该面板)
+        _panel?.Refresh();
+    }
+
+    private Entity FindItemInSlot(Entity unit, int slotIndex)
+    {
+        foreach (var link in unit.GetIncomingLinks<ItemOwner>())
+        {
+            var item = link.Entity;
+            if (item.TryGetComponent<ItemSlotIndex>(out var slot) && slot.index == slotIndex)
+            {
+                return item;
+            }
+        }
+        return default;
     }
 }

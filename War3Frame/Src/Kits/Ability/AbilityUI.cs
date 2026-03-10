@@ -105,7 +105,38 @@ public class AbilityUISystem : BaseSystem
         var args = SyncHelper.Decode(data);
         if (args.Length < 3 || args[0] != "cast") return;
         var unit = SyncHelper.DecodeEntity(args[1]);
+        if (unit.IsNull) return;
+
         int slotIdx = int.Parse(args[2]);
-        // TODO: 触发对应槽位技能的施法流程
+
+        // 查找对应槽位的技能
+        var ability = FindAbilityInSlot(unit, slotIdx);
+        if (ability.IsNull) return;
+
+        // 创建施法请求
+        // 注意：目前只支持无目标施法（如立即施法技能）
+        // 如果需要支持目标施法，UI 需要先进入选择目标模式，然后 SyncHelper 发送包含目标 Entity 或 坐标的数据
+        unit.AddComponent(new CastRequest
+        {
+            ability = ability,
+            targetUnit = default, // 无目标
+            targetX = 0,
+            targetY = 0
+        });
+
+        Console.WriteLine($"[Sync] Unit {unit.Id} requested cast ability {ability.Id} in slot {slotIdx}");
+    }
+
+    private Entity FindAbilityInSlot(Entity unit, int slotIndex)
+    {
+        foreach (var link in unit.GetIncomingLinks<AbilityOwner>())
+        {
+            var ability = link.Entity;
+            if (ability.TryGetComponent<AbilitySlotIndex>(out var slot) && slot.slotIndex == slotIndex)
+            {
+                return ability;
+            }
+        }
+        return default;
     }
 }

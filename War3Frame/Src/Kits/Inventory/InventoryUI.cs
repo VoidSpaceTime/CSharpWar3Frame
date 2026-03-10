@@ -84,15 +84,39 @@ public class InventoryPanel : UIPanel
         for (int i = 0; i < _slots.Length; i++)
             _slots[i].Clear();
 
-        // TODO: 当 ItemOwner 迁移为 ILinkComponent 后，使用 GetIncomingLinks<ItemOwner>
-        // 当前 ItemOwner 是 IComponent，无法直接反向查询
-        // 需要在 Inventory 套件中将 ItemOwner 改为 ILinkComponent 或使用 EntityStore Query
+        // 从 ECS 读取物品
+        var items = _boundUnit.GetIncomingLinks<ItemOwner>();
+        foreach (var link in items)
+        {
+            var itemEntity = link.Entity;
+            if (itemEntity.TryGetComponent<ItemSlotIndex>(out var slot))
+            {
+                if (slot.index >= 0 && slot.index < _slots.Length)
+                {
+                    if (itemEntity.TryGetComponent<ItemBase>(out var baseInfo))
+                    {
+                        _slots[slot.index].SetContent(baseInfo.icon);
+
+                        // 存储 tooltip 数据供 Hover 使用
+                        _slotTooltips[slot.index] = (baseInfo.name, baseInfo.description);
+                    }
+                    else
+                    {
+                        _slots[slot.index].SetContent("ReplaceableTextures\\CommandButtons\\BTNTemp.blp");
+                        _slotTooltips[slot.index] = ("未知物品", "缺少 ItemBase 组件");
+                    }
+                }
+            }
+        }
     }
+
+    // 存储 Tooltip 数据: index -> (name, desc)
+    private readonly Dictionary<int, (string name, string desc)> _slotTooltips = new();
 
     private void OnSlotHover(int slotIndex, bool enter)
     {
-        if (enter && !_slots[slotIndex].IsEmpty)
-            UIManager.Tooltip?.ShowAt(0.45f, 0.3f, "物品名称", "物品描述");
+        if (enter && !_slots[slotIndex].IsEmpty && _slotTooltips.TryGetValue(slotIndex, out var info))
+            UIManager.Tooltip?.ShowAt(0.45f, 0.3f, info.name, info.desc);
         else
             UIManager.Tooltip?.Hide();
     }

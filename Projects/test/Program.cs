@@ -67,9 +67,9 @@ public static class Game
         Console.WriteLine($"玩家 = {p0.Handle}");
         Console.WriteLine($"hfoo = {JassApi.C2I("hfoo")}");
 
+
         var unit = JassApi.CreateUnit(p0, JassApi.C2I("hfoo"), 0, 0, 270);
         Console.WriteLine($"创建单位 = {unit.Handle}");
-
         var entity = world.CreateEntity(new Position(0, 0, 0),
             new Velocity { value = new Vector3(0, 0, 0), unit = unit });
 
@@ -78,6 +78,7 @@ public static class Game
             root.Update(new UpdateTick(TICK_RATE, TimeSpan));
             TimeSpan += TICK_RATE;
         });
+
     }
 
     public struct Velocity : IComponent
