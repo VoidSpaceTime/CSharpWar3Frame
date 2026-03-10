@@ -239,7 +239,7 @@ namespace War3Frame
 
         public static void DzTriggerRegisterMouseEventByCode(JTrigger trig, int btn, int status, bool sync, Action funcHandle)
         {
-            War3.CallNative(_dzTriggerRegisterMouseEventByCodePtr, trig.Handle, btn, status, sync, funcHandle);
+            War3.CallNative(_dzTriggerRegisterMouseEventByCodePtr, trig.Handle, btn, status, sync, new War3.DzAction(funcHandle));
         }
 
         public static void DzTriggerRegisterKeyEvent(JTrigger trig, int key, int status, bool sync, string func)
@@ -249,7 +249,7 @@ namespace War3Frame
 
         public static void DzTriggerRegisterKeyEventByCode(JTrigger trig, int key, int status, bool sync, Action funcHandle)
         {
-            War3.CallNative(_dzTriggerRegisterKeyEventByCodePtr, trig.Handle, key, status, sync, funcHandle);
+            War3.CallNative(_dzTriggerRegisterKeyEventByCodePtr, trig.Handle, key, status, sync, new War3.DzAction(funcHandle));
         }
 
         public static void DzTriggerRegisterMouseWheelEvent(JTrigger trig, bool sync, string func)
@@ -259,7 +259,7 @@ namespace War3Frame
 
         public static void DzTriggerRegisterMouseWheelEventByCode(JTrigger trig, bool sync, Action funcHandle)
         {
-            War3.CallNative(_dzTriggerRegisterMouseWheelEventByCodePtr, trig.Handle, sync, funcHandle);
+            War3.CallNative(_dzTriggerRegisterMouseWheelEventByCodePtr, trig.Handle, sync, new War3.DzAction(funcHandle));
         }
 
         public static void DzTriggerRegisterMouseMoveEvent(JTrigger trig, bool sync, string func)
@@ -269,7 +269,7 @@ namespace War3Frame
 
         public static void DzTriggerRegisterMouseMoveEventByCode(JTrigger trig, bool sync, Action funcHandle)
         {
-            War3.CallNative(_dzTriggerRegisterMouseMoveEventByCodePtr, trig.Handle, sync, funcHandle);
+            War3.CallNative(_dzTriggerRegisterMouseMoveEventByCodePtr, trig.Handle, sync, new War3.DzAction(funcHandle));
         }
 
 
@@ -360,7 +360,7 @@ namespace War3Frame
 
         public static void DzTriggerRegisterWindowResizeEventByCode(JTrigger trig, bool sync, Action funcHandle)
         {
-            War3.CallNative(_dzTriggerRegisterWindowResizeEventByCodePtr, trig.Handle, sync, funcHandle);
+            War3.CallNative(_dzTriggerRegisterWindowResizeEventByCodePtr, trig.Handle, sync, new War3.DzAction(funcHandle));
         }
 
 
@@ -722,7 +722,7 @@ namespace War3Frame
 
         public static void DzFrameSetUpdateCallbackByCode(Action funcHandle)
         {
-            War3.CallNative(_dzFrameSetUpdateCallbackByCodePtr, funcHandle);
+            War3.CallNative(_dzFrameSetUpdateCallbackByCodePtr, new War3.DzAction(funcHandle));
         }
 
 
@@ -827,7 +827,7 @@ namespace War3Frame
 
         public static void DzFrameSetScriptByCode(int frame, int eventId, Action funcHandle, bool sync)
         {
-            War3.CallNative(_dzFrameSetScriptByCodePtr, frame, eventId, funcHandle, sync);
+            War3.CallNative(_dzFrameSetScriptByCodePtr, frame, eventId, new War3.DzAction(funcHandle), sync);
         }
 
 
@@ -857,7 +857,7 @@ namespace War3Frame
 
         public static void DzFrameSetScriptByCodeAsync(int frame, int eventId, Action func)
         {
-            War3.CallNative(_dzFrameSetScriptByCodeAsyncPtr, frame, eventId, func);
+            War3.CallNative(_dzFrameSetScriptByCodeAsyncPtr, frame, eventId, new War3.DzAction(func));
         }
 
 

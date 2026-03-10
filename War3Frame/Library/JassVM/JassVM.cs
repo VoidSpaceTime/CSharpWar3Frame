@@ -57,6 +57,8 @@ namespace War3Frame
             }
 
             private static readonly Lazy<nint> CreateOpcodeIdPtr = new(() => SelectVersion(new(V27A: 0x7ECE50)));
+            // pCreateFunction: 注册命名 Jass 函数，Dz ByCode 系列函数通过函数名查找，必须使用此接口
+            private static readonly Lazy<nint> CreateFunctionPtr = new(() => SelectVersion(new(V27A: 0x7EC2D0)));
             public uint CreateOpcodeId(nint opCode)
             {
                 unsafe
@@ -64,6 +66,31 @@ namespace War3Frame
                     var func = (delegate* unmanaged[Thiscall]<nint, nint, uint>)CreateOpcodeIdPtr.Value;
                     return func(RealJassVM, opCode);
                 }
+            }
+
+            /// <summary>
+            /// 注册一个具名 Jass 函数，对应 C++ CJassVirtualMachine::CreateFunction（偏移 0x7EC2D0）。
+            /// Dz ByCode 系列函数通过函数名查找回调，必须使用此方法而非 CreateOpcodeId。
+            /// 返回函数名的 HashId，即 Dz ByCode 参数所需的 code 值。
+            /// </summary>
+            public uint CreateJassFunction(string name, nint opCode, int retType = 0)
+            {
+                unsafe
+                {
+                    var utf8Bytes = GetUtf8BytesWithNull(name);
+                    fixed (byte* namePtr = utf8Bytes)
+                    {
+                        // void pCreateFunction(this, name, opCode, retType)
+                        var func = (delegate* unmanaged[Thiscall]<nint, byte*, nint, int, void>)CreateFunctionPtr.Value;
+                        func(RealJassVM, namePtr, opCode, retType);
+                    }
+                }
+
+                // 对应 C++ 中的 CreateJString(name)，保持名字字符串存活
+                CreateJassString(name);
+
+                // 返回函数名的 HashId（Dz ByCode 通过此 ID 查找命名函数）
+                return GetJassHashedId(name);
             }
 
             public uint GetJassHashedId(string str)

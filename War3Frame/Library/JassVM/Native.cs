@@ -132,6 +132,13 @@ namespace War3Frame
             return vm.GetJassHashedId("IsNoDefeatCheat");
         });
         private static List<Action> NativeCodeDelegates = [];
+        private static int _namedCodeIndex = 0;
+
+        /// <summary>
+        /// 用于标识此 Action 需要注册为命名 Jass 函数（供 Dz ByCode 系列 API 使用）。
+        /// 在 DzApi 的 ByCode 方法内部自动包装，用户侧无需感知。
+        /// </summary>
+        public record DzAction(Action Action);
 
         private static void NativeCodeCallback()
         {
@@ -139,52 +146,75 @@ namespace War3Frame
             NativeCodeDelegates[(int)value]();
         }
 
+        private static unsafe nint BuildOpcodes(nint idx)
+        {
+            int id = (int)NativeCodeId.Value;
+            if (id == 0) return 0;
+
+            const int TYPE_VARIABLE_INTEGER = 4;
+            const int TYPE_OPCODE_MOVRLITERAL = 12;
+            const int TYPE_OPCODE_CALLNATIVE = 21;
+            const int TYPE_OPCODE_RETURN = 39;
+
+            nint opcodes = Marshal.AllocHGlobal(0x08 * 3);
+            byte* op = (byte*)opcodes;
+            {
+                op[0] = 0;
+                op[1] = TYPE_VARIABLE_INTEGER;
+                op[2] = 0;
+                op[3] = TYPE_OPCODE_MOVRLITERAL;
+                *(int*)(op + 4) = (int)idx;
+                op += 8;
+            }
+            {
+                op[0] = 0;
+                op[1] = 0;
+                op[2] = 0;
+                op[3] = TYPE_OPCODE_CALLNATIVE;
+                *(int*)(op + 4) = id;
+                op += 8;
+            }
+            {
+                op[0] = 0;
+                op[1] = 0;
+                op[2] = 0;
+                op[3] = TYPE_OPCODE_RETURN;
+                *(int*)(op + 4) = 0;
+            }
+            return opcodes;
+        }
+
         private static uint CreateNativeCode(nint idx)
         {
             unsafe
             {
-                int id = (int)NativeCodeId.Value;
-                if (id == 0) return 0;
-
-                const int TYPE_VARIABLE_INTEGER = 4;
-                const int TYPE_OPCODE_MOVRLITERAL = 12;
-                const int TYPE_OPCODE_CALLNATIVE = 21;
-                const int TYPE_OPCODE_RETURN = 39;
-
-                nint opcodes = Marshal.AllocHGlobal(0x08 * 3);
-                byte* op = (byte*)opcodes;
-                {
-                    op[0] = 0;
-                    op[1] = TYPE_VARIABLE_INTEGER;
-                    op[2] = 0;
-                    op[3] = TYPE_OPCODE_MOVRLITERAL;
-                    *(int*)(op + 4) = (int)idx;
-                    op += 8;
-                }
-                {
-                    op[0] = 0;
-                    op[1] = 0;
-                    op[2] = 0;
-                    op[3] = TYPE_OPCODE_CALLNATIVE;
-                    *(int*)(op + 4) = id;
-                    op += 8;
-                }
-                {
-                    op[0] = 0;
-                    op[1] = 0;
-                    op[2] = 0;
-                    op[3] = TYPE_OPCODE_RETURN;
-                    *(int*)(op + 4) = 0;
-                    op += 8;
-                }
-
+                nint opcodes = BuildOpcodes(idx);
+                if (opcodes == 0) return 0;
                 return GetMainJassVM().CreateOpcodeId(opcodes);
             }
         }
+
         private static uint CreateNativeCode(Action func)
         {
             NativeCodeDelegates.Add(func);
             return CreateNativeCode(NativeCodeDelegates.Count - 1);
+        }
+
+        /// <summary>
+        /// 为 Dz ByCode 系列函数创建具名 Jass 函数，通过 CreateJassFunction 注册，返回 HashId。
+        /// 普通 JASS code 类型用 CreateNativeCode，Dz ByCode 用此方法。
+        /// </summary>
+        private static uint CreateNamedNativeCode(Action func)
+        {
+            NativeCodeDelegates.Add(func);
+            var idx = NativeCodeDelegates.Count - 1;
+            unsafe
+            {
+                nint opcodes = BuildOpcodes(idx);
+                if (opcodes == 0) return 0;
+                var name = $"__cs_{_namedCodeIndex++}";
+                return GetMainJassVM().CreateJassFunction(name, opcodes);
+            }
         }
         public static void CallNative(nint func, params object[] args)
         {
@@ -218,8 +248,11 @@ namespace War3Frame
                             case Action v:
                                 values[i] = (int)CreateNativeCode(v);
                                 break;
+                            case DzAction v:
+                                values[i] = (int)CreateNamedNativeCode(v.Action);
+                                break;
                             default:
-                                throw new InvalidCastException($"��֧�ֽ����� {args[i].GetType().Name} ת��Ϊ Int32");
+                                throw new InvalidCastException($"不支持将类型 {args[i].GetType().Name} 转换为 Int32");
                         }
                     }
                     CallCdeclFunction(func, values);
@@ -265,8 +298,11 @@ namespace War3Frame
                             case Action v:
                                 values[i] = (int)CreateNativeCode(v);
                                 break;
+                            case DzAction v:
+                                values[i] = (int)CreateNamedNativeCode(v.Action);
+                                break;
                             default:
-                                throw new InvalidCastException($"��֧�ֽ����� {args[i].GetType().Name} ת��Ϊ Int32");
+                                throw new InvalidCastException($"不支持将类型 {args[i].GetType().Name} 转换为 Int32");
                         }
                     }
 
@@ -307,7 +343,7 @@ namespace War3Frame
                 }
                 else
                 {
-                    throw new InvalidCastException($"��֧�ֽ��������� {typeof(T).Name} ת��Ϊ T");
+                    throw new InvalidCastException($"不支持将返回类型 {typeof(T).Name} 转换为 T");
                 }
             }
         }
@@ -382,7 +418,7 @@ namespace War3Frame
                         return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11]);
                     }
                 default:
-                    throw new NotSupportedException($"��ʱ��֧�� {args.Length} �������ĵ���");
+                    throw new NotSupportedException($"暂时不支持 {args.Length} 个参数的调用");
             }
         }
     }
