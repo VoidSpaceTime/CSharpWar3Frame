@@ -81,7 +81,6 @@ internal static class Program
                 UseShellExecute = false
             };
             psi.ArgumentList.Add("-launchwar3");
-            Task.Delay(1000);
             //var bo3 = File.Exists(Path.Combine(Config.We, "bin", "WEConfig.exe"));
 
             using var war3Psi = Process.Start(psi);
