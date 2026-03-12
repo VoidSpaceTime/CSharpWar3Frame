@@ -61,7 +61,7 @@ public static class UnitHelper
         }
 
         // 移除所有属性 Entity
-        var attrs = UnitAttrHelper.GetAllAttrs(unit);
+        var attrs = AttributeHelper.GetAllAttrs(unit);
         foreach (var (typeId, attrEntity) in attrs)
         {
             attrEntity.DeleteEntity();

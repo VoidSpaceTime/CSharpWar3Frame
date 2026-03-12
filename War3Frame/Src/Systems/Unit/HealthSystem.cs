@@ -16,7 +16,7 @@ public class HealthSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
             if (unit.IsNull) return;
 
             // 获取生命恢复属性
-            float regen = UnitAttrHelper.GetFinalValue(unit, AttributeHelper.HealthRegen);
+            float regen = AttrHelper.GetFinalValue(unit, AttributeHelper.HealthRegen);
             
             var before = val.current;
             val.current += regen * Tick.deltaTime;

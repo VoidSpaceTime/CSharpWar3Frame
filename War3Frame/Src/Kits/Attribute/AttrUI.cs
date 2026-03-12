@@ -69,7 +69,7 @@ public class AttrPanel : UIPanel
         {
             if (!_rows.TryGetValue(cfg.AttrTypeId, out var textUI)) continue;
 
-            if (UnitAttrHelper.TryGetAttr(_boundUnit, cfg.AttrTypeId, out var attrEntity)
+            if (AttrHelper.TryGetAttr(_boundUnit, cfg.AttrTypeId, out var attrEntity)
                 && attrEntity.TryGetComponent<AttrValue>(out var val))
             {
                 textUI.Text = string.Format(cfg.Format, val.current, val.finalValue);

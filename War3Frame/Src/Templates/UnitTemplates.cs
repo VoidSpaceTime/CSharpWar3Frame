@@ -1,5 +1,4 @@
 using Friflo.Engine.ECS;
-
 using War3Frame.TemplateInit;
 
 namespace War3Frame.Templates;
@@ -16,11 +15,11 @@ public class FootmanTemplate : IUnitTemplate
 
         // Create attribute entities
         // Health with current value
-        var health = UnitAttrHelper.CreateAttr(entity, AttributeHelper.Health, 420);
+        var health = AttributeHelper.CreateAttr(entity, AttributeHelper.Health, 420);
 
-        UnitAttrHelper.CreateAttr(entity, AttributeHelper.HealthRegen, 0.25f);
-        UnitAttrHelper.CreateAttr(entity, AttributeHelper.Damage, 12);
-        
+        AttributeHelper.CreateAttr(entity, AttributeHelper.HealthRegen, 0.25f);
+        AttributeHelper.CreateAttr(entity, AttributeHelper.Damage, 12);
+
         // Mana example (if needed)
         // var mana = UnitAttrHelper.CreateAttr(entity, AttributeHelper.Mana, 200);
         // mana.AddComponent(new AttrCurrentValue { value = 200 });
@@ -38,9 +37,9 @@ public class KnightTemplate : IUnitTemplate
     {
         var store = entity.Store;
 
-        var health = UnitAttrHelper.CreateAttr(entity, AttributeHelper.Health, 800);
+        var health = AttributeHelper.CreateAttr(entity, AttributeHelper.Health, 800);
 
-        UnitAttrHelper.CreateAttr(entity, AttributeHelper.HealthRegen, 0.5f);
-        UnitAttrHelper.CreateAttr(entity, AttributeHelper.Damage, 28);
+        AttributeHelper.CreateAttr(entity, AttributeHelper.HealthRegen, 0.5f);
+        AttributeHelper.CreateAttr(entity, AttributeHelper.Damage, 28);
     }
 }

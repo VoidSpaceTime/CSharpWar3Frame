@@ -31,7 +31,7 @@ public class ModifyHelper
         ModifyType type,
         float value)
     {
-        var attr = UnitAttrHelper.GetAttr(unit, attrTypeId);
+        var attr = AttributeHelper.GetAttr(unit, attrTypeId);
         if (attr == null) return null;
 
         return AddModifier(attr.Value, source, type, value);

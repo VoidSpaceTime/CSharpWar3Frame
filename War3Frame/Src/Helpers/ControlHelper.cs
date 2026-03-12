@@ -14,7 +14,7 @@ public static class ControlHelper
     public static bool IsIncapacitated(Entity unit)
     {
         return GetEffectiveValue(unit, AttributeHelper.Stun) > 0
-            || GetEffectiveValue(unit, AttributeHelper.Knockback) > 0;
+               || GetEffectiveValue(unit, AttributeHelper.Knockback) > 0;
     }
 
     /// <summary>
@@ -23,8 +23,8 @@ public static class ControlHelper
     public static bool IsImmobilized(Entity unit)
     {
         return GetEffectiveValue(unit, AttributeHelper.Stun) > 0
-            || GetEffectiveValue(unit, AttributeHelper.Root) > 0
-            || GetEffectiveValue(unit, AttributeHelper.Knockback) > 0;
+               || GetEffectiveValue(unit, AttributeHelper.Root) > 0
+               || GetEffectiveValue(unit, AttributeHelper.Knockback) > 0;
     }
 
     /// <summary>
@@ -33,8 +33,8 @@ public static class ControlHelper
     public static bool IsSilenced(Entity unit)
     {
         return GetEffectiveValue(unit, AttributeHelper.Stun) > 0
-            || GetEffectiveValue(unit, AttributeHelper.Silence) > 0
-            || GetEffectiveValue(unit, AttributeHelper.Knockback) > 0;
+               || GetEffectiveValue(unit, AttributeHelper.Silence) > 0
+               || GetEffectiveValue(unit, AttributeHelper.Knockback) > 0;
     }
 
     /// <summary>
@@ -43,8 +43,8 @@ public static class ControlHelper
     public static bool IsDisarmed(Entity unit)
     {
         return GetEffectiveValue(unit, AttributeHelper.Stun) > 0
-            || GetEffectiveValue(unit, AttributeHelper.Disarm) > 0
-            || GetEffectiveValue(unit, AttributeHelper.Knockback) > 0;
+               || GetEffectiveValue(unit, AttributeHelper.Disarm) > 0
+               || GetEffectiveValue(unit, AttributeHelper.Knockback) > 0;
     }
 
     /// <summary>
@@ -71,7 +71,7 @@ public static class ControlHelper
     /// </summary>
     private static float GetAttrValue(Entity unit, int attrId)
     {
-        var attr = UnitAttrHelper.GetAttr(unit, attrId);
+        var attr = AttributeHelper.GetAttr(unit, attrId);
         return attr?.GetComponent<AttrValue>().finalValue ?? 0;
     }
 

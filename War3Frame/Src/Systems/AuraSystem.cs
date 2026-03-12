@@ -128,7 +128,7 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
     private void AddAuraBuffToUnit(EntityStore store, Entity auraEntity, Entity unit, AuraEffect effect)
     {
         // 获取对应的属性 Entity
-        var attrEntity = UnitAttrHelper.GetAttr(unit, effect.attrType);
+        var attrEntity = AttrHelper.GetAttr(unit, effect.attrType);
         if (attrEntity == null) return;
 
         var buff = store.CreateEntity(

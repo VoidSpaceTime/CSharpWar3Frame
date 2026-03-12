@@ -33,7 +33,7 @@ public static class BuffHelper
         }
 
         // 获取对应的属性 Entity
-        var attrEntity = UnitAttrHelper.GetAttr(unit, attrTypeId);
+        var attrEntity = AttributeHelper.GetAttr(unit, attrTypeId);
         if (attrEntity == null) return default;
 
         // 创建新 Buff
@@ -85,7 +85,7 @@ public static class BuffHelper
         }
 
         // 获取对应的属性 Entity
-        var attrEntity = UnitAttrHelper.GetAttr(unit, attrTypeId);
+        var attrEntity = AttributeHelper.GetAttr(unit, attrTypeId);
         if (attrEntity == null) return default;
 
         // 创建新 Buff
@@ -127,7 +127,7 @@ public static class BuffHelper
         float value)
     {
         // 获取对应的属性 Entity
-        var attrEntity = UnitAttrHelper.GetAttr(unit, attrTypeId);
+        var attrEntity = AttributeHelper.GetAttr(unit, attrTypeId);
         if (attrEntity == null) return default;
 
         var buff = store.CreateEntity(
@@ -180,7 +180,7 @@ public static class BuffHelper
     public static void RemoveAllBuffs(Entity unit)
     {
         // 获取单位的所有属性
-        var attrs = UnitAttrHelper.GetAllAttrs(unit);
+        var attrs = AttributeHelper.GetAllAttrs(unit);
         var affectedAttrs = new HashSet<Entity>();
         var toDelete = new List<Entity>();
 
@@ -222,7 +222,7 @@ public static class BuffHelper
     public static Entity FindBuffByIdOnUnit(Entity unit, string buffId)
     {
         // 遍历单位的所有属性，查找 Buff
-        var attrs = UnitAttrHelper.GetAllAttrs(unit);
+        var attrs = AttributeHelper.GetAllAttrs(unit);
 
         foreach (var (typeId, attrEntity) in attrs)
         {

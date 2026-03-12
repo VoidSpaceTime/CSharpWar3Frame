@@ -16,7 +16,7 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
         {
             // 同步单位血量              
             if (entity.Tags.Has<HealthNativeDirty>() &&
-                UnitAttrHelper.TryGetAttr(entity, AttributeHelper.Health, out var health))
+                AttrHelper.TryGetAttr(entity, AttributeHelper.Health, out var health))
             {
                 if (health.TryGetComponent<AttrValue>(out var hpVal))
                 {
@@ -28,7 +28,7 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
 
             // 同步单位魔法
             if (entity.Tags.Has<ManaNativeDirty>() &&
-                UnitAttrHelper.TryGetAttr(entity, AttributeHelper.Mana, out var mana))
+                AttrHelper.TryGetAttr(entity, AttributeHelper.Mana, out var mana))
             {
                 if (mana.TryGetComponent<AttrValue>(out var manaVal))
                 {
