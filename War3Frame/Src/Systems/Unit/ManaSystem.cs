@@ -16,7 +16,7 @@ public class ManaSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
             if (unit.IsNull) return;
 
             // 获取魔法恢复属性
-            float regen = AttrHelper.GetFinalValue(unit, AttributeHelper.ManaRegen);
+            float regen = AttributeHelper.GetFinalValue(unit, AttributeHelper.ManaRegen);
             
             var before = val.current;
             val.current += regen * Tick.deltaTime;
@@ -24,7 +24,7 @@ public class ManaSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
             
             if (!val.current.Equals(before))
             {
-                unit.AddTag<ManaNativeDirty>();
+                unit.AddTag<NativeManaDirty>();
             }
         });
     }

@@ -14,25 +14,11 @@ public class AbilityTemplateAttribute : Attribute
 }
 
 /// <summary>
-/// 技能模板接口 - 所有技能模板必须实现此接口
-/// </summary>
-public interface IAbilityTemplate
-{
-    /// <summary>
-    /// 配置技能 Entity 的组件
-    /// 在这里添加所有效果组件（伤害、弹道、AOE、Buff 等）
-    /// </summary>
-    /// <param name="ability">技能 Entity（已经有 AbilityBase 和 AbilityOwner）</param>
-    /// <param name="level">技能等级（用于数值缩放）</param>
-    void Configure(Entity ability, int level);
-}
-
-/// <summary>
 /// 技能模板注册表和工厂
 /// </summary>
 public static partial class AbilityTemplate
 {
-    private static readonly SortedDictionary<string, IAbilityTemplate> _templates = new();
+    private static readonly SortedDictionary<string, ITemplate> _templates = new();
     private static bool _initialized = false;
 
     /// <summary>
@@ -50,7 +36,7 @@ public static partial class AbilityTemplate
     /// <summary>
     /// 手动注册技能模板
     /// </summary>
-    public static void Register(string name, IAbilityTemplate template)
+    public static void Register(string name, ITemplate template)
     {
         _templates[name] = template;
     }
@@ -58,7 +44,7 @@ public static partial class AbilityTemplate
     /// <summary>
     /// 获取技能模板
     /// </summary>
-    public static IAbilityTemplate? Get(string templateName)
+    public static ITemplate? Get(string templateName)
     {
         return _templates.GetValueOrDefault(templateName);
     }
@@ -66,12 +52,14 @@ public static partial class AbilityTemplate
     /// <summary>
     /// 将模板应用到技能 Entity 上
     /// </summary>
-    public static void Apply(string templateName, Entity ability, int level = 1)
+    public static Entity Apply(string templateName, Entity targetEntity, int level = 1)
     {
+        var entity = Game.Store.CreateEntity();
         if (!_templates.TryGetValue(templateName, out var template))
             throw new ArgumentException($"技能模板 '{templateName}' 未找到");
 
-        template.Configure(ability, level);
+        template.Configure(entity);
+        return entity;
     }
 
     /// <summary>

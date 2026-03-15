@@ -2,7 +2,8 @@
 
 namespace War3Frame;
 
-public struct UnitDeadTag : ITag;
+
+public struct NativeUnitDeathDirty : ITag;
 
 public struct UnitFalseDeadTag : ITag;
 
@@ -37,6 +38,7 @@ public struct UnitNativeDirty : IComponent
 {
     public UnitNativeDirtyFlags flags;
 }
+
 [Flags]
 public enum UnitNativeDirtyFlags
 {
@@ -47,3 +49,4 @@ public enum UnitNativeDirtyFlags
     Move = 1 << 3,
     Death = 1 << 4,
 }
+

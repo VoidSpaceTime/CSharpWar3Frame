@@ -1,4 +1,5 @@
 using Friflo.Engine.ECS;
+using War3Frame.Helpers;
 using War3Frame.TemplateInit;
 
 namespace War3Frame;
@@ -27,47 +28,53 @@ public static class AbilitySlotHelper
         int level = 1,
         Action<Entity>? configure = null)
     {
-        var store = unit.Store;
+        var ability = AbilityHelper.CreateAbility(templateName, level, store: unit.Store);
 
-        // 1. 检查单位是否有技能槽容器
-        if (!unit.TryGetComponent<AbilitySlotContainer>(out var container))
-            throw new InvalidOperationException($"单位 {unit.Id} 没有 AbilitySlotContainer 组件");
-
-        // 2. 检查槽位是否在有效范围内
-        if (slotIndex < 0 || slotIndex >= container.maxSlots)
-            throw new InvalidOperationException($"槽位索引 {slotIndex} 超出范围 [0, {container.maxSlots})");
-
-        // 3. 检查槽位是否已被占用
-        if (IsSlotOccupied(unit, slotIndex))
-            throw new InvalidOperationException($"槽位 {slotIndex} 已被占用");
-
-        // 4. 创建技能 Entity（基础组件）
-        var ability = store.CreateEntity(
-            new AbilityBase
-            {
-                templateName = templateName,
-                level = level,
-                state = AbilityState.Ready
-            },
-            new AbilitySlotIndex
-            {
-                slotIndex = slotIndex
-            },
-            new AbilityOwner(unit)
-        );
-
-        // 5. 应用技能模板（自动添加效果组件：伤害、弹道、AOE 等）
+        // 应用技能模板（自动添加效果组件：伤害、弹道、AOE 等）
         if (AbilityTemplate.HasTemplate(templateName))
         {
             AbilityTemplate.Apply(templateName, ability, level);
         }
+        // 应用额外配置（可覆盖模板默认值）
+        configure?.Invoke(ability);
+
+        return AttachAbilityToSlot(unit, ability, slotIndex);
+    }
+
+    /// <summary>
+    ///     将已存在的技能实体装配到指定槽位
+    /// </summary>
+    public static Entity AttachAbilityToSlot(Entity unit, Entity ability, int slotIndex)
+    {
+        // 1. 检查单位是否有技能槽容器
+        if (!unit.TryGetComponent<AbilitySlotContainer>(out var container))
+            throw new InvalidOperationException($"单位 {unit.Id} 没有 AbilitySlotContainer 组件");
+
+        // 2. 检查技能是否合法
+        if (ability.IsNull || !ability.TryGetComponent<AbilityBase>(out _))
+            throw new InvalidOperationException($"实体 {ability.Id} 不是合法技能实体");
+
+        // 3. 检查槽位范围
+        if (slotIndex < 0 || slotIndex >= container.maxSlots)
+            throw new InvalidOperationException($"槽位索引 {slotIndex} 超出范围 [0, {container.maxSlots})");
+
+        // 4. 检查槽位是否已被占用
+        if (IsSlotOccupied(unit, slotIndex))
+            throw new InvalidOperationException($"槽位 {slotIndex} 已被占用");
+
+        // 5. 已装配技能不允许重复装配到其他单位
+        if (ability.TryGetComponent<AbilityOwner>(out var owner) && !owner.owner.IsNull)
+            throw new InvalidOperationException($"技能 {ability.Id} 已经装配到单位 {owner.owner.Id}");
+
+        ability.AddComponent(new AbilitySlotIndex
+        {
+            slotIndex = slotIndex
+        });
+        ability.AddComponent(new AbilityOwner(unit));
 
         // 6. 更新单位的槽位计数
         container.currentCount++;
         unit.AddComponent(container);
-
-        // 7. 应用额外配置（可覆盖模板默认值）
-        configure?.Invoke(ability);
 
         return ability;
     }
@@ -116,7 +123,7 @@ public static class AbilitySlotHelper
         }
 
         // 删除技能 Entity
-        ability.Value.DeleteEntity();
+        AbilityHelper.RemoveAbility(ability.Value);
         return true;
     }
 
@@ -129,7 +136,7 @@ public static class AbilitySlotHelper
         var abilities = GetAllAbilities(unit);
         foreach (var ability in abilities)
         {
-            ability.DeleteEntity();
+            AbilityHelper.RemoveAbility(ability);
         }
 
         if (unit.TryGetComponent<AbilitySlotContainer>(out var container))

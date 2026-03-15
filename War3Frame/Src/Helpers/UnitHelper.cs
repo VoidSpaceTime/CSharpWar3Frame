@@ -56,8 +56,7 @@ public static class UnitHelper
         // 移除原生单位
         if (unit.TryGetComponent<UnitNative>(out var native))
         {
-            JassApi.RemoveUnit(native.unit);
-            HandleHelper.HandleRemove(native.unit);
+            unit.AddTag<NativeUnitDeathDirty>();
         }
 
         // 移除所有属性 Entity

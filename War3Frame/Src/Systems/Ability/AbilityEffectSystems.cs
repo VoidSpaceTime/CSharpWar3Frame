@@ -188,7 +188,7 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
                 target.targetUnit, AttributeHelper.Health, -finalDamage);
 
             // 3. 标记血量需要同步到 Native
-            target.targetUnit.AddTag<HealthNativeDirty>();
+            target.targetUnit.AddTag<NativeealthDirty>();
 
             // 4. 检查是否死亡
             if (remaining <= 0)
@@ -248,7 +248,7 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
                 target.targetUnit, AttributeHelper.Health, finalHeal);
 
             // 3. 标记血量需要同步
-            target.targetUnit.AddTag<HealthNativeDirty>();
+            target.targetUnit.AddTag<NativeealthDirty>();
 
             // 4. 标记已处理
             if (!effectEntity.HasComponent<DamageEffectData>() &&

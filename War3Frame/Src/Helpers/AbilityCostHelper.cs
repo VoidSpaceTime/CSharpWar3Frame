@@ -21,14 +21,14 @@ public static class AbilityCostHelper
         // 1. 检查蓝耗
         if (ability.TryGetComponent<ManaCost>(out var manaCost))
         {
-            float mana = AttrHelper.GetCurrent(unit, AttributeHelper.Mana);
+            float mana = AttributeHelper.GetCurrent(unit, AttributeHelper.Mana);
             if (mana < manaCost.value) return false;
         }
 
         // 2. 检查血耗
         if (ability.TryGetComponent<HealthCost>(out var hpCost))
         {
-            float hp = AttrHelper.GetCurrent(unit, AttributeHelper.Health);
+            float hp = AttributeHelper.GetCurrent(unit, AttributeHelper.Health);
             if (hp < hpCost.value) return false;
             
             // 可选：如果不允许自杀
@@ -38,7 +38,7 @@ public static class AbilityCostHelper
         // 3. 检查通用属性消耗
         if (ability.TryGetComponent<AttributeCost>(out var attrCost))
         {
-            float current = AttrHelper.GetCurrent(unit, attrCost.attrId);
+            float current = AttributeHelper.GetCurrent(unit, attrCost.attrId);
             if (current < attrCost.value) return false;
         }
 
@@ -53,21 +53,21 @@ public static class AbilityCostHelper
         // 1. 扣蓝
         if (ability.TryGetComponent<ManaCost>(out var manaCost))
         {
-            AttrHelper.ModifyCurrent(unit, AttributeHelper.Mana, -manaCost.value);
-            unit.AddTag<ManaNativeDirty>();
+            AttributeHelper.ModifyCurrent(unit, AttributeHelper.Mana, -manaCost.value);
+            unit.AddTag<NativeManaDirty>();
         }
 
         // 2. 扣血
         if (ability.TryGetComponent<HealthCost>(out var hpCost))
         {
-            AttrHelper.ModifyCurrent(unit, AttributeHelper.Health, -hpCost.value);
-            unit.AddTag<HealthNativeDirty>();
+            AttributeHelper.ModifyCurrent(unit, AttributeHelper.Health, -hpCost.value);
+            unit.AddTag<NativeealthDirty>();
         }
         
         // 3. 扣除通用属性消耗
         if (ability.TryGetComponent<AttributeCost>(out var attrCost))
         {
-            AttrHelper.ModifyCurrent(unit, attrCost.attrId, -attrCost.value);
+            AttributeHelper.ModifyCurrent(unit, attrCost.attrId, -attrCost.value);
             // 注意：通用属性可能没有对应的 Dirty Tag，需要根据具体属性处理
         }
     }
@@ -75,7 +75,7 @@ public static class AbilityCostHelper
     // 扩展方法：检查是否拥有属性 (临时)
     private static bool TryGetAttr(this Entity unit, int attrTypeId, out Entity attrEntity)
     {
-        attrEntity = AttrHelper.GetAttr(unit, attrTypeId) ?? default;
+        attrEntity = AttributeHelper.GetAttr(unit, attrTypeId) ?? default;
         return !attrEntity.IsNull;
     }
 }

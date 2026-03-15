@@ -13,23 +13,13 @@ public class UnitTemplateAttribute : Attribute
     public UnitTemplateAttribute(string name) => Name = name;
 }
 
-/// <summary>
-/// Interface for unit template configuration
-/// </summary>
-public interface IUnitTemplate
-{
-    /// <summary>
-    /// Configure the unit entity with components
-    /// </summary>
-    void Configure(Entity entity);
-}
 
 /// <summary>
 /// Unit template registry and factory
 /// </summary>
 public static partial class UnitTemplate
 {
-    private static readonly SortedDictionary<string, IUnitTemplate> _templates = new();
+    private static readonly SortedDictionary<string, ITemplate> _templates = new();
     private static bool _initialized = false;
 
     /// <summary>
@@ -47,7 +37,7 @@ public static partial class UnitTemplate
     /// <summary>
     /// Register a template (can also be called manually)
     /// </summary>
-    public static void Register(string name, IUnitTemplate template)
+    public static void Register(string name, ITemplate template)
     {
         _templates[name] = template;
     }

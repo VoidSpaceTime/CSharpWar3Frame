@@ -13,25 +13,14 @@ public class ItemTemplateAttribute : Attribute
     public ItemTemplateAttribute(string name) => Name = name;
 }
 
-/// <summary>
-/// 物品模板接口 - 所有物品模板必须实现此接口
-/// </summary>
-public interface IItemTemplate
-{
-    /// <summary>
-    /// 配置物品 Entity 的组件
-    /// 在这里添加物品的属性加成、主动技能、被动效果等
-    /// </summary>
-    /// <param name="item">物品 Entity</param>
-    void Configure(Entity item);
-}
+
 
 /// <summary>
 /// 物品模板注册表和工厂
 /// </summary>
 public static partial class ItemTemplate
 {
-    private static readonly SortedDictionary<string, IItemTemplate> _templates = new();
+    private static readonly SortedDictionary<string, ITemplate> _templates = new();
     private static bool _initialized = false;
 
     /// <summary>
@@ -47,7 +36,7 @@ public static partial class ItemTemplate
     /// <summary>
     /// 手动注册物品模板
     /// </summary>
-    public static void Register(string name, IItemTemplate template)
+    public static void Register(string name, ITemplate template)
     {
         _templates[name] = template;
     }
@@ -55,7 +44,7 @@ public static partial class ItemTemplate
     /// <summary>
     /// 获取物品模板
     /// </summary>
-    public static IItemTemplate? Get(string templateName)
+    public static ITemplate? Get(string templateName)
     {
         return _templates.GetValueOrDefault(templateName);
     }

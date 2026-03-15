@@ -8,7 +8,7 @@ public enum AbilityState
     Casting, // 吟唱中
     Channeling, // 持续施法中
     Cooldown, // 冷却中
-    Ban
+    Ban, // 被禁用
 }
 
 public enum AbilityType
@@ -33,30 +33,14 @@ public struct AbilityBase : IComponent
     /// <summary>技能类型 ID（用于识别技能模板）</summary>
     public string templateName;
 
-    /// <summary>技能等级</summary>
-    public int level;
+    public string Name;
+    public string Description;
 
     /// <summary>技能状态</summary>
     public AbilityState state;
 
     /// <summary>目标类型</summary>
     public AbilityTargetType targetType;
-
-    /// <summary>基础 CD（从模板/等级表获取，升级时更新）</summary>
-    public float cooldown;
-
-    /// <summary>当前 CD 剩余</summary>
-    public float currentCd;
-
-
-    /// <summary>施法时间（吟唱时间）</summary>
-    public float castTime;
-
-    /// <summary>施法距离</summary>
-    public float castRange;
-
-    /// <summary>持续施法时长（0 表示无持续施法）</summary>
-    public float channelDuration;
 }
 
 // AbilityOwner 和 SkillItem 已移动到 AbilitySlotBinding.cs 中
