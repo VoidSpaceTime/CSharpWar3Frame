@@ -184,7 +184,7 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
             float finalDamage = dmg.amount;
 
             // 2. 扣除目标生命值
-            float remaining = AttrHelper.ModifyCurrent(
+            float remaining = AttributeHelper.ModifyCurrent(
                 target.targetUnit, AttributeHelper.Health, -finalDamage);
 
             // 3. 标记血量需要同步到 Native
@@ -244,7 +244,7 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
             float finalHeal = heal.amount;
 
             // 2. 回复目标生命值
-            AttrHelper.ModifyCurrent(
+            AttributeHelper.ModifyCurrent(
                 target.targetUnit, AttributeHelper.Health, finalHeal);
 
             // 3. 标记血量需要同步
