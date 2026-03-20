@@ -1,8 +1,10 @@
 ﻿using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
+using War3Frame.Systems;
 
 namespace War3Frame.Src.Systems;
 
+[SystemRegister(SystemKind.Interval)]
 public class HealthSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
 {
     protected override void OnUpdate()
@@ -17,11 +19,11 @@ public class HealthSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
 
             // 获取生命恢复属性
             float regen = AttributeHelper.GetFinalValue(unit, AttributeHelper.HealthRegen);
-            
+
             var before = val.current;
             val.current += regen * Tick.deltaTime;
             val.current = Math.Min(val.current, val.finalValue);
-            
+
             if (!val.current.Equals(before))
             {
                 unit.AddTag<NativeealthDirty>();

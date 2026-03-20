@@ -1,12 +1,14 @@
 ﻿using System.Numerics;
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
+using War3Frame.Systems;
 
 namespace War3Frame.Src.Systems.Unit;
 
 /// <summary>
 /// 移动系统 - 处理单位的移动命令
 /// </summary>
+[SystemRegister(SystemKind.Interval)]
 public class MoveSystem : QuerySystem<MoveCommand, Position>, ITimedSystem
 {
     public float Interval => 0.1f; // 每 0.1 秒检查一次

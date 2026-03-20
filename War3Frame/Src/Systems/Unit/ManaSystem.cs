@@ -1,8 +1,10 @@
 ﻿using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
+using War3Frame.Systems;
 
 namespace War3Frame.Src.Systems;
 
+[SystemRegister(SystemKind.Interval)]
 public class ManaSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
 {
     protected override void OnUpdate()

@@ -3,6 +3,7 @@ using Friflo.Engine.ECS.Systems;
 
 namespace War3Frame.Systems;
 
+[SystemRegister(SystemKind.Immediate)]
 public class UnitDeadSystem : QuerySystem<UnitNative>
 {
     public UnitDeadSystem()

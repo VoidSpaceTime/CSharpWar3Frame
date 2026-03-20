@@ -30,8 +30,4 @@
       <Compile Remove="Src\Systems\EffectSystem.cs" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Src\EntityExtension\" />
-    </ItemGroup>
-
 </Project>
