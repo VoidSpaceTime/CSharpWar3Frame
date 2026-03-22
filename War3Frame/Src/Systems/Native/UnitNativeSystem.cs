@@ -1,16 +1,10 @@
-﻿using Friflo.Engine.ECS;
+using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
+using War3Frame.Systems;
 
 namespace War3Frame.Src.Systems;
 
-public struct NativeealthDirty : ITag
-{
-}
-
-public struct NativeManaDirty : ITag
-{
-}
-
+[SystemRegister(SystemKind.Interval)]
 public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
 {
     public float Interval => 0.03125f;
@@ -19,17 +13,8 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
     {
         Query.ForEachEntity((ref UnitNative native, Entity entity) =>
         {
-            // 同步单位死亡
-            if (entity.Tags.Has<NativeUnitDeathDirty>())
-            {
-                JassApi.KillUnit(native.unit);
-                HandleHelper.HandleRemove(native.unit);
-                entity.RemoveTag<NativeUnitDeathDirty>();
-                return;
-            }
-
             // 同步单位血量              
-            if (entity.Tags.Has<NativeealthDirty>() &&
+            if (UnitNativeDirtyHelper.Has(entity, UnitNativeDirtyFlags.Health) &&
                 AttributeHelper.TryGetAttr(entity, AttributeHelper.Health, out var health))
             {
                 if (health.TryGetComponent<AttrValue>(out var hpVal))
@@ -38,11 +23,11 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
                     JassApi.SetUnitState(native.unit, new JUnitState(Blizzard.UNIT_STATE_LIFE), set);
                 }
 
-                entity.RemoveTag<NativeealthDirty>();
+                UnitNativeDirtyHelper.Clear(entity, UnitNativeDirtyFlags.Health);
             }
 
             // 同步单位魔法
-            if (entity.Tags.Has<NativeManaDirty>() &&
+            if (UnitNativeDirtyHelper.Has(entity, UnitNativeDirtyFlags.Mana) &&
                 AttributeHelper.TryGetAttr(entity, AttributeHelper.Mana, out var mana))
             {
                 if (mana.TryGetComponent<AttrValue>(out var manaVal))
@@ -51,7 +36,7 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
                     JassApi.SetUnitState(native.unit, new JUnitState(Blizzard.UNIT_STATE_MANA), set);
                 }
 
-                entity.RemoveTag<NativeManaDirty>();
+                UnitNativeDirtyHelper.Clear(entity, UnitNativeDirtyFlags.Mana);
             }
 
             // 同步单位位置

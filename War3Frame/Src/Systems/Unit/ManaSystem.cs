@@ -17,8 +17,10 @@ public class ManaSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
             var unit = owner.owner;
             if (unit.IsNull) return;
 
-            // 获取魔法恢复属性
-            float regen = AttributeHelper.GetFinalValue(unit, AttributeHelper.ManaRegen);
+            // 获取魔法恢复属性（固定值 + 最大魔法百分比）
+            float flatRegen = AttributeHelper.GetFinalValue(unit, AttributeHelper.ManaRegen);
+            float percentRegen = AttributeHelper.GetFinalValue(unit, AttributeHelper.ManaRegenPercent);
+            float regen = flatRegen + val.finalValue * percentRegen;
             
             var before = val.current;
             val.current += regen * Tick.deltaTime;
@@ -26,7 +28,7 @@ public class ManaSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
             
             if (!val.current.Equals(before))
             {
-                unit.AddTag<NativeManaDirty>();
+                UnitNativeDirtyHelper.Mark(unit, UnitNativeDirtyFlags.Mana);
             }
         });
     }

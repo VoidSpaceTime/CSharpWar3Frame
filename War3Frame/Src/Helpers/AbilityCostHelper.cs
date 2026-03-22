@@ -30,11 +30,11 @@ public static class AbilityCostHelper
         {
             float hp = AttributeHelper.GetCurrent(unit, AttributeHelper.Health);
             if (hp < hpCost.value) return false;
-            
+
             // 可选：如果不允许自杀
             // if (hp - hpCost.value <= 0) return false;
         }
-        
+
         // 3. 检查通用属性消耗
         if (ability.TryGetComponent<AttributeCost>(out var attrCost))
         {
@@ -54,16 +54,16 @@ public static class AbilityCostHelper
         if (ability.TryGetComponent<ManaCost>(out var manaCost))
         {
             AttributeHelper.ModifyCurrent(unit, AttributeHelper.Mana, -manaCost.value);
-            unit.AddTag<NativeManaDirty>();
+            UnitNativeDirtyHelper.Mark(unit, UnitNativeDirtyFlags.Mana);
         }
 
         // 2. 扣血
         if (ability.TryGetComponent<HealthCost>(out var hpCost))
         {
             AttributeHelper.ModifyCurrent(unit, AttributeHelper.Health, -hpCost.value);
-            unit.AddTag<NativeealthDirty>();
+            UnitNativeDirtyHelper.Mark(unit, UnitNativeDirtyFlags.Health);
         }
-        
+
         // 3. 扣除通用属性消耗
         if (ability.TryGetComponent<AttributeCost>(out var attrCost))
         {
@@ -71,7 +71,7 @@ public static class AbilityCostHelper
             // 注意：通用属性可能没有对应的 Dirty Tag，需要根据具体属性处理
         }
     }
-    
+
     // 扩展方法：检查是否拥有属性 (临时)
     private static bool TryGetAttr(this Entity unit, int attrTypeId, out Entity attrEntity)
     {

@@ -67,15 +67,18 @@ public static partial class UnitTemplate
             throw new ArgumentException($"Unit template '{templateName}' not found");
         }
 
-        // 创建原生 War3 单位（使用通用单位类型，后续可以扩展）
-        var junit = JassApi.CreateUnit(player, JassApi.C2I("hfoo"), x, y, facing);
-        HandleHelper.HandleAdd(junit);
-
-        // 创建 Entity + 基础组件
+        // 创建 Entity + 基础组件，请求由 Immediate System 消费
         var entity = Game.Store.CreateEntity(
-            new UnitNative { unit = junit },
-            new UnitState { isAlive = true },
-            new Position { x = x, y = y }
+            new UnitState { isAlive = true, lifePhase = UnitLifecyclePhase.Alive },
+            new Position { x = x, y = y },
+            new NativeUnitCreateRequest
+            {
+                player = player,
+                x = x,
+                y = y,
+                facing = facing,
+                unitTypeId = JassApi.C2I("hfoo")
+            }
         );
 
         // 应用模板配置

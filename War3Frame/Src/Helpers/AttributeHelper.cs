@@ -15,8 +15,10 @@ public static partial class AttributeHelper
     // 框架内置 - 基础属性
     public static readonly int Health = Register("Health");
     public static readonly int HealthRegen = Register("HealthRegen");
+    public static readonly int HealthRegenPercent = Register("HealthRegenPercent");
     public static readonly int Mana = Register("Mana");
     public static readonly int ManaRegen = Register("ManaRegen");
+    public static readonly int ManaRegenPercent = Register("ManaRegenPercent");
     public static readonly int Damage = Register("Damage");
 
     // ============================================================================

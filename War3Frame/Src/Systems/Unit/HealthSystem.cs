@@ -17,8 +17,10 @@ public class HealthSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
             var unit = owner.owner;
             if (unit.IsNull) return;
 
-            // 获取生命恢复属性
-            float regen = AttributeHelper.GetFinalValue(unit, AttributeHelper.HealthRegen);
+            // 获取生命恢复属性（固定值 + 最大生命百分比）
+            float flatRegen = AttributeHelper.GetFinalValue(unit, AttributeHelper.HealthRegen);
+            float percentRegen = AttributeHelper.GetFinalValue(unit, AttributeHelper.HealthRegenPercent);
+            float regen = flatRegen + val.finalValue * percentRegen;
 
             var before = val.current;
             val.current += regen * Tick.deltaTime;
@@ -26,7 +28,7 @@ public class HealthSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
 
             if (!val.current.Equals(before))
             {
-                unit.AddTag<NativeealthDirty>();
+                UnitNativeDirtyHelper.Mark(unit, UnitNativeDirtyFlags.Health);
             }
         });
     }

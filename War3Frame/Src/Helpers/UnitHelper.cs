@@ -1,4 +1,5 @@
 using Friflo.Engine.ECS;
+using Friflo.Engine.ECS.Systems;
 using War3Frame.TemplateInit;
 
 namespace War3Frame;
@@ -25,7 +26,9 @@ public static class UnitHelper
         float x, float y,
         float facing = 270)
     {
-        return UnitTemplate.Create(templateName, player, x, y, facing);
+        var entity = UnitTemplate.Create(templateName, player, x, y, facing);
+        Game.FlushImmediateSystems();
+        return entity;
     }
 
     /// <summary>
@@ -53,22 +56,16 @@ public static class UnitHelper
     {
         if (unit.IsNull) return;
 
-        // 移除原生单位
+        // 有原生单位时走立即死亡流程
         if (unit.TryGetComponent<UnitNative>(out var native))
         {
-            unit.AddTag<NativeUnitDeathDirty>();
+            UnitNativeDirtyHelper.MarkImmediate(unit, UnitNativeDirtyFlags.Remove);
         }
 
-        // 移除所有属性 Entity
-        var attrs = AttributeHelper.GetAllAttrs(unit);
-        foreach (var (typeId, attrEntity) in attrs)
-        {
-            attrEntity.DeleteEntity();
-        }
-
+        // 清理 ECS 数据
+        AttributeHelper.RemoveAllAttrs(unit);
         // 移除所有技能
         AbilitySlotHelper.RemoveAllAbilities(unit);
-
         // 删除单位 Entity
         unit.DeleteEntity();
     }
@@ -106,4 +103,43 @@ public static class UnitHelper
     }
 
     #endregion
+
+    public static void KillUnit(Entity unit)
+    {
+        if (unit.IsNull) return;
+
+        if (unit.TryGetComponent<UnitState>(out var state))
+        {
+            state.isAlive = false;
+            state.lifePhase = UnitLifecyclePhase.Corpse;
+            unit.AddComponent(state);
+        }
+
+        // 有原生单位时走立即死亡流程
+        if (unit.TryGetComponent<UnitNative>(out var native))
+        {
+            UnitNativeDirtyHelper.MarkImmediate(unit, UnitNativeDirtyFlags.Death);
+
+            unit.AddComponent(new TimerTask
+            {
+                mode = TimerTaskMode.Once,
+                interval = 3f,
+                remaining = 3f,
+                paused = false,
+                owner = unit,
+                kind = TimerTaskKind.CorpseCleanup,
+                triggerCount = 0,
+                maxTriggerCount = 1
+            });
+
+            return;
+        }
+
+        // 清理 ECS 数据
+        AttributeHelper.RemoveAllAttrs(unit);
+        // 移除所有技能
+        AbilitySlotHelper.RemoveAllAbilities(unit);
+        // 删除单位 Entity
+        unit.DeleteEntity();
+    }
 }

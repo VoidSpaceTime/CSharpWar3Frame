@@ -2,11 +2,6 @@
 
 namespace War3Frame;
 
-
-public struct NativeUnitDeathDirty : ITag;
-
-public struct UnitFalseDeadTag : ITag;
-
 public struct UnitOwner : ILinkComponent
 {
     public Entity GetIndexedValue()
@@ -28,10 +23,19 @@ public struct UnitNative : IComponent
     public JPlayer player;
 }
 
-public struct UnitState : IComponent
+//原生单位删除标签
+public struct UnitRemoveTag : ITag;
+
+/// <summary>
+/// 原生单位创建请求
+/// </summary>
+public struct NativeUnitCreateRequest : IComponent
 {
-    public bool isAlive;
-    public float rebornTime;
+    public JPlayer player;
+    public float x;
+    public float y;
+    public float facing;
+    public int unitTypeId;
 }
 
 public struct UnitNativeDirty : IComponent
@@ -48,5 +52,6 @@ public enum UnitNativeDirtyFlags
     Poison = 1 << 2,
     Move = 1 << 3,
     Death = 1 << 4,
+    Remove = 1 << 5,
+    Reborn = 1 << 6,
 }
-
