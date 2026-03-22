@@ -24,14 +24,31 @@ public class BuffDurationSystem : QuerySystem<BuffDuration>, ITimedSystem
             // 永久 Buff 不处理
             if (duration.isPermanent) return;
 
-            // 减少剩余时间
-            duration.remaining -= Tick.deltaTime;
-
-            // 时间到了，标记为过期
-            if (duration.remaining <= 0)
+            if (entity.Tags.Has<BuffExpired>())
             {
-                entity.AddTag<BuffExpired>();
+                duration.remaining = 0;
+                entity.AddComponent(duration);
+                return;
             }
+
+            if (!entity.TryGetComponent<TimerTask>(out var timer) || timer.kind != TimerTaskKind.BuffExpire)
+            {
+                entity.AddComponent(new TimerTask
+                {
+                    mode = TimerTaskMode.Once,
+                    interval = duration.remaining,
+                    remaining = duration.remaining,
+                    paused = false,
+                    owner = entity,
+                    kind = TimerTaskKind.BuffExpire,
+                    triggerCount = 0,
+                    maxTriggerCount = 1
+                });
+                return;
+            }
+
+            duration.remaining = Math.Max(0, timer.remaining);
+            entity.AddComponent(duration);
         });
     }
 }
