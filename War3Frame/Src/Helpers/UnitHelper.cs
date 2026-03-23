@@ -56,18 +56,20 @@ public static class UnitHelper
     {
         if (unit.IsNull) return;
 
-        // 有原生单位时走立即死亡流程
-        if (unit.TryGetComponent<UnitNative>(out var native))
+        if (unit.TryGetComponent<UnitLifeState>(out var state))
         {
-            UnitNativeDirtyHelper.MarkImmediate(unit, UnitNativeDirtyFlags.Remove);
+            if (state.lifePhase != UnitLifecyclePhase.Alive && state.lifePhase != UnitLifecyclePhase.Corpse)
+            {
+                return;
+            }
+
+            state.isAlive = false;
+            state.lifePhase = UnitLifecyclePhase.Remove;
+            unit.AddComponent(state);
         }
 
-        // 清理 ECS 数据
-        AttributeHelper.RemoveAllAttrs(unit);
-        // 移除所有技能
-        AbilitySlotHelper.RemoveAllAbilities(unit);
-        // 删除单位 Entity
-        unit.DeleteEntity();
+        // 生命周期仅写入意图并立即触发执行层
+        Game.FlushImmediateSystems();
     }
 
     #endregion
@@ -80,7 +82,7 @@ public static class UnitHelper
     public static bool IsAlive(Entity unit)
     {
         if (unit.IsNull) return false;
-        if (unit.TryGetComponent<UnitState>(out var state))
+        if (unit.TryGetComponent<UnitLifeState>(out var state))
             return state.isAlive;
         return false;
     }
@@ -108,38 +110,38 @@ public static class UnitHelper
     {
         if (unit.IsNull) return;
 
-        if (unit.TryGetComponent<UnitState>(out var state))
+        if (unit.TryGetComponent<UnitLifeState>(out var state))
         {
+            if (state.lifePhase != UnitLifecyclePhase.Alive)
+            {
+                return;
+            }
+
             state.isAlive = false;
-            state.lifePhase = UnitLifecyclePhase.Corpse;
+            state.lifePhase = UnitLifecyclePhase.Death;
             unit.AddComponent(state);
-        }
-
-        // 有原生单位时走立即死亡流程
-        if (unit.TryGetComponent<UnitNative>(out var native))
-        {
-            UnitNativeDirtyHelper.MarkImmediate(unit, UnitNativeDirtyFlags.Death);
-
             unit.AddComponent(new TimerTask
             {
                 mode = TimerTaskMode.Once,
-                interval = 3f,
-                remaining = 3f,
+                interval = Game.DefaultCorpseDuration,
+                remaining = Game.DefaultCorpseDuration,
                 paused = false,
                 owner = unit,
                 kind = TimerTaskKind.CorpseCleanup,
                 triggerCount = 0,
                 maxTriggerCount = 1
             });
-
-            return;
+            Game.FlushImmediateSystems();
         }
-
-        // 清理 ECS 数据
-        AttributeHelper.RemoveAllAttrs(unit);
-        // 移除所有技能
-        AbilitySlotHelper.RemoveAllAbilities(unit);
-        // 删除单位 Entity
-        unit.DeleteEntity();
+    }
+    /// <summary>
+    /// 执行 ECS 终态收尾。
+    /// </summary>
+    public static void CleanupFinalizeEntityDispose(Entity entity)
+    {
+        entity.RemoveTag<TimerExpired>();
+        AttributeHelper.RemoveAllAttrs(entity);
+        AbilitySlotHelper.RemoveAllAbilities(entity);
+        entity.DeleteEntity();
     }
 }

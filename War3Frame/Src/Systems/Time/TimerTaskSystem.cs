@@ -40,7 +40,13 @@ public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
             switch (timer.kind)
             {
                 case TimerTaskKind.CorpseCleanup:
-                    entity.AddTag<CorpseExpired>();
+                    if (!timer.owner.IsNull && timer.owner.TryGetComponent<UnitLifeState>(out UnitLifeState state)
+                        && state.lifePhase == UnitLifecyclePhase.Corpse)
+                    {
+                        state.lifePhase = UnitLifecyclePhase.ClearCorpse;
+                        timer.owner.AddComponent(state);
+                        Game.FlushImmediateSystems();
+                    }
                     break;
                 case TimerTaskKind.BuffExpire:
                     entity.AddTag<BuffExpired>();

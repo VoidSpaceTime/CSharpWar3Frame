@@ -51,7 +51,9 @@ public enum UnitNativeDirtyFlags
     Mana = 1 << 1,
     Poison = 1 << 2,
     Move = 1 << 3,
+    // 死亡动作请求：执行原生死亡，不等于最终删除
     Death = 1 << 4,
+    // 终态移除请求：执行原生移除与最终删除
     Remove = 1 << 5,
     Reborn = 1 << 6,
 }

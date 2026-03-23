@@ -69,7 +69,7 @@ public static partial class UnitTemplate
 
         // 创建 Entity + 基础组件，请求由 Immediate System 消费
         var entity = Game.Store.CreateEntity(
-            new UnitState { isAlive = true, lifePhase = UnitLifecyclePhase.Alive },
+            new UnitLifeState { isAlive = true, lifePhase = UnitLifecyclePhase.Alive },
             new Position { x = x, y = y },
             new NativeUnitCreateRequest
             {
