@@ -21,15 +21,9 @@ public class ManaSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
             float flatRegen = AttributeHelper.GetFinalValue(unit, AttributeHelper.ManaRegen);
             float percentRegen = AttributeHelper.GetFinalValue(unit, AttributeHelper.ManaRegenPercent);
             float regen = flatRegen + val.finalValue * percentRegen;
-            
-            var before = val.current;
+
             val.current += regen * Tick.deltaTime;
             val.current = Math.Min(val.current, val.finalValue);
-            
-            if (!val.current.Equals(before))
-            {
-                UnitNativeDirtyHelper.Mark(unit, UnitNativeDirtyFlags.Mana);
-            }
         });
     }
 }

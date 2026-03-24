@@ -2,6 +2,11 @@ using Friflo.Engine.ECS;
 
 namespace War3Frame.TemplateInit;
 
+public interface IItemTemplate
+{
+    public void Configure(Entity entity);
+}
+
 /// <summary>
 /// 标记一个类为物品模板
 /// Source Generator 会自动发现并注册这些类
@@ -13,14 +18,12 @@ public class ItemTemplateAttribute : Attribute
     public ItemTemplateAttribute(string name) => Name = name;
 }
 
-
-
 /// <summary>
 /// 物品模板注册表和工厂
 /// </summary>
 public static partial class ItemTemplate
 {
-    private static readonly SortedDictionary<string, ITemplate> _templates = new();
+    private static readonly SortedDictionary<string, IItemTemplate> _templates = new();
     private static bool _initialized = false;
 
     /// <summary>
@@ -36,7 +39,7 @@ public static partial class ItemTemplate
     /// <summary>
     /// 手动注册物品模板
     /// </summary>
-    public static void Register(string name, ITemplate template)
+    public static void Register(string name, IItemTemplate template)
     {
         _templates[name] = template;
     }
@@ -44,7 +47,7 @@ public static partial class ItemTemplate
     /// <summary>
     /// 获取物品模板
     /// </summary>
-    public static ITemplate? Get(string templateName)
+    public static IItemTemplate? Get(string templateName)
     {
         return _templates.GetValueOrDefault(templateName);
     }

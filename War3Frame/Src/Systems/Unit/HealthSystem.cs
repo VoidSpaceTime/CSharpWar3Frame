@@ -22,14 +22,8 @@ public class HealthSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
             float percentRegen = AttributeHelper.GetFinalValue(unit, AttributeHelper.HealthRegenPercent);
             float regen = flatRegen + val.finalValue * percentRegen;
 
-            var before = val.current;
             val.current += regen * Tick.deltaTime;
             val.current = Math.Min(val.current, val.finalValue);
-
-            if (!val.current.Equals(before))
-            {
-                UnitNativeDirtyHelper.Mark(unit, UnitNativeDirtyFlags.Health);
-            }
         });
     }
 }

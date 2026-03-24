@@ -2,6 +2,11 @@ using Friflo.Engine.ECS;
 
 namespace War3Frame.TemplateInit;
 
+public interface IAbilityTemplate
+{
+    public void Configure(Entity entity, int level);
+}
+
 /// <summary>
 /// 标记一个类为技能模板
 /// Source Generator 会自动发现并注册这些类
@@ -18,7 +23,7 @@ public class AbilityTemplateAttribute : Attribute
 /// </summary>
 public static partial class AbilityTemplate
 {
-    private static readonly SortedDictionary<string, ITemplate> _templates = new();
+    private static readonly SortedDictionary<string, IAbilityTemplate> _templates = new();
     private static bool _initialized = false;
 
     /// <summary>
@@ -36,7 +41,7 @@ public static partial class AbilityTemplate
     /// <summary>
     /// 手动注册技能模板
     /// </summary>
-    public static void Register(string name, ITemplate template)
+    public static void Register(string name, IAbilityTemplate template)
     {
         _templates[name] = template;
     }
@@ -44,7 +49,7 @@ public static partial class AbilityTemplate
     /// <summary>
     /// 获取技能模板
     /// </summary>
-    public static ITemplate? Get(string templateName)
+    public static IAbilityTemplate? Get(string templateName)
     {
         return _templates.GetValueOrDefault(templateName);
     }
@@ -58,7 +63,7 @@ public static partial class AbilityTemplate
         if (!_templates.TryGetValue(templateName, out var template))
             throw new ArgumentException($"技能模板 '{templateName}' 未找到");
 
-        template.Configure(entity);
+        template.Configure(entity, level);
         return entity;
     }
 

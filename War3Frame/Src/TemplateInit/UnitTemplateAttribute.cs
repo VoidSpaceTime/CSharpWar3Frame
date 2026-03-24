@@ -2,6 +2,11 @@ using Friflo.Engine.ECS;
 
 namespace War3Frame.TemplateInit;
 
+public interface IUnitTemplate
+{
+    public void Configure(Entity entity);
+}
+
 /// <summary>
 /// Attribute to mark a class as a unit template
 /// Source Generator will auto-discover and register these
@@ -13,13 +18,12 @@ public class UnitTemplateAttribute : Attribute
     public UnitTemplateAttribute(string name) => Name = name;
 }
 
-
 /// <summary>
 /// Unit template registry and factory
 /// </summary>
 public static partial class UnitTemplate
 {
-    private static readonly SortedDictionary<string, ITemplate> _templates = new();
+    private static readonly SortedDictionary<string, IUnitTemplate> _templates = new();
     private static bool _initialized = false;
 
     /// <summary>
@@ -37,7 +41,7 @@ public static partial class UnitTemplate
     /// <summary>
     /// Register a template (can also be called manually)
     /// </summary>
-    public static void Register(string name, ITemplate template)
+    public static void Register(string name, IUnitTemplate template)
     {
         _templates[name] = template;
     }
