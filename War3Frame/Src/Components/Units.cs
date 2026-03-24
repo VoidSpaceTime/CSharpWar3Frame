@@ -23,6 +23,18 @@ public struct UnitNative : IComponent
     public JPlayer player;
 }
 
+/// <summary>
+/// 原生同步快照，仅用于连续字段 compare-sync。
+/// </summary>
+public struct UnitNativeSyncSnapshot : IComponent
+{
+    public bool initialized;
+    public float lastHealthCurrent;
+    public float lastHealthFinal;
+    public float lastManaCurrent;
+    public float lastManaFinal;
+}
+
 //原生单位删除标签
 public struct UnitRemoveTag : ITag;
 
@@ -36,24 +48,4 @@ public struct NativeUnitCreateRequest : IComponent
     public float y;
     public float facing;
     public int unitTypeId;
-}
-
-public struct UnitNativeDirty : IComponent
-{
-    public UnitNativeDirtyFlags flags;
-}
-
-[Flags]
-public enum UnitNativeDirtyFlags
-{
-    None = 0,
-    Health = 1 << 0,
-    Mana = 1 << 1,
-    Poison = 1 << 2,
-    Move = 1 << 3,
-    // 死亡动作请求：执行原生死亡，不等于最终删除
-    Death = 1 << 4,
-    // 终态移除请求：执行原生移除与最终删除
-    Remove = 1 << 5,
-    Reborn = 1 << 6,
 }
