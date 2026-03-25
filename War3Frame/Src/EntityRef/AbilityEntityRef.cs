@@ -49,7 +49,7 @@ public readonly struct AbilityEntityRef
 
     public AbilityStatValue GetStatValue(int typeId)
     {
-        return AbilityHelper.GetValue(Entity, typeId);
+        return Helpers.AbilityHelper.GetValue(Entity, typeId);
     }
 
     public string GetTemplateName() => GetBase().templateName;
@@ -59,9 +59,9 @@ public readonly struct AbilityEntityRef
     public AbilityTargetType GetTargetType() => GetBase().targetType;
     public int GetSlotIndex() => Entity.TryGetComponent<AbilitySlotIndex>(out var slot) ? slot.slotIndex : -1;
     public Entity GetOwner() => Entity.TryGetComponent<AbilityOwner>(out var owner) ? owner.owner : default;
-    public float GetStatBaseValue(int typeId) => AbilityHelper.GetBaseValue(Entity, typeId);
-    public float GetStatCurrentValue(int typeId) => AbilityHelper.GetCurrentValue(Entity, typeId);
-    public float GetStatFinalValue(int typeId) => AbilityHelper.GetFinalValue(Entity, typeId);
+    public float GetStatBaseValue(int typeId) => Helpers.AbilityHelper.GetBaseValue(Entity, typeId);
+    public float GetStatCurrentValue(int typeId) => Helpers.AbilityHelper.GetCurrentValue(Entity, typeId);
+    public float GetStatFinalValue(int typeId) => Helpers.AbilityHelper.GetFinalValue(Entity, typeId);
     public float GetCooldownRemaining() => GetRuntime().cooldownRemaining;
     public float GetCastRemaining() => GetRuntime().castRemaining;
     public float GetChannelRemaining() => GetRuntime().channelRemaining;
@@ -108,37 +108,37 @@ public readonly struct AbilityEntityRef
 
     public AbilityEntityRef EnsureStat(int typeId, float baseValue, float? currentValue = null)
     {
-        AbilityHelper.EnsureStat(Entity, typeId, baseValue, currentValue);
+        Helpers.AbilityHelper.EnsureStat(Entity, typeId, baseValue, currentValue);
         return this;
     }
 
     public AbilityEntityRef SetStatValue(int typeId, float baseValue, float currentValue, float finalValue)
     {
-        AbilityHelper.SetValue(Entity, typeId, baseValue, currentValue, finalValue);
+        Helpers.AbilityHelper.SetValue(Entity, typeId, baseValue, currentValue, finalValue);
         return this;
     }
 
     public AbilityEntityRef SetStatBaseValue(int typeId, float value)
     {
-        AbilityHelper.SetBaseValue(Entity, typeId, value);
+        Helpers.AbilityHelper.SetBaseValue(Entity, typeId, value);
         return this;
     }
 
     public AbilityEntityRef SetStatCurrentValue(int typeId, float value)
     {
-        AbilityHelper.SetCurrentValue(Entity, typeId, value);
+        Helpers.AbilityHelper.SetCurrentValue(Entity, typeId, value);
         return this;
     }
 
     public AbilityEntityRef SetStatFinalValue(int typeId, float value)
     {
-        AbilityHelper.SetFinalValue(Entity, typeId, value);
+        Helpers.AbilityHelper.SetFinalValue(Entity, typeId, value);
         return this;
     }
 
     public AbilityEntityRef AddStatModifier(int typeId, Entity source, ModifyType modifyType, float value, int priority = 0)
     {
-        AbilityHelper.AddModifier(Entity, typeId, source, modifyType, value, priority);
+        Helpers.AbilityHelper.AddModifier(Entity, typeId, source, modifyType, value, priority);
         return this;
     }
 
@@ -200,7 +200,7 @@ public readonly struct AbilityEntityRef
         }
         else
         {
-            AbilityHelper.RemoveAbility(Entity);
+            Helpers.AbilityHelper.RemoveAbility(Entity);
         }
 
         return this;

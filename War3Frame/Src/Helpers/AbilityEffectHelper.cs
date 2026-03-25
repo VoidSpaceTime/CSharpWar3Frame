@@ -1,4 +1,5 @@
 using Friflo.Engine.ECS;
+using War3Frame.Helpers;
 
 namespace War3Frame;
 
@@ -38,11 +39,25 @@ public static class AbilityEffectHelper
 
         // 伤害效果
         if (ability.TryGetComponent<DamageEffectData>(out var dmg))
+        {
+            var amount = AbilityHelper.GetDamageAmount(ability);
+            if (amount > 0)
+            {
+                dmg.amount = amount;
+            }
             effectEntity.AddComponent(dmg);
+        }
 
         // 治疗效果
         if (ability.TryGetComponent<HealEffectData>(out var heal))
+        {
+            var amount = AbilityHelper.GetHealAmount(ability);
+            if (amount > 0)
+            {
+                heal.amount = amount;
+            }
             effectEntity.AddComponent(heal);
+        }
 
         // Buff 施加效果
         if (ability.TryGetComponent<ApplyBuffData>(out var buff))
@@ -51,6 +66,14 @@ public static class AbilityEffectHelper
         // 范围搜索效果（AOE）
         if (ability.TryGetComponent<AreaSearchData>(out var area))
         {
+            var radius = AbilityHelper.GetRadius(ability);
+            if (radius > 0)
+            {
+                area.radius = radius;
+            }
+
+            area.maxTargets = AbilityHelper.GetMaxTargets(ability);
+
             // 如果未指定中心点，使用目标坐标
             if (area.centerX == 0 && area.centerY == 0)
             {
@@ -63,6 +86,18 @@ public static class AbilityEffectHelper
         // 弹道效果
         if (ability.TryGetComponent<ProjectileData>(out var proj))
         {
+            var speed = AbilityHelper.GetProjectileSpeed(ability);
+            if (speed > 0)
+            {
+                proj.speed = speed;
+            }
+
+            var arrivalThreshold = AbilityHelper.GetArrivalThreshold(ability);
+            if (arrivalThreshold > 0)
+            {
+                proj.arrivalThreshold = arrivalThreshold;
+            }
+
             // 设置弹道到达阈值默认值
             if (proj.arrivalThreshold <= 0)
                 proj.arrivalThreshold = 30f;
@@ -83,6 +118,24 @@ public static class AbilityEffectHelper
         // 线性弹道效果（方向射击，沿途命中）
         if (ability.TryGetComponent<LinearProjectileData>(out var linear))
         {
+            var speed = AbilityHelper.GetProjectileSpeed(ability);
+            if (speed > 0)
+            {
+                linear.speed = speed;
+            }
+
+            var maxDistance = AbilityHelper.GetProjectileDistance(ability);
+            if (maxDistance > 0)
+            {
+                linear.maxDistance = maxDistance;
+            }
+
+            var hitWidth = AbilityHelper.GetHitWidth(ability);
+            if (hitWidth > 0)
+            {
+                linear.hitRadius = hitWidth;
+            }
+
             // 计算飞行方向（从施法者指向目标点）
             if (caster.TryGetComponent<Position>(out var casterPos2))
             {

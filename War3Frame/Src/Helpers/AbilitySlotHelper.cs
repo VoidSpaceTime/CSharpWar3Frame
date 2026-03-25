@@ -28,7 +28,7 @@ public static class AbilitySlotHelper
         int level = 1,
         Action<Entity>? configure = null)
     {
-        var ability = AbilityHelper.CreateAbility(templateName, level, store: unit.Store);
+        var ability = Helpers.AbilityHelper.CreateAbility(templateName, level, store: unit.Store);
 
         // 应用技能模板（自动添加效果组件：伤害、弹道、AOE 等）
         if (AbilityTemplate.HasTemplate(templateName))
@@ -123,7 +123,7 @@ public static class AbilitySlotHelper
         }
 
         // 删除技能 Entity
-        AbilityHelper.RemoveAbility(ability.Value);
+        Helpers.AbilityHelper.RemoveAbility(ability.Value);
         return true;
     }
 
@@ -136,7 +136,7 @@ public static class AbilitySlotHelper
         var abilities = GetAllAbilities(unit);
         foreach (var ability in abilities)
         {
-            AbilityHelper.RemoveAbility(ability);
+            Helpers.AbilityHelper.RemoveAbility(ability);
         }
 
         if (unit.TryGetComponent<AbilitySlotContainer>(out var container))

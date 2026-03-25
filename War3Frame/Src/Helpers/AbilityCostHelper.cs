@@ -1,4 +1,5 @@
 using Friflo.Engine.ECS;
+using War3Frame.Helpers;
 using War3Frame.Src.Systems;
 
 
@@ -19,7 +20,7 @@ public static class AbilityCostHelper
     public static bool CheckCost(Entity unit, Entity ability)
     {
         // 1. 检查蓝耗
-        var manaCost = AbilityValueHelper.GetManaCost(ability);
+        var manaCost = AbilityHelper.GetManaCost(ability);
         if (manaCost > 0)
         {
             float mana = AttributeHelper.GetCurrent(unit, AttributeHelper.Mana);
@@ -52,7 +53,7 @@ public static class AbilityCostHelper
     public static void ApplyCost(Entity unit, Entity ability)
     {
         // 1. 扣蓝
-        var manaCost = AbilityValueHelper.GetManaCost(ability);
+        var manaCost = AbilityHelper.GetManaCost(ability);
         if (manaCost > 0)
         {
             AttributeHelper.ModifyCurrent(unit, AttributeHelper.Mana, -manaCost);

@@ -1,6 +1,7 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using War3Frame.Components;
+using War3Frame.Helpers;
 
 
 namespace War3Frame.Src.Systems;
@@ -49,7 +50,7 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
             }
 
             float dist = CalcDistance(pos.x, pos.y, targetX, targetY);
-            float castRange = AbilityValueHelper.GetCastRange(ability);
+            float castRange = AbilityHelper.GetCastRange(ability);
 
             if (dist <= castRange)
             {
@@ -87,7 +88,7 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
 
     private void StartCasting(Entity unit, CastRequest request, AbilityBase abilityBase)
     {
-        var castTime = AbilityValueHelper.GetCastTime(request.ability);
+        var castTime = AbilityHelper.GetCastTime(request.ability);
 
         unit.AddComponent(new CastState
         {
@@ -170,7 +171,7 @@ public class MoveToCastSystem : QuerySystem<CastState>
                 unit.RemoveTag<ArrivedTag>();
 
                 cast.phase = CastPhase.Casting;
-                cast.timer = AbilityValueHelper.GetCastTime(ability);
+                cast.timer = AbilityHelper.GetCastTime(ability);
                 unit.AddComponent(cast);
 
                 // 扣除资源消耗
@@ -266,7 +267,7 @@ public class CastingSystem : QuerySystem<CastState>, ITimedSystem
                 ExecuteAbility(unit, cast);
 
                 // 检查是否有持续施法
-                var channelDuration = AbilityValueHelper.GetChannelDuration(cast.ability);
+                var channelDuration = AbilityHelper.GetChannelDuration(cast.ability);
                 if (channelDuration > 0)
                 {
                     // 进入持续施法阶段
@@ -317,7 +318,7 @@ public class CastingSystem : QuerySystem<CastState>, ITimedSystem
 
         cast.ability.AddComponent(new AbilityCooldownState
         {
-            remaining = AbilityValueHelper.GetCooldown(cast.ability)
+            remaining = AbilityHelper.GetCooldown(cast.ability)
         });
 
         unit.RemoveComponent<CastState>();
@@ -391,7 +392,7 @@ public class ChannelingSystem : QuerySystem<ChannelState, CastState>, ITimedSyst
 
         cast.ability.AddComponent(new AbilityCooldownState
         {
-            remaining = AbilityValueHelper.GetCooldown(cast.ability)
+            remaining = AbilityHelper.GetCooldown(cast.ability)
         });
 
         unit.RemoveComponent<ChannelState>();

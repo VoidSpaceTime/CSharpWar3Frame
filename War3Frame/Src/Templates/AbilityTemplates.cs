@@ -26,13 +26,13 @@ public class ArrowShotTemplate : IAbilityTemplate
         abilityBase.targetType = AbilityTargetType.Point;  // 指向性技能
         ability.AddComponent(abilityBase);
 
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 800f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 8f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 75f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.ProjectileSpeed, 900f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.ProjectileDistance, 800f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.HitWidth, 80f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.DamageAmount, 50 + 25 * level);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.Range, 800f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.CooldownDuration, 8f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.ManaCost, 75f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.ProjectileSpeed, 900f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.ProjectileDistance, 800f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.HitWidth, 80f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.DamageAmount, 50 + 25 * level);
 
         // 线性弹道（朝目标方向飞行，沿途命中敌人）
         ability.AddComponent(new LinearProjectileData
@@ -69,14 +69,14 @@ public class FireballTemplate : IAbilityTemplate
         abilityBase.targetType = AbilityTargetType.Unit;   // 单位目标
         ability.AddComponent(abilityBase);
 
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 600f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 10f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 120f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.ProjectileSpeed, 700f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.ArrivalThreshold, 30f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.Radius, 200f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.MaxTargets, 0f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.DamageAmount, 75 + 25 * level);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.Range, 600f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.CooldownDuration, 10f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.ManaCost, 120f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.ProjectileSpeed, 700f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.ArrivalThreshold, 30f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.Radius, 200f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.MaxTargets, 0f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.DamageAmount, 75 + 25 * level);
 
         // 追踪弹道 → 飞到目标身上
         ability.AddComponent(new ProjectileData
@@ -118,10 +118,10 @@ public class HealTemplate : IAbilityTemplate
         abilityBase.targetType = AbilityTargetType.Unit;
         ability.AddComponent(abilityBase);
 
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 500f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 6f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 60f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.HealAmount, 100 + 50 * level);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.Range, 500f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.CooldownDuration, 6f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.ManaCost, 60f);
+        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.HealAmount, 100 + 50 * level);
 
         // 直接治疗，无弹道
         ability.AddComponent(new HealEffectData
