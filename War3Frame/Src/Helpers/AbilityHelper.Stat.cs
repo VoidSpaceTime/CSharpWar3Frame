@@ -30,6 +30,22 @@ public static partial class AbilityHelper
     public static readonly int Height = Register("Height");
     /// <summary>技能最大充能数</summary>
     public static readonly int ChargesMax = Register("ChargesMax");
+    /// <summary>技能引导时长</summary>
+    public static readonly int ChannelDuration = Register("ChannelDuration");
+    /// <summary>技能伤害数值</summary>
+    public static readonly int DamageAmount = Register("DamageAmount");
+    /// <summary>技能治疗数值</summary>
+    public static readonly int HealAmount = Register("HealAmount");
+    /// <summary>弹道速度</summary>
+    public static readonly int ProjectileSpeed = Register("ProjectileSpeed");
+    /// <summary>弹道距离</summary>
+    public static readonly int ProjectileDistance = Register("ProjectileDistance");
+    /// <summary>命中宽度</summary>
+    public static readonly int HitWidth = Register("HitWidth");
+    /// <summary>到达阈值</summary>
+    public static readonly int ArrivalThreshold = Register("ArrivalThreshold");
+    /// <summary>最大目标数</summary>
+    public static readonly int MaxTargets = Register("MaxTargets");
 
     /// <summary>注册技能属性类型</summary>
     public static int Register(string name)

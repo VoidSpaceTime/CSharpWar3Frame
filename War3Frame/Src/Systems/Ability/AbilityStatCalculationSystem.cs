@@ -6,7 +6,7 @@ namespace War3Frame.Src.Systems;
 
 public class AbilityStatCalculationSystem : QuerySystem<AbilityStatValue>
 {
-    public AbilityStatCalculationSystem()
+    public AbilityStatCalculationSystem() 
     {
         Filter.AnyTags(Tags.Get<AbilityStatDirty>());
     }

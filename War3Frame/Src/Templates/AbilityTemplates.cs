@@ -1,4 +1,5 @@
 using Friflo.Engine.ECS;
+using War3Frame.Helpers;
 using War3Frame.Src.Components;
 using War3Frame.TemplateInit;
 
@@ -21,21 +22,25 @@ public class ArrowShotTemplate : IAbilityTemplate
     {
         // 技能基础信息（覆盖默认值）
         var abilityBase = ability.GetComponent<AbilityBase>();
+        abilityBase.level = level;
         abilityBase.targetType = AbilityTargetType.Point;  // 指向性技能
-        abilityBase.castRange = 800;
-        abilityBase.cooldown = 8f;
         ability.AddComponent(abilityBase);
 
-        // 消耗
-        ability.AddComponent(new ManaCost { value = 75 });
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 800f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 8f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 75f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ProjectileSpeed, 900f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ProjectileDistance, 800f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.HitWidth, 80f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.DamageAmount, 50 + 25 * level);
 
         // 线性弹道（朝目标方向飞行，沿途命中敌人）
         ability.AddComponent(new LinearProjectileData
         {
             model = "Abilities\\Weapons\\SearingArrow\\SearingArrowMissile.mdl",
             speed = 900f,
-            maxDistance = 800f,          // 最远飞行 800 距离
-            hitRadius = 80f,            // 碰撞半径 80
+            maxDistance = 800f,
+            hitRadius = 80f,
             hitFilter = TargetFilter.EnemyAlive,
             canHitSameTarget = true    // 每个目标只命中一次
         });
@@ -43,7 +48,7 @@ public class ArrowShotTemplate : IAbilityTemplate
         // 伤害效果（对命中的每个目标造成伤害）
         ability.AddComponent(new DamageEffectData
         {
-            amount = 50 + 25 * level,   // 75/100/125/150（根据等级缩放）
+            amount = 50 + 25 * level,
             damageType = DamageType.Magical,
             damageSrc = DamageSrc.Skill
         });
@@ -60,12 +65,18 @@ public class FireballTemplate : IAbilityTemplate
     public void Configure(Entity ability, int level)
     {
         var abilityBase = ability.GetComponent<AbilityBase>();
+        abilityBase.level = level;
         abilityBase.targetType = AbilityTargetType.Unit;   // 单位目标
-        abilityBase.castRange = 600;
-        abilityBase.cooldown = 10f;
         ability.AddComponent(abilityBase);
 
-        ability.AddComponent(new ManaCost { value = 120 });
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 600f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 10f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 120f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ProjectileSpeed, 700f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ArrivalThreshold, 30f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Radius, 200f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.MaxTargets, 0f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.DamageAmount, 75 + 25 * level);
 
         // 追踪弹道 → 飞到目标身上
         ability.AddComponent(new ProjectileData
@@ -103,12 +114,14 @@ public class HealTemplate : IAbilityTemplate
     public void Configure(Entity ability, int level)
     {
         var abilityBase = ability.GetComponent<AbilityBase>();
+        abilityBase.level = level;
         abilityBase.targetType = AbilityTargetType.Unit;
-        abilityBase.castRange = 500;
-        abilityBase.cooldown = 6f;
         ability.AddComponent(abilityBase);
 
-        ability.AddComponent(new ManaCost { value = 60 });
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 500f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 6f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 60f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.HealAmount, 100 + 50 * level);
 
         // 直接治疗，无弹道
         ability.AddComponent(new HealEffectData

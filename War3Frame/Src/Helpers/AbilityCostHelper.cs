@@ -19,10 +19,11 @@ public static class AbilityCostHelper
     public static bool CheckCost(Entity unit, Entity ability)
     {
         // 1. 检查蓝耗
-        if (ability.TryGetComponent<ManaCost>(out var manaCost))
+        var manaCost = AbilityValueHelper.GetManaCost(ability);
+        if (manaCost > 0)
         {
             float mana = AttributeHelper.GetCurrent(unit, AttributeHelper.Mana);
-            if (mana < manaCost.value) return false;
+            if (mana < manaCost) return false;
         }
 
         // 2. 检查血耗
@@ -51,9 +52,10 @@ public static class AbilityCostHelper
     public static void ApplyCost(Entity unit, Entity ability)
     {
         // 1. 扣蓝
-        if (ability.TryGetComponent<ManaCost>(out var manaCost))
+        var manaCost = AbilityValueHelper.GetManaCost(ability);
+        if (manaCost > 0)
         {
-            AttributeHelper.ModifyCurrent(unit, AttributeHelper.Mana, -manaCost.value);
+            AttributeHelper.ModifyCurrent(unit, AttributeHelper.Mana, -manaCost);
         }
 
         // 2. 扣血

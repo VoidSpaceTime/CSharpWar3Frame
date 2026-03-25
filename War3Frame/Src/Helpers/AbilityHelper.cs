@@ -17,6 +17,7 @@ public static partial class AbilityHelper
         var entity = store.CreateEntity(new AbilityBase
             {
                 templateName = templateName,
+                level = level,
                 Name = templateName,
                 Description = string.Empty,
                 state = AbilityState.Ready

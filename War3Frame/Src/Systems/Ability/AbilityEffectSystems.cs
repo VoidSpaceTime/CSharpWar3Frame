@@ -187,16 +187,13 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
             float remaining = AttributeHelper.ModifyCurrent(
                 target.targetUnit, AttributeHelper.Health, -finalDamage);
 
-            // 3. 标记血量需要同步到 Native
-            target.targetUnit.AddTag<NativeealthDirty>();
-
-            // 4. 检查是否死亡
+            // 3. 检查是否死亡
             if (remaining <= 0)
             {
                 // TODO: 调用 UnitHelper.Kill(target.targetUnit, source.caster);
             }
 
-            // 5. 标记已处理（如果没有其他效果需要处理则删除）
+            // 4. 标记已处理（如果没有其他效果需要处理则删除）
             if (!effectEntity.HasComponent<HealEffectData>() &&
                 !effectEntity.HasComponent<ApplyBuffData>())
             {
@@ -247,10 +244,7 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
             AttributeHelper.ModifyCurrent(
                 target.targetUnit, AttributeHelper.Health, finalHeal);
 
-            // 3. 标记血量需要同步
-            target.targetUnit.AddTag<NativeealthDirty>();
-
-            // 4. 标记已处理
+            // 3. 标记已处理
             if (!effectEntity.HasComponent<DamageEffectData>() &&
                 !effectEntity.HasComponent<ApplyBuffData>())
             {

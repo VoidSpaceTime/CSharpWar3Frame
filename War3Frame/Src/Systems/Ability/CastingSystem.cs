@@ -49,7 +49,7 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
             }
 
             float dist = CalcDistance(pos.x, pos.y, targetX, targetY);
-            float castRange = abilityBase.castRange;
+            float castRange = AbilityValueHelper.GetCastRange(ability);
 
             if (dist <= castRange)
             {
@@ -87,6 +87,8 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
 
     private void StartCasting(Entity unit, CastRequest request, AbilityBase abilityBase)
     {
+        var castTime = AbilityValueHelper.GetCastTime(request.ability);
+
         unit.AddComponent(new CastState
         {
             phase = CastPhase.Casting,
@@ -94,7 +96,7 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
             targetUnit = request.targetUnit,
             targetX = request.targetX,
             targetY = request.targetY,
-            timer = abilityBase.castTime
+            timer = castTime
         });
 
         // 扣除资源消耗
@@ -168,7 +170,7 @@ public class MoveToCastSystem : QuerySystem<CastState>
                 unit.RemoveTag<ArrivedTag>();
 
                 cast.phase = CastPhase.Casting;
-                cast.timer = abilityBase.castTime;
+                cast.timer = AbilityValueHelper.GetCastTime(ability);
                 unit.AddComponent(cast);
 
                 // 扣除资源消耗
@@ -264,18 +266,18 @@ public class CastingSystem : QuerySystem<CastState>, ITimedSystem
                 ExecuteAbility(unit, cast);
 
                 // 检查是否有持续施法
-                if (cast.ability.TryGetComponent<AbilityBase>(out var abilityBase)
-                    && abilityBase.channelDuration > 0)
+                var channelDuration = AbilityValueHelper.GetChannelDuration(cast.ability);
+                if (channelDuration > 0)
                 {
                     // 进入持续施法阶段
                     cast.phase = CastPhase.Channeling;
-                    cast.timer = abilityBase.channelDuration;
+                    cast.timer = channelDuration;
                     unit.AddComponent(cast);
 
                     unit.AddComponent(new ChannelState
                     {
-                        remaining = abilityBase.channelDuration,
-                        duration = abilityBase.channelDuration,
+                        remaining = channelDuration,
+                        duration = channelDuration,
                         ability = cast.ability
                     });
                 }
@@ -310,9 +312,13 @@ public class CastingSystem : QuerySystem<CastState>, ITimedSystem
         if (cast.ability.TryGetComponent<AbilityBase>(out var abilityBase))
         {
             abilityBase.state = AbilityState.Cooldown;
-            abilityBase.currentCd = abilityBase.cooldown;
             cast.ability.AddComponent(abilityBase);
         }
+
+        cast.ability.AddComponent(new AbilityCooldownState
+        {
+            remaining = AbilityValueHelper.GetCooldown(cast.ability)
+        });
 
         unit.RemoveComponent<CastState>();
     }
@@ -380,9 +386,13 @@ public class ChannelingSystem : QuerySystem<ChannelState, CastState>, ITimedSyst
         if (cast.ability.TryGetComponent<AbilityBase>(out var abilityBase))
         {
             abilityBase.state = AbilityState.Cooldown;
-            abilityBase.currentCd = abilityBase.cooldown;
             cast.ability.AddComponent(abilityBase);
         }
+
+        cast.ability.AddComponent(new AbilityCooldownState
+        {
+            remaining = AbilityValueHelper.GetCooldown(cast.ability)
+        });
 
         unit.RemoveComponent<ChannelState>();
         unit.RemoveComponent<CastState>();

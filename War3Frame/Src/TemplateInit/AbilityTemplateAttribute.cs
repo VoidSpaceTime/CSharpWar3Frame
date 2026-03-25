@@ -59,12 +59,11 @@ public static partial class AbilityTemplate
     /// </summary>
     public static Entity Apply(string templateName, Entity targetEntity, int level = 1)
     {
-        var entity = Game.Store.CreateEntity();
         if (!_templates.TryGetValue(templateName, out var template))
             throw new ArgumentException($"技能模板 '{templateName}' 未找到");
 
-        template.Configure(entity, level);
-        return entity;
+        template.Configure(targetEntity, level);
+        return targetEntity;
     }
 
     /// <summary>

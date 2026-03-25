@@ -1,4 +1,4 @@
-﻿using Friflo.Engine.ECS;
+using Friflo.Engine.ECS;
 
 namespace War3Frame;
 
@@ -33,6 +33,9 @@ public struct AbilityBase : IComponent
     /// <summary>技能类型 ID（用于识别技能模板）</summary>
     public string templateName;
 
+    /// <summary>技能等级</summary>
+    public int level;
+
     public string Name;
     public string Description;
 
@@ -41,6 +44,14 @@ public struct AbilityBase : IComponent
 
     /// <summary>目标类型</summary>
     public AbilityTargetType targetType;
+}
+
+/// <summary>
+/// 技能冷却运行时状态。
+/// </summary>
+public struct AbilityCooldownState : IComponent
+{
+    public float remaining;
 }
 
 // AbilityOwner 和 SkillItem 已移动到 AbilitySlotBinding.cs 中
