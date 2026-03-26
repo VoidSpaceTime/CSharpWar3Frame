@@ -7,8 +7,14 @@ namespace War3Frame.Src.Systems;
 [SystemRegister(SystemKind.Interval)]
 public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
 {
+    /// <summary>
+    /// 用于判断数值是否发生有效变化的容差。
+    /// </summary>
     private const float CompareTolerance = 0.0001f;
 
+    /// <summary>
+    /// 原生同步执行间隔。
+    /// </summary>
     public float Interval => 0.03125f;
 
     protected override void OnUpdate()
@@ -78,6 +84,9 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
         return MathF.Abs(left - right) > CompareTolerance;
     }
 
+    /// <summary>
+    /// 将当前值/最终值换算为 Warcraft 原生单位状态值。
+    /// </summary>
     private static float ToNativeStateValue(float current, float finalValue)
     {
         if (finalValue <= 0f)

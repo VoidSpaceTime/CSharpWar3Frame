@@ -10,8 +10,8 @@ namespace War3Frame;
 public static class TargetFilterRegistry
 {
     /// <summary>
-    /// 自定义筛选委托
-    /// 参数：(施法者, 候选目标) → 是否通过筛选
+    /// 自定义筛选委托。
+    /// 参数：(施法者, 候选目标) → 是否通过筛选。
     /// </summary>
     public delegate bool FilterFunc(Entity caster, Entity target);
 

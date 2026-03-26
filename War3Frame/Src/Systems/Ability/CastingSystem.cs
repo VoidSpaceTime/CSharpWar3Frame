@@ -11,6 +11,9 @@ namespace War3Frame.Src.Systems;
 /// </summary>
 public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSystem
 {
+    /// <summary>
+    /// 施法请求检查与启动的执行间隔。
+    /// </summary>
     public float Interval { get; } = 0.02f;
 
     protected override void OnUpdate()
@@ -86,6 +89,9 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
         });
     }
 
+    /// <summary>
+    /// 开始施法流程。
+    /// </summary>
     private void StartCasting(Entity unit, CastRequest request, AbilityBase abilityBase)
     {
         var castTime = AbilityHelper.GetCastTime(request.ability);
@@ -108,6 +114,9 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
         request.ability.AddComponent(abilityBase);
     }
 
+    /// <summary>
+    /// 计算两点之间的平面距离。
+    /// </summary>
     private float CalcDistance(float x1, float y1, float x2, float y2)
     {
         float dx = x2 - x1;
@@ -244,6 +253,9 @@ public class MoveToCastSystem : QuerySystem<CastState>
 /// </summary>
 public class CastingSystem : QuerySystem<CastState>, ITimedSystem
 {
+    /// <summary>
+    /// 吟唱推进间隔。
+    /// </summary>
     public float Interval => 0.05f; // 每 50ms 更新一次
 
     protected override void OnUpdate()

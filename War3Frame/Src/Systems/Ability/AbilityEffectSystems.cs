@@ -16,6 +16,9 @@ namespace War3Frame;
 /// </summary>
 public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, EffectTargetInfo>
 {
+    /// <summary>
+    /// 初始化范围搜索系统，仅处理待处理的效果实体。
+    /// </summary>
     public AreaSearchSystem()
     {
         // 只处理待处理的效果
@@ -92,6 +95,9 @@ public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, Effect
 /// </summary>
 public class ProjectileSystem : QuerySystem<ProjectileData, EffectTargetInfo, Position>
 {
+    /// <summary>
+    /// 初始化弹道系统，仅处理待处理的效果实体。
+    /// </summary>
     public ProjectileSystem()
     {
         Filter.AnyTags(Tags.Get<EffectPending>());
@@ -156,6 +162,9 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectTargetInfo, Po
 /// </summary>
 public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, EffectTargetInfo>
 {
+    /// <summary>
+    /// 初始化伤害效果系统，仅处理待处理的效果实体。
+    /// </summary>
     public DamageEffectSystem()
     {
         Filter.AnyTags(Tags.Get<EffectPending>());
@@ -213,6 +222,9 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
 /// </summary>
 public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, EffectTargetInfo>
 {
+    /// <summary>
+    /// 初始化治疗效果系统，仅处理待处理的效果实体。
+    /// </summary>
     public HealEffectSystem()
     {
         Filter.AnyTags(Tags.Get<EffectPending>());
@@ -264,6 +276,9 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
 /// </summary>
 public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectTargetInfo>
 {
+    /// <summary>
+    /// 初始化 Buff 效果系统，仅处理待处理的效果实体。
+    /// </summary>
     public BuffEffectSystem()
     {
         Filter.AnyTags(Tags.Get<EffectPending>());
@@ -317,6 +332,9 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
 /// </summary>
 public class EffectCleanupSystem : QuerySystem<EffectSource>
 {
+    /// <summary>
+    /// 初始化效果清理系统，仅处理待处理的效果实体。
+    /// </summary>
     public EffectCleanupSystem()
     {
         Filter.AnyTags(Tags.Get<EffectPending>());

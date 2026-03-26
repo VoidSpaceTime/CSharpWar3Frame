@@ -8,7 +8,14 @@ public static partial class AttributeHelper
 {
     #region MyRegion init
 
+    /// <summary>
+    /// 已注册的属性类型名称表。
+    /// </summary>
     private static SortedDictionary<int, string> _types = new();
+
+    /// <summary>
+    /// 下一个属性类型 ID。
+    /// </summary>
     private static int _nextId = 0;
 
 
@@ -84,6 +91,9 @@ public static partial class AttributeHelper
         return null;
     }
 
+    /// <summary>
+    /// 尝试获取实体的指定属性实体。
+    /// </summary>
     public static bool TryGetAttr(Entity entity, int typeId, out Entity attr)
     {
         var relations = GetAttr(entity, typeId);

@@ -18,6 +18,9 @@ namespace War3Frame.Templates;
 [AbilityTemplate("arrow_shot")]
 public class ArrowShotTemplate : IAbilityTemplate
 {
+    /// <summary>
+    /// 配置箭矢射击技能模板。
+    /// </summary>
     public void Configure(Entity ability, int level)
     {
         // 技能基础信息（覆盖默认值）
@@ -62,6 +65,9 @@ public class ArrowShotTemplate : IAbilityTemplate
 [AbilityTemplate("fireball")]
 public class FireballTemplate : IAbilityTemplate
 {
+    /// <summary>
+    /// 配置火球术技能模板。
+    /// </summary>
     public void Configure(Entity ability, int level)
     {
         var abilityBase = ability.GetComponent<AbilityBase>();
@@ -111,6 +117,9 @@ public class FireballTemplate : IAbilityTemplate
 [AbilityTemplate("heal")]
 public class HealTemplate : IAbilityTemplate
 {
+    /// <summary>
+    /// 配置治疗波技能模板。
+    /// </summary>
     public void Configure(Entity ability, int level)
     {
         var abilityBase = ability.GetComponent<AbilityBase>();

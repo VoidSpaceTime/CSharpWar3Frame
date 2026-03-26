@@ -10,6 +10,9 @@ namespace War3Frame.Src.Systems.Time;
 [SystemRegister(SystemKind.Interval, 0)]
 public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
 {
+    /// <summary>
+    /// 计时任务推进间隔。
+    /// </summary>
     public float Interval => 0.05f;
 
     protected override void OnUpdate()

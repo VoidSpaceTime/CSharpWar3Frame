@@ -11,12 +11,18 @@ public enum AbilityState
     Ban, // 被禁用
 }
 
+/// <summary>
+/// 技能类型。
+/// </summary>
 public enum AbilityType
 {
     Active, // 主动
     Passive // 被动
 }
 
+/// <summary>
+/// 技能目标类型。
+/// </summary>
 public enum AbilityTargetType
 {
     None, // 无目标
@@ -36,7 +42,10 @@ public struct AbilityBase : IComponent
     /// <summary>技能等级</summary>
     public int level;
 
+    /// <summary>技能名称。</summary>
     public string Name;
+
+    /// <summary>技能描述。</summary>
     public string Description;
 
     /// <summary>技能状态</summary>
@@ -51,6 +60,9 @@ public struct AbilityBase : IComponent
 /// </summary>
 public struct AbilityCooldownState : IComponent
 {
+    /// <summary>
+    /// 剩余冷却时间。
+    /// </summary>
     public float remaining;
 }
 
@@ -58,8 +70,15 @@ public struct AbilityCooldownState : IComponent
 // 使用 AbilityOwnerRelation : IRelation<Entity> 替代
 public struct AbilityBan : IComponent
 {
+    /// <summary>禁用原因。</summary>
     public string banReason;
+
+    /// <summary>禁用总时长。</summary>
     public float banDurtion;
+
+    /// <summary>当前已禁用时长。</summary>
     public float banCurrent;
+
+    /// <summary>当前是否处于禁用状态。</summary>
     public bool isBan;
 }

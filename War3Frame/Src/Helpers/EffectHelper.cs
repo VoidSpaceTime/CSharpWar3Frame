@@ -130,7 +130,9 @@ public static class EffectHelper
 
     #region 属性设置（自动标记脏）
 
-    /// <summary>设置特效显示/隐藏</summary>
+    /// <summary>
+    /// 设置特效显示状态。
+    /// </summary>
     public static void SetVisible(Entity entity, bool visible)
     {
         if (!entity.TryGetComponent<EffectBase>(out var effect)) return;
@@ -139,7 +141,9 @@ public static class EffectHelper
         MarkDirty(entity, EffectDirtyFlags.Visible);
     }
 
-    /// <summary>设置特效大小</summary>
+    /// <summary>
+    /// 设置特效缩放。
+    /// </summary>
     public static void SetScale(Entity entity, float scale)
     {
         if (!entity.TryGetComponent<EffectBase>(out var effect)) return;
@@ -148,7 +152,9 @@ public static class EffectHelper
         MarkDirty(entity, EffectDirtyFlags.Scale);
     }
 
-    /// <summary>设置特效播放速度</summary>
+    /// <summary>
+    /// 设置特效播放速度。
+    /// </summary>
     public static void SetSpeed(Entity entity, float speed)
     {
         if (!entity.TryGetComponent<EffectBase>(out var effect)) return;
@@ -157,7 +163,9 @@ public static class EffectHelper
         MarkDirty(entity, EffectDirtyFlags.Speed);
     }
 
-    /// <summary>设置特效透明度 (0-255)</summary>
+    /// <summary>
+    /// 设置特效透明度（0-255）。
+    /// </summary>
     public static void SetAlpha(Entity entity, int alpha)
     {
         if (!entity.TryGetComponent<EffectBase>(out var effect)) return;
@@ -166,7 +174,9 @@ public static class EffectHelper
         MarkDirty(entity, EffectDirtyFlags.Alpha);
     }
 
-    /// <summary>设置特效颜色 (RGB 0-255)</summary>
+    /// <summary>
+    /// 设置特效颜色（RGB 0-255）。
+    /// </summary>
     public static void SetColor(Entity entity, int red, int green, int blue)
     {
         if (!entity.TryGetComponent<EffectBase>(out var effect)) return;
@@ -177,7 +187,9 @@ public static class EffectHelper
         MarkDirty(entity, EffectDirtyFlags.Color);
     }
 
-    /// <summary>设置特效颜色和透明度</summary>
+    /// <summary>
+    /// 同时设置特效颜色和透明度。
+    /// </summary>
     public static void SetColorWithAlpha(Entity entity, int red, int green, int blue, int alpha)
     {
         if (!entity.TryGetComponent<EffectBase>(out var effect)) return;
@@ -189,7 +201,9 @@ public static class EffectHelper
         MarkDirty(entity, EffectDirtyFlags.Color | EffectDirtyFlags.Alpha);
     }
 
-    /// <summary>设置特效队伍颜色</summary>
+    /// <summary>
+    /// 设置特效队伍颜色。
+    /// </summary>
     public static void SetTeamColor(Entity entity, int playerId)
     {
         if (!entity.TryGetComponent<EffectBase>(out var effect)) return;
@@ -198,7 +212,10 @@ public static class EffectHelper
         MarkDirty(entity, EffectDirtyFlags.TeamColor);
     }
 
-    /// <summary>设置特效位置（仅点特效有效）</summary>
+    /// <summary>
+    /// 设置特效位置。
+    /// 当前只修改 ECS 中的 <see cref="Position"/>，由原生执行层统一同步。
+    /// </summary>
     public static void SetPosition(Entity entity, float x, float y, float z)
     {
         var pos = entity.TryGetComponent<Position>(out var existing)
@@ -210,7 +227,10 @@ public static class EffectHelper
         entity.AddComponent(pos);
     }
 
-    /// <summary>播放特效动画</summary>
+    /// <summary>
+    /// 请求播放特效动画。
+    /// 动画请求会由原生执行系统消费。
+    /// </summary>
     public static void PlayAnimation(Entity entity, string animName, string link = "")
     {
         entity.AddComponent(new EffectAnimationRequest
@@ -220,28 +240,36 @@ public static class EffectHelper
         });
     }
 
-    /// <summary>重置特效矩阵（旋转归零）</summary>
+    /// <summary>
+    /// 重置特效矩阵（旋转归零）。
+    /// </summary>
     public static void Reset(Entity entity)
     {
         if (!entity.TryGetComponent<EffectNative>(out var native)) return;
         YDApi.EXEffectMatReset(native.effect);
     }
 
-    /// <summary>设置特效 X 轴旋转</summary>
+    /// <summary>
+    /// 设置特效 X 轴旋转。
+    /// </summary>
     public static void SetRotateX(Entity entity, float angle)
     {
         if (!entity.TryGetComponent<EffectNative>(out var native)) return;
         YDApi.EXEffectMatRotateX(native.effect, angle);
     }
 
-    /// <summary>设置特效 Y 轴旋转</summary>
+    /// <summary>
+    /// 设置特效 Y 轴旋转。
+    /// </summary>
     public static void SetRotateY(Entity entity, float angle)
     {
         if (!entity.TryGetComponent<EffectNative>(out var native)) return;
         YDApi.EXEffectMatRotateY(native.effect, angle);
     }
 
-    /// <summary>设置特效 Z 轴旋转</summary>
+    /// <summary>
+    /// 设置特效 Z 轴旋转。
+    /// </summary>
     public static void SetRotateZ(Entity entity, float angle)
     {
         if (!entity.TryGetComponent<EffectNative>(out var native)) return;

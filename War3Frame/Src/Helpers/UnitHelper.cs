@@ -106,6 +106,10 @@ public static class UnitHelper
 
     #endregion
 
+    /// <summary>
+    /// 让单位进入死亡流程。
+    /// 会写入生命周期阶段、挂接尸体清理计时器，并立即刷新即时系统。
+    /// </summary>
     public static void KillUnit(Entity unit)
     {
         if (unit.IsNull) return;
@@ -135,7 +139,8 @@ public static class UnitHelper
         }
     }
     /// <summary>
-    /// 执行 ECS 终态收尾。
+    /// 执行单位的 ECS 终态收尾。
+    /// 包括移除计时标记、清空属性、清空技能并删除实体。
     /// </summary>
     public static void CleanupFinalizeEntityDispose(Entity entity)
     {

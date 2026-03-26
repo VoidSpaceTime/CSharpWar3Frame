@@ -9,7 +9,14 @@ namespace War3Frame.Helpers;
 /// </summary>
 public static partial class AbilityHelper
 {
+    /// <summary>
+    /// 已注册的技能数值类型名称表。
+    /// </summary>
     private static readonly SortedDictionary<int, string> _types = new();
+
+    /// <summary>
+    /// 下一个技能数值类型 ID。
+    /// </summary>
     private static int _nextId = 0;
 
     /// <summary>技能生命消耗</summary>
@@ -132,8 +139,19 @@ public static partial class AbilityHelper
             : default;
     }
 
+    /// <summary>
+    /// 获取技能属性基础值。
+    /// </summary>
     public static float GetBaseValue(Entity ability, int typeId) => GetValue(ability, typeId).baseValue;
+
+    /// <summary>
+    /// 获取技能属性当前值。
+    /// </summary>
     public static float GetCurrentValue(Entity ability, int typeId) => GetValue(ability, typeId).currentValue;
+
+    /// <summary>
+    /// 获取技能属性最终值。
+    /// </summary>
     public static float GetFinalValue(Entity ability, int typeId) => GetValue(ability, typeId).finalValue;
 
     /// <summary>整体设置技能属性值</summary>
