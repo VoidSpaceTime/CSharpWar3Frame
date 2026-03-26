@@ -1,5 +1,6 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
+using War3Frame.Helpers;
 
 namespace War3Frame;
 
@@ -64,8 +65,12 @@ public class AbilityPanel : UIPanel
             if (!entity.TryGetComponent<AbilityBase>(out var ab)) continue;
 
             _slots[slot.slotIndex].SetContent("ReplaceableTextures\\CommandButtons\\BTNAbility.blp");
-            if (ab.currentCd > 0 && ab.cooldown > 0)
-                _slots[slot.slotIndex].SetCooldown(ab.currentCd / ab.cooldown);
+            if (entity.TryGetComponent<AbilityCooldownState>(out var cooldown))
+            {
+                float cooldownLength = AbilityHelper.GetCooldown(entity);
+                if (cooldown.remaining > 0 && cooldownLength > 0)
+                    _slots[slot.slotIndex].SetCooldown(cooldown.remaining / cooldownLength);
+            }
         }
     }
 

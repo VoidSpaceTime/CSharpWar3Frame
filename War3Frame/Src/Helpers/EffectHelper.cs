@@ -22,8 +22,14 @@ public static class EffectHelper
     /// <returns>特效 Entity，如果 duration=0 则返回 null</returns>
     public static Entity? CreatePosition(string model, float x, float y, float z = 0, float duration = -1)
     {
-        var jeffect = JassApi.AddSpecialEffect(model, x, y);
-        
+        if (duration == 0)
+        {
+            var onceEffect = JassApi.AddSpecialEffect(model, x, y);
+            YDApi.EXSetEffectZ(onceEffect, z);
+            JassApi.DestroyEffect(onceEffect);
+            return null;
+        }
+
         // 创建 ECS Entity
         var entity = Game.Store.CreateEntity(
             new EffectBase
@@ -39,17 +45,8 @@ public static class EffectHelper
                 duration = duration,
                 effectType = EffectType.Position
             },
-            new EffectNative { effect = jeffect },
             new Position { x = x, y = y, z = z }
         );
-        YDApi.EXSetEffectZ(jeffect, z);
-
-        if (duration == 0)
-        {
-            // 立即销毁型（播放一次动画）
-            JassApi.DestroyEffect(jeffect);
-            return null;
-        }
 
         // 如果有持续时间，添加定时销毁逻辑（需要 TimerSystem 支持）
         // if (duration > 0) { ... }
@@ -68,14 +65,12 @@ public static class EffectHelper
     public static Entity? CreateAttached(Entity unit, string model,
         EffectAttachType attachPoint = EffectAttachType.Origin, float duration = -1)
     {
-        if (!unit.TryGetComponent<UnitNative>(out var unitNative)) return null;
-
-        var attachPointStr = GetAttachPointString(attachPoint);
-        var handle = JassApi.AddSpecialEffectTarget(model, unitNative.unit, attachPointStr);
-
         if (duration == 0)
         {
-            JassApi.DestroyEffect(handle);
+            if (!unit.TryGetComponent<UnitNative>(out var onceUnitNative)) return null;
+            var onceAttachPoint = GetAttachPointString(attachPoint);
+            var onceHandle = JassApi.AddSpecialEffectTarget(model, onceUnitNative.unit, onceAttachPoint);
+            JassApi.DestroyEffect(onceHandle);
             return null;
         }
 
@@ -94,7 +89,11 @@ public static class EffectHelper
                 effectType = EffectType.Attach,
                 effectAttachType = attachPoint
             },
-            new EffectNative { effect = handle }
+            new EffectAttachment
+            {
+                target = unit,
+                attachType = attachPoint
+            }
         );
 
         // 建立 Unit -> Effect 关系（可选）
@@ -114,14 +113,16 @@ public static class EffectHelper
     /// <param name="hideFirst">销毁前是否先隐藏（避免闪烁）</param>
     public static void Destroy(Entity entity, bool hideFirst = false)
     {
-        if (!entity.TryGetComponent<EffectNative>(out var native)) return;
-
-        if (hideFirst)
+        if (entity.TryGetComponent<EffectNative>(out var native))
         {
-            KKApi.DzSetEffectVisible(native.effect, false);
+            if (hideFirst)
+            {
+                KKApi.DzSetEffectVisible(native.effect, false);
+            }
+
+            JassApi.DestroyEffect(native.effect);
         }
 
-        JassApi.DestroyEffect(native.effect);
         entity.DeleteEntity();
     }
 
@@ -200,27 +201,23 @@ public static class EffectHelper
     /// <summary>设置特效位置（仅点特效有效）</summary>
     public static void SetPosition(Entity entity, float x, float y, float z)
     {
-        if (!entity.TryGetComponent<EffectNative>(out var native)) return;
-
-        // 直接调用 API（位置变更通常需要即时生效）
-        YDApi.EXSetEffectXY(native.effect, x, y);
-        YDApi.EXSetEffectZ(native.effect, z);
-
-        // 更新 ECS 组件
-        if (entity.TryGetComponent<Position>(out var pos))
-        {
-            pos.x = x;
-            pos.y = y;
-            pos.z = z;
-            entity.AddComponent(pos);
-        }
+        var pos = entity.TryGetComponent<Position>(out var existing)
+            ? existing
+            : new Position();
+        pos.x = x;
+        pos.y = y;
+        pos.z = z;
+        entity.AddComponent(pos);
     }
 
     /// <summary>播放特效动画</summary>
     public static void PlayAnimation(Entity entity, string animName, string link = "")
     {
-        if (!entity.TryGetComponent<EffectNative>(out var native)) return;
-        KKApi.DzPlayEffectAnimation(native.effect, animName, link);
+        entity.AddComponent(new EffectAnimationRequest
+        {
+            animation = animName,
+            link = link
+        });
     }
 
     /// <summary>重置特效矩阵（旋转归零）</summary>

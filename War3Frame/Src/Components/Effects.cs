@@ -15,9 +15,28 @@ public enum EffectAttachType
     Weapon,
     Chest,
 }
+
 public struct EffectNative : IComponent
 {
     public JEffect effect;
+}
+
+/// <summary>
+/// 附着意图，由 ECS 持有语义真相。
+/// </summary>
+public struct EffectAttachment : IComponent
+{
+    public Entity target;
+    public EffectAttachType attachType;
+}
+
+/// <summary>
+/// 一次性动画播放请求。
+/// </summary>
+public struct EffectAnimationRequest : IComponent
+{
+    public string animation;
+    public string link;
 }
 
 public struct EffectBase : IComponent
