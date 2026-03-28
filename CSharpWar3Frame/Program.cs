@@ -26,28 +26,40 @@ internal static class Program
 
         // 关键点：泛型里填入 <RunOptions, WeOptions>
         // 库会根据用户输入的第一个词（run 或 we）自动匹配到对应的类
-        Parser.Default.ParseArguments<RunOptions, WeOptions, NewOptions, MultiOptions>(args)
-            .WithParsed<RunOptions>(async opts =>
+        var parseResult = Parser.Default.ParseArguments<RunOptions, WeOptions, NewOptions, MultiOptions>(args);
+        await parseResult.MapResult(
+            async (RunOptions opts) =>
             {
                 CommandManager = new CommandManager(pathConfig, opts.ProjectName, opts.CurrentBuildMode); // 项目名后续传入
                 await RunCommand(opts);
-            }) // 如果匹配到 run
-            .WithParsed<WeOptions>(async opts =>
+                return 0;
+            },
+            async (WeOptions opts) =>
             {
                 CommandManager = new CommandManager(pathConfig, opts.ProjectName); // 项目名后续传入
                 await WeCommand(opts);
-            }) // 如果匹配到 we
-            .WithParsed<NewOptions>(async opts =>
+                return 0;
+            },
+            async (NewOptions opts) =>
             {
                 CommandManager = new CommandManager(pathConfig, opts.ProjectName); // 项目名后续传入
                 await NewCommand(opts);
-            }) // 如果匹配到 we
-            .WithParsed<MultiOptions>(ops =>
+                return 0;
+            },
+            (MultiOptions ops) =>
             {
                 CommandManager = new CommandManager(pathConfig, ""); // 项目名后续传入
                 MultiCommand(ops);
-            })
-            .WithNotParsed(e => throw new Exception("无匹配命令:" + e)); // 如果都没匹配上
+                return Task.FromResult(0);
+            },
+            errs =>
+            {
+                var parserErrors = errs.ToArray();
+                if (parserErrors.All(err => err is CommandLine.HelpRequestedError or CommandLine.HelpVerbRequestedError or CommandLine.VersionRequestedError))
+                    return Task.FromResult(0);
+
+                throw new Exception("无匹配命令:" + string.Join(", ", parserErrors));
+            });
     }
 
 
@@ -59,7 +71,10 @@ internal static class Program
 
     private static async Task RunCommand(RunOptions options)
     {
-        await CommandManager.Run(options.CacheBuild, options.NoRunTests);
+        var success = await CommandManager.Run(options.CacheBuild, options.NoRunTests);
+        if (!success)
+            throw new Exception($"运行项目失败: {options.ProjectName}");
+
         Console.WriteLine($"运行项目: {options.ProjectName}");
     }
 
@@ -127,7 +142,7 @@ internal static class Program
             {
                 if (BuildRelease) return BuildModeEnum.Release;
                 if (BuildDebug) return BuildModeEnum.Build;
-                return BuildModeEnum.Build;
+                return BuildModeEnum.Test;
             }
         }
     }
@@ -146,10 +161,10 @@ internal static class Program
         public string ProjectName { get; set; }
     }
 
-    [Verb("multi", HelpText = "新建项目")]
+    [Verb("multi", HelpText = "魔兽多开测试")]
     private class MultiOptions
     {
-        [Value(0, Default = 2, Required = false, HelpText = "项目名称")]
+        [Value(0, Default = 2, Required = false, HelpText = "魔兽多开测试")]
         public int Count { get; } = 2;
     }
 }

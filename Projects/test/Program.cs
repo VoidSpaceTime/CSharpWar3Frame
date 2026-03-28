@@ -79,6 +79,19 @@ public static partial class Game
             TimeSpan += TICK_RATE;
         });
 
+        var playerSelectEvent = JassApi.Condition(() =>
+        {
+            var triggerUnit = JassApi.GetTriggerUnit();
+            var triggerPlayer = JassApi.GetTriggerPlayer();
+            Console.WriteLine("选择单位");
+        });
+        var getHandleId = JassApi.GetHandleId(playerSelectEvent);
+       var tgr = JassApi.CreateTrigger();
+       HandleHelper.HandleAdd(tgr);
+       JassApi.TriggerAddCondition(tgr, playerSelectEvent);
+       
+
+
     }
 
     public struct Velocity : IComponent
