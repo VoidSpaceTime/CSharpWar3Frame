@@ -130,6 +130,75 @@
 
 即使看起来只是局部修改，也要说明为什么其他区域 **不受影响**。
 
+## War3 原生调用分层规则
+
+### 总原则
+
+- ECS / 组件 / 工作流层持有长期语义真相。
+- War3 原生调用优先集中在专门的 `Native` / `Execution` 层。
+- helper 只允许做薄入口与一次性便利调用，不得重新成为长期语义 owner。
+
+### 允许直接调用 War3 原生函数的层
+
+以下层级可以直接调用 `JassApi` / `KKApi` / `YDApi` / `DzApi` 等 War3 原生函数：
+
+- `Systems/Native/*`：原生执行层、同步层、句柄层。
+- 明确以 `*ExecutionSystem`、`*NativeSystem` 命名的执行系统。
+- 少量 fire-and-forget 的即时 helper（例如一次性短效特效），前提是不承载长期状态真相。
+
+这些调用的职责应该是：
+
+- 执行原生副作用。
+- 同步 ECS 真相到原生世界。
+- 创建、更新或销毁原生句柄。
+
+### 不应直接调用 War3 原生函数的层
+
+以下层级不得直接拥有 War3 原生调用语义，除非经过额外架构评审并明确说明例外理由：
+
+- 生命周期推进系统。
+- 施法、任务、AI、交互等业务工作流系统。
+- 纯规则系统（过滤、判定、冷却、数值推进、状态机推进）。
+- 持续语义型 helper。
+
+这些层只应负责：
+
+- 产生命令、请求或脏标记。
+- 推进 ECS 状态。
+- 监听结果与决定下一步流程。
+
+### Helper 规则
+
+- helper 可以包装常用入口，但默认只写 ECS 意图或发一次性请求。
+- helper 不得长期持有原生句柄语义。
+- helper 不得持续驱动原生行为并同时定义业务真相。
+- 若 helper 直接调用原生函数，该调用必须满足“瞬时、无长期语义、无复杂流程回放要求”。
+
+### 推荐结构
+
+- 业务系统 / 工作流层：写 `Command` / `Request` / `State` / `Outcome`。
+- Native 执行层：消费 ECS 真相并执行 War3 原生调用。
+- 结果桥接层：把原生执行结果重新表达为 ECS outcome，而不是反向把 native 状态当真相。
+
+### 典型正例
+
+- `UnitLifecycleTransitionSystem` 推进阶段，`UnitNativeRemoveSystem` 执行 `KillUnit/RemoveUnit`。
+- `UnitNativeSystem` 统一执行血蓝同步，而不是各业务入口直接 `SetUnitState`。
+- `EffectHelper` 写 `Position` / `EffectAnimationRequest`，由 `EffectNativeSystem` 同步到原生特效。
+- `MoveSystem` / 后续 `MoveNativeExecutionSystem` 负责原生命令执行，施法系统只消费 move outcome。
+
+### 典型反例
+
+- 在施法系统里直接 `IssuePointOrder`、`KillUnit`、`AddSpecialEffect`。
+- 在生命周期推进系统里直接执行终态原生移除。
+- 在 helper 里同时持有长期状态、原生句柄和业务流程控制。
+
+### 审查要求
+
+- 任何新增 War3 原生调用，都必须先回答：为什么它不能放进现有 `Native` / `Execution` 层。
+- 如果某个系统或 helper 既推进语义状态又直接执行原生副作用，默认判定为高风险设计，需要单独提案审查。
+- 若只是一次性、短生命周期、无需重放的便利调用，可以保留在 helper，但必须在代码注释中说明其“非长期语义 owner”身份。
+
 ## 执行要求
 
 ### 1. Design
