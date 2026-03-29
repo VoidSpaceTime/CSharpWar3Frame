@@ -70,7 +70,7 @@ namespace War3Frame
             {
                 var triggerUnit = JassApi.GetTriggerUnit();
                 var triggerPlayer = JassApi.GetTriggerPlayer();
-                Console.WriteLine("选择单位");
+                Console.WriteLine($"选择单位,{triggerUnit.Handle}, {triggerPlayer.Handle}");
             });
 
             

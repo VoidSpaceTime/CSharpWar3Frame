@@ -20,6 +20,11 @@
     <PackageReference Include="Friflo.Engine.ECS" Version="3.4.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Src\Systems\Native\EffectNativeSystem.cs" />
+    <Compile Remove="Src\Helpers\UnitHelper.cs" />
+  </ItemGroup>
+
 
 
 </Project>
