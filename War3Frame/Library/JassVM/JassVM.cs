@@ -170,7 +170,7 @@ namespace War3Frame
                     if (handleContext == 0)
                         return;
 
-                    var func = (delegate* unmanaged[Fastcall]<nint, int, nint, void>)*(nint*)(RealJassVM + 0x28A0);
+                    var func = (delegate* unmanaged[Stdcall]<nint, int, nint, void>)*(nint*)(RealJassVM + 0x28A0);
                     func(handle, sub ? 1 : 0, handleContext);
                 }
             }
@@ -258,14 +258,5 @@ namespace War3Frame
         {
             MainJassVM.Value.SubHandleReference(handle);
         }
-    }
-
-    public static void AddHandleReference(nint handle)
-    {
-        MainJassVM.Value.AddHandleReference(handle);
-    }
-    public static void SubHandleReference(nint handle)
-    {
-        MainJassVM.Value.SubHandleReference(handle);
     }
 }

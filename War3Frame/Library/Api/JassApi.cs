@@ -3265,11 +3265,14 @@ namespace War3Frame
             return new JPlayer(handle);
         }
 
-        public static JEvent TriggerRegisterPlayerUnitEvent(JTrigger whichTrigger, JPlayer whichPlayer, JPlayerUnitEvent whichPlayerUnitEvent, JBoolExpr filter)
-        {
-            var handle = War3.CallNative<int>(_triggerRegisterPlayerUnitEventPtr, whichTrigger.Handle, whichPlayer.Handle, whichPlayerUnitEvent.Handle, filter.Handle);
-            return new JEvent(handle);
-        }
+    public static JEvent TriggerRegisterPlayerUnitEvent(JTrigger whichTrigger, JPlayer whichPlayer,
+        JPlayerUnitEvent whichPlayerUnitEvent, JBoolExpr filter)
+    {
+        var filterHandle = filter is null ? 0 : filter.Handle;
+        var handle = War3.CallNative<int>(_triggerRegisterPlayerUnitEventPtr, whichTrigger.Handle, whichPlayer.Handle,
+            whichPlayerUnitEvent.Handle, filterHandle);
+        return new JEvent(handle);
+    }
 
 
         /// title = "升级的英雄"

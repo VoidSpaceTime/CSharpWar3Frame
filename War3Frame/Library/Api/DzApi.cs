@@ -616,13 +616,9 @@ namespace War3Frame
         }
 
 
-    /// title = "取 RGBA 色值"
-    /// description = "将RGB(Alph:${Alpha}，R:${Red} G:${Green} B:${Blue} 转换为色值"
-    /// comment = "返回一个整数，用于设置Frame颜色"
-    public static int DzGetColor(int r, int g, int b, int a)
-    {
-        return War3.CallNative<int>(_dzGetColorPtr, a, r, g, b);
-    }
+        /// title = "原生 - 英雄血条"
+        /// description = "英雄血条:${buttnoid}"
+        /// comment = "左侧的英雄头像下的血条，参数表示第N+1个英雄，索引从0开始"
 
         public static int DzFrameGetHeroHPBar(int buttonId)
         {

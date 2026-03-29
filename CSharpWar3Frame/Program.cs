@@ -43,18 +43,13 @@ namespace CSharpWar3FrameConsole
             // 这样你在业务逻辑里就不用写 if(b) else if(r) 了
             public BuildModeEnum CurrentBuildMode
             {
-                FileName = path,
-                UseShellExecute = false
-            };
-            psi.ArgumentList.Add("-launchwar3");
-            //var bo3 = File.Exists(Path.Combine(Config.We, "bin", "WEConfig.exe"));
-
-            using var war3Psi = Process.Start(psi);
-
-            var war3Count = Process.GetProcesses()
-                .Count(p => string.Equals(p.ProcessName, "war3", StringComparison.OrdinalIgnoreCase));
-            Log.Information($"当前魔兽争霸III进程数量: {war3Count}");
-            if (i < war3Count) i--;
+                get
+                {
+                    if (BuildRelease) return BuildModeEnum.Release;
+                    if (BuildDebug) return BuildModeEnum.Build;
+                    return BuildModeEnum.Build;
+                }
+            }
         }
         [Verb("we", HelpText = "WE编辑运行项目")]
         class WeOptions

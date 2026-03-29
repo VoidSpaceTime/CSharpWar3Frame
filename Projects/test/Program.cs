@@ -15,19 +15,21 @@ namespace War3Frame
         public static int MainAOT()
         {
             /* AOTInit 注册 Component
-             * 
+             *
              * ECSInit 创建root entityStore
-             * War3Init  初始化原生信息, 
+             * War3Init  初始化原生信息,
              * 其他框架初始化
              * 地图内容初始化
-*/
+             */
 
             Main(true);
 
             return 0;
         }
+
         // 使用 Cdecl 调用约定，导出名为 "main"（不带装饰符）
-        [UnmanagedCallersOnly(EntryPoint = "main", CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+        [UnmanagedCallersOnly(EntryPoint = "main",
+            CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
         public static int MainJIT()
         {
             Main(false);
@@ -45,6 +47,7 @@ namespace War3Frame
                 aot.RegisterComponent<Velocity>();
                 aot.CreateSchema();
             }
+
             var world = new EntityStore();
 
             // 使用 TimedSystemRoot
@@ -65,17 +68,36 @@ namespace War3Frame
             Console.WriteLine($"hfoo = {JassApi.C2I("hfoo")}");
 
             var unit = JassApi.CreateUnit(p0, JassApi.C2I("hfoo"), 0, 0, 270);
+            // var unit2 = JassApi.CreateUnit(p0, JassApi.C2I("hfoo"), 0, 0, 270);
             Console.WriteLine($"创建单位 = {unit.Handle}");
 
-            var entity = world.CreateEntity(new Position(0, 0, 0), new Velocity { value = new Vector3(0, 0, 0), unit = unit });
+            var entity = world.CreateEntity(new Position(0, 0, 0),
+                new Velocity { value = new Vector3(0, 0, 0), unit = unit });
 
+            var tgr = JassApi.CreateTrigger();
+            HandleHelper.HandleAdd(tgr);
+            JassApi.TriggerRegisterPlayerUnitEvent(tgr, JassApi.Player(0),
+                JassApi.ConvertPlayerUnitEvent(Blizzard.EVENT_PLAYER_UNIT_SELECTED), null);
+            JassApi.TriggerAddAction(tgr, () =>
+            {
+                var triggerUnit = JassApi.GetTriggerUnit();
+                var triggerPlayer = JassApi.GetTriggerPlayer();
+                Console.WriteLine("选择单位");
+            });
+
+            
             War3.CallNative<int>(func, t, TICK_RATE, true, () =>
             {
                 root.Update(new(TICK_RATE, TimeSpan));
                 TimeSpan += TICK_RATE;
             });
         }
-        public struct Velocity : IComponent { public Vector3 value; public JUnit unit; }
+
+        public struct Velocity : IComponent
+        {
+            public Vector3 value;
+            public JUnit unit;
+        }
 
         // 使用原生 QuerySystem，频率由 TimedSystemRoot 控制
         class MoveSystem : QuerySystem<Position>
@@ -94,5 +116,3 @@ namespace War3Frame
         }
     }
 }
-
-
