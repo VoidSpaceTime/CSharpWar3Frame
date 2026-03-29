@@ -4,7 +4,7 @@ namespace War3Frame
 {
     public partial class War3
     {
-        internal class JassVM(nint realJassVM)
+        public class JassVM(nint realJassVM)
         {
             readonly nint RealJassVM = realJassVM;
 
@@ -247,6 +247,16 @@ namespace War3Frame
                 }
                 return new JassVM(0);
             }
+        }
+
+        public static void AddHandleReference(nint handle)
+        {
+            MainJassVM.Value.AddHandleReference(handle);
+        }
+
+        public static void SubHandleReference(nint handle)
+        {
+            MainJassVM.Value.SubHandleReference(handle);
         }
     }
 
