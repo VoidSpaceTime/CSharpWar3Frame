@@ -3346,8 +3346,9 @@ public static partial class JassApi
     public static JEvent TriggerRegisterPlayerUnitEvent(JTrigger whichTrigger, JPlayer whichPlayer,
         JPlayerUnitEvent whichPlayerUnitEvent, JBoolExpr filter)
     {
+        var filterHandle = filter is null ? 0 : filter.Handle;
         var handle = War3.CallNative<int>(_triggerRegisterPlayerUnitEventPtr, whichTrigger.Handle, whichPlayer.Handle,
-            whichPlayerUnitEvent.Handle, filter.Handle);
+            whichPlayerUnitEvent.Handle, filterHandle);
         return new JEvent(handle);
     }
 
