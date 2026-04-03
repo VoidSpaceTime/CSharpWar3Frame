@@ -27,6 +27,11 @@ public static class UnitHelper
         float facing = 270)
     {
         var entity = UnitTemplate.Create(templateName, player, x, y, facing);
+        entity.AddComponent(new UnitLifeState()
+        {
+            isAlive =  true,
+            lifePhase = UnitLifecyclePhase.Alive,
+        });
         Game.FlushImmediateSystems();
         return entity;
     }
@@ -138,6 +143,40 @@ public static class UnitHelper
             Game.FlushImmediateSystems();
         }
     }
+
+    /// <summary>
+    /// 让单位移动到指定位置，并在到达后交由上层任务流继续处理。
+    /// helper 只写入 move 意图与 continuation，不拥有任务执行语义。
+    /// </summary>
+    public static void MoveToTask(Entity unit, float targetX, float targetY, float arrivalDistance, MoveReason reason = MoveReason.PlayerCommand)
+    {
+        if (unit.IsNull) return;
+
+        var commandToken = War3Frame.Src.Systems.Unit.MoveSystem.NextCommandToken();
+
+        unit.AddComponent(new MoveCommand
+        {
+            targetX = targetX,
+            targetY = targetY,
+            arrivalDistance = arrivalDistance,
+            reason = reason,
+            orderType = MoveOrderType.Move,
+            commandToken = commandToken,
+            issued = false
+        });
+
+        unit.AddComponent(new MoveContinuation
+        {
+            kind = MoveContinuationKind.ExecuteTask,
+            ability = default,
+            targetUnit = default,
+            targetX = targetX,
+            targetY = targetY
+        });
+
+        Game.FlushImmediateSystems();
+    }
+
     /// <summary>
     /// 执行单位的 ECS 终态收尾。
     /// 包括移除计时标记、清空属性、清空技能并删除实体。

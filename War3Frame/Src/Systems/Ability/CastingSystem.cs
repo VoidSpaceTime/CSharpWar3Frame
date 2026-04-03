@@ -62,6 +62,8 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
             }
             else
             {
+                var commandToken = War3Frame.Src.Systems.Unit.MoveSystem.NextCommandToken();
+
                 // 不在范围内，发出移动命令
                 unit.AddComponent(new CastState
                 {
@@ -72,15 +74,25 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
                     targetY = targetY,
                     timer = 0
                 });
-                unit.AddTag<MovingForCastTag>();
 
-                // 发出移动命令（由 MoveSystem 处理）
                 unit.AddComponent(new MoveCommand
                 {
                     targetX = targetX,
                     targetY = targetY,
                     arrivalDistance = castRange * 0.9f, // 留一点余量
-                    reason = MoveReason.CastingAbility
+                    reason = MoveReason.CastingAbility,
+                    orderType = MoveOrderType.Move,
+                    commandToken = commandToken,
+                    issued = false
+                });
+
+                unit.AddComponent(new MoveContinuation
+                {
+                    kind = MoveContinuationKind.CastAbility,
+                    ability = ability,
+                    targetUnit = request.targetUnit,
+                    targetX = targetX,
+                    targetY = targetY
                 });
             }
 
@@ -127,16 +139,17 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
 }
 
 /// <summary>
-/// 移动到施法范围系统 - 监听移动到达事件
+/// 移动后施法桥接系统。
+/// 施法系统只作为 move 的调用方，通过 move outcome 决定后续动作。
 /// </summary>
-public class MoveToCastSystem : QuerySystem<CastState>
+public class MoveToCastSystem : QuerySystem<CastState, MoveOutcome, MoveContinuation>
 {
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref CastState cast, Entity unit) =>
+        Query.ForEachEntity((ref CastState cast, ref MoveOutcome outcome, ref MoveContinuation continuation, Entity unit) =>
         {
             if (cast.phase != CastPhase.MovingToCast) return;
-            if (!unit.Tags.Has<MovingForCastTag>()) return;
+            if (continuation.kind != MoveContinuationKind.CastAbility) return;
 
             var ability = cast.ability;
             if (ability.IsNull || !ability.TryGetComponent<AbilityBase>(out var abilityBase)) return;
@@ -152,15 +165,7 @@ public class MoveToCastSystem : QuerySystem<CastState>
                 return;
             }
 
-            // 2. 检查玩家手动取消（发出了新的移动命令或停止命令）
-            if (unit.TryGetComponent<MoveCommand>(out var moveCmd) && moveCmd.reason != MoveReason.CastingAbility)
-            {
-                // 玩家发出了新的非施法移动命令，取消施法移动
-                CancelCastMovement(unit, cast);
-                return;
-            }
-
-            // 3. 检查是否被打断标记
+            // 2. 检查是否被打断标记
             if (unit.Tags.Has<CastInterruptedTag>())
             {
                 CancelCastMovement(unit, cast);
@@ -172,13 +177,8 @@ public class MoveToCastSystem : QuerySystem<CastState>
             // 正常流程
             // ========================================
 
-            // 检查是否到达目标（由 MoveSystem 设置的标记）
-            if (unit.Tags.Has<ArrivedTag>())
+            if (outcome.outcome == MoveOutcomeType.Arrived)
             {
-                // 到达范围，开始施法
-                unit.RemoveTag<MovingForCastTag>();
-                unit.RemoveTag<ArrivedTag>();
-
                 cast.phase = CastPhase.Casting;
                 cast.timer = AbilityHelper.GetCastTime(ability);
                 unit.AddComponent(cast);
@@ -189,23 +189,35 @@ public class MoveToCastSystem : QuerySystem<CastState>
                 // 更新技能状态
                 abilityBase.state = AbilityState.Casting;
                 ability.AddComponent(abilityBase);
+
+                unit.RemoveComponent<MoveOutcome>();
+                unit.RemoveComponent<MoveContinuation>();
+            }
+            else if (outcome.outcome is MoveOutcomeType.Cancelled or MoveOutcomeType.Overridden or MoveOutcomeType.Interrupted or MoveOutcomeType.Failed)
+            {
+                CancelCastMovement(unit, cast);
+                unit.RemoveComponent<MoveOutcome>();
+                unit.RemoveComponent<MoveContinuation>();
             }
             else if (!cast.targetUnit.IsNull && cast.targetUnit.TryGetComponent<Position>(out var targetPos))
             {
-                // 如果目标移动了，更新移动命令
                 if (unit.TryGetComponent<MoveCommand>(out var cmd) && cmd.reason == MoveReason.CastingAbility)
                 {
                     float newX = targetPos.x;
                     float newY = targetPos.y;
 
-                    // 只有目标移动超过一定距离才更新
                     float dx = newX - cmd.targetX;
                     float dy = newY - cmd.targetY;
-                    if (dx * dx + dy * dy > 100 * 100) // 100 单位
+                    if (dx * dx + dy * dy > 100 * 100)
                     {
                         cmd.targetX = newX;
                         cmd.targetY = newY;
+                        cmd.issued = false;
                         unit.AddComponent(cmd);
+
+                        continuation.targetX = newX;
+                        continuation.targetY = newY;
+                        unit.AddComponent(continuation);
 
                         cast.targetX = newX;
                         cast.targetY = newY;
@@ -230,7 +242,6 @@ public class MoveToCastSystem : QuerySystem<CastState>
     private void CancelCastMovement(Entity unit, CastState cast)
     {
         // 清理施法状态
-        unit.RemoveTag<MovingForCastTag>();
         unit.RemoveComponent<CastState>();
 
         // 移除施法移动命令
