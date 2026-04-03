@@ -8,7 +8,7 @@ namespace War3Frame.Src.Systems;
 /// 原生单位创建系统 - 立即消费创建请求
 /// </summary>
 [SystemRegister(SystemKind.Immediate)]
-public class UnitNativeCreateSystem : QuerySystem<NativeUnitCreateRequest>
+public class UnitCreateNativeSystem : QuerySystem<NativeUnitCreateRequest>
 {
     protected override void OnUpdate()
     {

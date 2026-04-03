@@ -23,15 +23,68 @@ public struct ItemSlotIndex : IComponent
 }
 
 /// <summary>
+/// 地上物品状态。
+/// </summary>
+public struct ItemGroundTag : ITag
+{
+}
+
+/// <summary>
+/// 背包物品状态。
+/// </summary>
+public struct ItemInventoryTag : ITag
+{
+}
+
+/// <summary>
+/// 装备物品状态。
+/// </summary>
+public struct ItemEquippedTag : ITag
+{
+}
+
+/// <summary>
+/// 仓库物品状态。
+/// </summary>
+public struct ItemStoredTag : ITag
+{
+}
+
+/// <summary>
+/// 物品属性应用请求。
+/// </summary>
+public struct ItemAttrApplyRequest : ITag
+{
+}
+
+/// <summary>
+/// 物品属性移除请求。
+/// </summary>
+public struct ItemAttrRemoveRequest : ITag
+{
+}
+
+/// <summary>
 /// 物品基础组件 - 定义物品的静态数据
 /// </summary>
 public struct ItemBase : IComponent
 {
-    public string id;           // 物品模板ID
-    public string name;         // 名称
-    public string icon;         // 图标路径
-    public string description;  // 描述
-    public int stackCount;      // 堆叠数量
-    public int maxStack;        // 最大堆叠
-    public bool isUsable;       // 是否可使用
+    public string templateName;
+    public string name; // 名称
+    public int stackCount; // 堆叠数量
+    public int maxStack; // 最大堆叠
+    public bool isUsable; // 是否可使用
+    public bool isConsumable; // 是否可消耗
+    public bool isInstantiate; // 物品实体化
+}
+
+/// <summary>
+/// 物品属性加成定义。
+/// </summary>
+public struct ItemAttrModifier : IComponent
+{
+    public int attrTypeId;
+    public ModifyType modifyType;
+    public float value;
+    public int priority;
 }

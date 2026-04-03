@@ -8,7 +8,7 @@ namespace War3Frame.Systems.Native;
 /// 仅根据生命周期阶段执行 native side effects，不拥有 phase 推进或终态 ECS 清理。
 /// </summary>
 [SystemRegister(SystemKind.Immediate)]
-public class UnitNativeRemoveSystem : QuerySystem<UnitLifeState>
+public class UnitRemoveNativeSystem : QuerySystem<UnitLifeState>
 {
     protected override void OnUpdate()
     {

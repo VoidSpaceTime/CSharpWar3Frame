@@ -17,6 +17,12 @@ public struct UnitOwner : ILinkComponent
     public Entity player;
 }
 
+public struct UnitBase : IComponent
+{
+    public string templateName;
+    public string name;
+}
+
 public struct UnitNative : IComponent
 {
     public JUnit unit;
@@ -34,9 +40,6 @@ public struct UnitNativeSyncSnapshot : IComponent
     public float lastManaCurrent;
     public float lastManaFinal;
 }
-
-//原生单位删除标签
-public struct UnitRemoveTag : ITag;
 
 /// <summary>
 /// 原生单位创建请求
