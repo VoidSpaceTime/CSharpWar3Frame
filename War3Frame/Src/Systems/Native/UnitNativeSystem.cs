@@ -23,44 +23,28 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
         {
             var hasSnapshot = entity.TryGetComponent<UnitNativeSyncSnapshot>(out var snapshot);
 
-            // 同步单位血量
-            if (AttributeHelper.TryGetAttr(entity, AttributeHelper.Health, out var health) &&
-                health.TryGetComponent<AttrValue>(out var hpVal))
+            foreach (var spec in UnitNativeSyncRegistry.Specs)
             {
-                var healthChanged = !hasSnapshot
-                    || !snapshot.initialized
-                    || HasMeaningfulDifference(snapshot.lastHealthCurrent, hpVal.current)
-                    || HasMeaningfulDifference(snapshot.lastHealthFinal, hpVal.finalValue);
-
-                if (healthChanged)
+                if (!AttributeHelper.TryGetAttr(entity, spec.AttrTypeId, out var attr)
+                    || !attr.TryGetComponent<AttrValue>(out var attrVal))
                 {
-                    var set = ToNativeStateValue(hpVal.current, hpVal.finalValue);
-                    JassApi.SetUnitState(native.unit, new JUnitState(Blizzard.UNIT_STATE_LIFE), set);
-
-                    snapshot.lastHealthCurrent = hpVal.current;
-                    snapshot.lastHealthFinal = hpVal.finalValue;
-                    snapshot.initialized = true;
-                    hasSnapshot = true;
+                    continue;
                 }
-            }
 
-            // 同步单位魔法
-            if (AttributeHelper.TryGetAttr(entity, AttributeHelper.Mana, out var mana) &&
-                mana.TryGetComponent<AttrValue>(out var manaVal))
-            {
-                var manaChanged = !hasSnapshot
-                    || !snapshot.initialized
-                    || HasMeaningfulDifference(snapshot.lastManaCurrent, manaVal.current)
-                    || HasMeaningfulDifference(snapshot.lastManaFinal, manaVal.finalValue);
+                ref var entry = ref GetEntry(ref snapshot, spec.AttrTypeId);
+                var changed = !hasSnapshot
+                    || !entry.initialized
+                    || HasMeaningfulDifference(entry.lastCurrent, attrVal.current)
+                    || HasMeaningfulDifference(entry.lastFinal, attrVal.finalValue);
 
-                if (manaChanged)
+                if (changed)
                 {
-                    var set = ToNativeStateValue(manaVal.current, manaVal.finalValue);
-                    JassApi.SetUnitState(native.unit, new JUnitState(Blizzard.UNIT_STATE_MANA), set);
+                    spec.Apply(native, attrVal.current, attrVal.finalValue);
 
-                    snapshot.lastManaCurrent = manaVal.current;
-                    snapshot.lastManaFinal = manaVal.finalValue;
-                    snapshot.initialized = true;
+                    entry.attrTypeId = spec.AttrTypeId;
+                    entry.lastCurrent = attrVal.current;
+                    entry.lastFinal = attrVal.finalValue;
+                    entry.initialized = true;
                     hasSnapshot = true;
                 }
             }
@@ -84,16 +68,19 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
         return MathF.Abs(left - right) > CompareTolerance;
     }
 
-    /// <summary>
-    /// 将当前值/最终值换算为 Warcraft 原生单位状态值。
-    /// </summary>
-    private static float ToNativeStateValue(float current, float finalValue)
+    private static ref UnitNativeSyncEntry GetEntry(ref UnitNativeSyncSnapshot snapshot, int attrTypeId)
     {
-        if (finalValue <= 0f)
+        if (snapshot.entry0.attrTypeId == attrTypeId || !snapshot.entry0.initialized)
         {
-            return 0f;
+            return ref snapshot.entry0;
         }
 
-        return (current / finalValue) * 10000f;
+        if (snapshot.entry1.attrTypeId == attrTypeId || !snapshot.entry1.initialized)
+        {
+            return ref snapshot.entry1;
+        }
+
+        return ref snapshot.entry0;
     }
+
 }

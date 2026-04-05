@@ -34,11 +34,19 @@ public struct UnitNative : IComponent
 /// </summary>
 public struct UnitNativeSyncSnapshot : IComponent
 {
+    public UnitNativeSyncEntry entry0;
+    public UnitNativeSyncEntry entry1;
+}
+
+/// <summary>
+/// 单个原生同步条目快照。
+/// </summary>
+public struct UnitNativeSyncEntry
+{
+    public int attrTypeId;
     public bool initialized;
-    public float lastHealthCurrent;
-    public float lastHealthFinal;
-    public float lastManaCurrent;
-    public float lastManaFinal;
+    public float lastCurrent;
+    public float lastFinal;
 }
 
 /// <summary>
