@@ -1,4 +1,5 @@
 using Friflo.Engine.ECS;
+using War3Frame.Components;
 using War3Frame.Helpers;
 using War3Frame.TemplateInit;
 
@@ -72,6 +73,16 @@ public static class AbilitySlotHelper
         });
         ability.AddComponent(new AbilityOwner(unit));
 
+        if (ability.TryGetComponent<AttributeContributionEntry>(out _))
+        {
+            ability.AddComponent(new AttributeContributionSource
+            {
+                kind = AttributeContributionSourceKind.Ability
+            });
+            ability.AddTag<AbilityAttrApplyRequest>();
+            ability.RemoveTag<AbilityAttrRemoveRequest>();
+        }
+
         // 6. 更新单位的槽位计数
         container.currentCount++;
         unit.AddComponent(container);
@@ -122,6 +133,8 @@ public static class AbilitySlotHelper
             unit.AddComponent(container);
         }
 
+        ability.Value.AddTag<AbilityAttrRemoveRequest>();
+
         // 删除技能 Entity
         Helpers.AbilityHelper.RemoveAbility(ability.Value);
         return true;
@@ -136,6 +149,7 @@ public static class AbilitySlotHelper
         var abilities = GetAllAbilities(unit);
         foreach (var ability in abilities)
         {
+            ability.AddTag<AbilityAttrRemoveRequest>();
             Helpers.AbilityHelper.RemoveAbility(ability);
         }
 

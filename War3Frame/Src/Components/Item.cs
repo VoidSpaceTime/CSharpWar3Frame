@@ -77,14 +77,3 @@ public struct ItemBase : IComponent
     public bool isConsumable; // 是否可消耗
     public bool isInstantiate; // 物品实体化
 }
-
-/// <summary>
-/// 物品属性加成定义。
-/// </summary>
-public struct ItemAttrModifier : IComponent
-{
-    public int attrTypeId;
-    public ModifyType modifyType;
-    public float value;
-    public int priority;
-}

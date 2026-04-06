@@ -22,6 +22,10 @@ public static class ItemHelper
         item.AddTag<ItemEquippedTag>();
         item.AddTag<ItemAttrApplyRequest>();
         item.RemoveTag<ItemAttrRemoveRequest>();
+        item.AddComponent(new AttributeContributionSource
+        {
+            kind = AttributeContributionSourceKind.Item
+        });
         item.AddComponent(new ItemOwner(unit));
         item.AddComponent(new ItemSlotIndex { index = slotIndex });
     }
