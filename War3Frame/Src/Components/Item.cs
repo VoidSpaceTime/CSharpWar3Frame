@@ -23,6 +23,38 @@ public struct ItemSlotIndex : IComponent
 }
 
 /// <summary>
+/// 物品槽容器。
+/// </summary>
+public struct ItemSlotContainer : IComponent
+{
+    public int maxSlots;
+    public int currentCount;
+}
+
+/// <summary>
+/// 物品挂载请求。
+/// </summary>
+public struct ItemAttachRequest : IComponent
+{
+    public Entity owner;
+    public Entity item;
+    public int slotIndex;
+}
+
+/// <summary>
+/// 物品移除请求。
+/// </summary>
+public struct ItemRemoveRequest : IComponent
+{
+    public Entity owner;
+    public int slotIndex;
+    public bool dropToGround;
+    public float x;
+    public float y;
+    public float z;
+}
+
+/// <summary>
 /// 地上物品状态。
 /// </summary>
 public struct ItemGroundTag : ITag

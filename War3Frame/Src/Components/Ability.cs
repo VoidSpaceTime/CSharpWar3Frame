@@ -66,6 +66,26 @@ public struct AbilityCooldownState : IComponent
     public float remaining;
 }
 
+/// <summary>
+/// 技能挂载请求。
+/// </summary>
+public struct AbilityAttachRequest : IComponent
+{
+    public Entity unit;
+    public Entity ability;
+    public int slotIndex;
+}
+
+/// <summary>
+/// 技能移除请求。
+/// </summary>
+public struct AbilityRemoveRequest : IComponent
+{
+    public Entity unit;
+    public int slotIndex;
+    public bool destroyAbility;
+}
+
 // AbilityOwner 和 SkillItem 已移动到 AbilitySlotBinding.cs 中
 // 使用 AbilityOwnerRelation : IRelation<Entity> 替代
 public struct AbilityBan : IComponent

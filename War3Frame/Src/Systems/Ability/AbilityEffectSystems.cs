@@ -1,5 +1,6 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
+using War3Frame.Helpers;
 using War3Frame.Src.Systems;
 
 namespace War3Frame;
@@ -36,10 +37,12 @@ public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, Effect
             if (effectEntity.HasComponent<ProjectileData>() && !effectEntity.Tags.Has<ProjectileArrived>())
                 return;
 
+            var radius = AbilityHelper.GetRadius(source.ability);
+
             // 搜索范围内的目标
             var targets = FindTargetsInArea(
                 source.caster, area.centerX, area.centerY,
-                area.radius, area.filter, area.customFilterId, area.maxTargets);
+                radius, area.filter, area.customFilterId, area.maxTargets);
 
             // 为每个目标创建子效果 Entity
             foreach (var targetUnit in targets)

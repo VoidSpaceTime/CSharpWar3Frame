@@ -173,9 +173,6 @@ public enum TargetFilter
 /// </summary>
 public struct AreaSearchData : IComponent
 {
-    /// <summary>搜索半径</summary>
-    public float radius;
-
     /// <summary>搜索中心 X（0 表示使用 EffectTargetInfo 的坐标）</summary>
     public float centerX;
 

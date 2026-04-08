@@ -16,18 +16,13 @@ public static class ItemHelper
     {
         if (item.IsNull || unit.IsNull) return;
 
-        item.RemoveTag<ItemGroundTag>();
-        item.RemoveTag<ItemStoredTag>();
-        item.AddTag<ItemInventoryTag>();
-        item.AddTag<ItemEquippedTag>();
-        item.AddTag<ItemAttrApplyRequest>();
-        item.RemoveTag<ItemAttrRemoveRequest>();
-        item.AddComponent(new AttributeContributionSource
+        unit.Store.CreateEntity(new ItemAttachRequest
         {
-            kind = AttributeContributionSourceKind.Item
+            owner = unit,
+            item = item,
+            slotIndex = slotIndex
         });
-        item.AddComponent(new ItemOwner(unit));
-        item.AddComponent(new ItemSlotIndex { index = slotIndex });
+        Game.FlushImmediateSystems();
     }
 
     /// <summary>
@@ -50,14 +45,29 @@ public static class ItemHelper
     {
         if (item.IsNull) return;
 
-        item.RemoveTag<ItemEquippedTag>();
-        item.RemoveTag<ItemInventoryTag>();
-        item.RemoveTag<ItemStoredTag>();
-        item.AddTag<ItemGroundTag>();
-        item.AddTag<ItemAttrRemoveRequest>();
-        item.RemoveTag<ItemAttrApplyRequest>();
-        item.RemoveComponent<ItemOwner>();
-        item.RemoveComponent<ItemSlotIndex>();
-        item.AddComponent(new Position { x = x, y = y, z = z });
+        if (!item.TryGetComponent<ItemOwner>(out var owner) || !item.TryGetComponent<ItemSlotIndex>(out var slotIndex))
+        {
+            item.RemoveTag<ItemEquippedTag>();
+            item.RemoveTag<ItemInventoryTag>();
+            item.RemoveTag<ItemStoredTag>();
+            item.AddTag<ItemGroundTag>();
+            item.AddTag<ItemAttrRemoveRequest>();
+            item.RemoveTag<ItemAttrApplyRequest>();
+            item.RemoveComponent<ItemOwner>();
+            item.RemoveComponent<ItemSlotIndex>();
+            item.AddComponent(new Position { x = x, y = y, z = z });
+            return;
+        }
+
+        item.Store.CreateEntity(new ItemRemoveRequest
+        {
+            owner = owner.unit,
+            slotIndex = slotIndex.index,
+            dropToGround = true,
+            x = x,
+            y = y,
+            z = z
+        });
+        Game.FlushImmediateSystems();
     }
 }

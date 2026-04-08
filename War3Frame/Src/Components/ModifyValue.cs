@@ -35,6 +35,19 @@ public struct ModifySource : ILinkComponent
     public ModifySource(Entity source) => this.source = source;
 }
 
+/// <summary>
+/// 修改器来源类型。
+/// </summary>
+public enum ModifierSourceType
+{
+    Item,
+    Ability,
+    Buff,
+    Aura,
+    Talent,
+    Other
+}
+
 public enum ModifyType
 {
     Flat, // +100

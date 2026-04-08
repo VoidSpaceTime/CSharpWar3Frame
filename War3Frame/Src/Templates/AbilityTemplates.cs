@@ -95,7 +95,6 @@ public class FireballTemplate : IAbilityTemplate
         // 到达后进行范围搜索
         ability.AddComponent(new AreaSearchData
         {
-            radius = 200f,
             filter = TargetFilter.EnemyAlive,
             maxTargets = 0  // 无限制
         });

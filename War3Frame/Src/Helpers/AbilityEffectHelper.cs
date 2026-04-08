@@ -66,12 +66,6 @@ public static class AbilityEffectHelper
         // 范围搜索效果（AOE）
         if (ability.TryGetComponent<AreaSearchData>(out var area))
         {
-            var radius = AbilityHelper.GetRadius(ability);
-            if (radius > 0)
-            {
-                area.radius = radius;
-            }
-
             area.maxTargets = AbilityHelper.GetMaxTargets(ability);
 
             // 如果未指定中心点，使用目标坐标

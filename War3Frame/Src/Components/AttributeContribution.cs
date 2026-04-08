@@ -3,23 +3,12 @@ using Friflo.Engine.ECS;
 namespace War3Frame.Components;
 
 /// <summary>
-/// 单位属性长期贡献来源类型。
-/// </summary>
-public enum AttributeContributionSourceKind
-{
-    Item,
-    Ability,
-    Aura,
-    Buff
-}
-
-/// <summary>
 /// 属性贡献来源标识。
 /// 用于标记某个实体属于哪一类长期属性贡献来源。
 /// </summary>
 public struct AttributeContributionSource : IComponent
 {
-    public AttributeContributionSourceKind kind;
+    public ModifierSourceType kind;
 }
 
 /// <summary>
