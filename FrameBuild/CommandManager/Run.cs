@@ -76,6 +76,7 @@ namespace War3FrameBuild.CommandManager
                 RunTest(w3xFire, qty + 1);
             }
         }
+
         /// <summary>
         /// 通过w2l 打包地图
         /// </summary>
@@ -93,10 +94,36 @@ namespace War3FrameBuild.CommandManager
             w2lProc.ArgumentList.Add(modeLni);
             w2lProc.ArgumentList.Add(BuildDstPath);
             w2lProc.ArgumentList.Add(dstW3xFire);
+            w2lProc.ArgumentList.Add("-ydwe");
+            w2lProc.ArgumentList.Add(Config.We);
 
             using var w2l = new Process { StartInfo = w2lProc, EnableRaisingEvents = true };
-
-            if (!w2l.Start())
+            try
+            {
+                if (!w2l.Start())
+                {
+                    Log.Error("w2l 进程启动失败");
+                    return;
+                }
+                // 异步读取输出，避免子进程因输出缓冲区满而阻塞
+                w2l.OutputDataReceived += (s, e) =>
+                {
+                    if (e.Data != null)
+                    {
+                        Log.Debug(e.Data);
+                    }
+                };
+                w2l.ErrorDataReceived += (s, e) =>
+                {
+                    if (e.Data != null)
+                    {
+                        Log.Warning(e.Data);
+                    }
+                };
+                w2l.BeginOutputReadLine();
+                w2l.BeginErrorReadLine();
+            }
+            catch (Exception e)
             {
                 Log.Error("w2l 进程启动失败");
                 return;
@@ -106,6 +133,7 @@ namespace War3FrameBuild.CommandManager
             Log.Debug($"打包地图，路径：{dstW3xFire}");
             Log.Verbose($"打包地图，耗时：{(DateTime.Now - startTime).TotalSeconds.ToString()}");
         }
+
         // 预编译正则表达式以提高性能
         private static readonly Regex ModulePathRegex = new(@"string ModulePath = .*", RegexOptions.Compiled);
         private static readonly Regex ModuleNameRegex = new(@"string ModuleName = .*", RegexOptions.Compiled);
@@ -285,6 +313,7 @@ namespace War3FrameBuild.CommandManager
             ProcessCallbackFile(sourceFile, callbackInBuild, mapDir, dllName);
             return true;
         }
+
         /// <summary>
         /// 脚本文件打包成dll
         /// </summary>
@@ -386,6 +415,7 @@ namespace War3FrameBuild.CommandManager
 
             return;
         }
+
         void DeleteOtherConfig()
         {
             if (File.Exists(Path.Combine(Config.War3, "fwht.txt")))
@@ -397,6 +427,7 @@ namespace War3FrameBuild.CommandManager
             if (File.Exists(Path.Combine(Config.War3, "version.dll")))
                 File.Delete(Path.Combine(Config.War3, "version.dll"));
         }
+
         public async Task<bool> Run(bool isCache, bool noTest)
         {
             var startTime = DateTime.Now;
@@ -405,7 +436,6 @@ namespace War3FrameBuild.CommandManager
             Directory.CreateDirectory(Path.Combine(Config.War3, "Maps", "Test"));
 
             var modeLni = "slk";
-            if (BuildMode is BuildModeEnum.Test)
             {
                 modeLni = "obj";
             }
