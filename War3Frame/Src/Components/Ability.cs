@@ -32,6 +32,61 @@ public enum AbilityTargetType
 }
 
 /// <summary>
+/// 能力挂载类型。
+/// </summary>
+public enum AbilityMountType
+{
+    Slot,
+    NonSlot,
+    ItemGranted,
+    SystemGranted
+}
+
+/// <summary>
+/// 能力触发类型。
+/// </summary>
+public enum AbilityTriggerType
+{
+    ActiveCast,
+    OnDamaged,
+    OnDeath,
+    OnHit,
+    OnEquip,
+    OnUnequip,
+    Periodic
+}
+
+/// <summary>
+/// 能力执行流节点类型。
+/// </summary>
+public enum AbilityFlowNodeType
+{
+    Cast,
+    Projectile,
+    AreaSearch,
+    Periodic,
+    Damage,
+    Heal,
+    Buff,
+    AttributeContribution,
+    Move,
+    Lifecycle
+}
+
+/// <summary>
+/// 能力结算类型。
+/// </summary>
+public enum AbilitySettlementType
+{
+    Damage,
+    Heal,
+    Buff,
+    AttributeContribution,
+    Move,
+    Lifecycle
+}
+
+/// <summary>
 ///     技能基础组件（所有技能都有）
 /// </summary>
 public struct AbilityBase : IComponent
@@ -53,6 +108,42 @@ public struct AbilityBase : IComponent
 
     /// <summary>目标类型</summary>
     public AbilityTargetType targetType;
+}
+
+/// <summary>
+/// 能力挂载元信息。
+/// 用于表达能力通过何种方式属于某个来源。
+/// </summary>
+public struct AbilityMountInfo : IComponent
+{
+    public AbilityMountType mountType;
+}
+
+/// <summary>
+/// 能力触发元信息。
+/// 用于表达当前能力主要通过何种方式启动。
+/// </summary>
+public struct AbilityTriggerInfo : IComponent
+{
+    public AbilityTriggerType triggerType;
+}
+
+/// <summary>
+/// 能力执行流节点元信息。
+/// 用于标记当前 ability/effect 所处的节点语义。
+/// </summary>
+public struct AbilityFlowNodeInfo : IComponent
+{
+    public AbilityFlowNodeType nodeType;
+}
+
+/// <summary>
+/// 能力结算元信息。
+/// 用于表达最终效果应落到哪类结算层。
+/// </summary>
+public struct AbilitySettlementInfo : IComponent
+{
+    public AbilitySettlementType settlementType;
 }
 
 /// <summary>

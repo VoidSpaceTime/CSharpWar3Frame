@@ -92,7 +92,7 @@ public class ScrollFireballTemplate : IItemTemplate
         // 范围伤害
         item.AddComponent(new DamageEffectData
         {
-            amount = 120f,
+            damageFunc = (caster, ability, target, damage) => 120f, 
             damageType = DamageType.Magical,
             damageSrc = DamageSrc.Skill
         });

@@ -191,9 +191,9 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
             // 必须有目标单位
             if (target.targetUnit.IsNull) return;
 
-            // 1. 计算最终伤害
-            //    TODO: 根据护甲、减伤、增伤等修改最终数值
-            float finalDamage = dmg.amount;
+            // 1. 计算基础伤害
+            //    TODO: 后续再把增伤/减伤/护盾等统一收进伤害结算层
+            float finalDamage = dmg.damageFunc(source.caster, source.ability, target.targetUnit, dmg);
 
             // 2. 扣除目标生命值
             float remaining = AttributeHelper.ModifyCurrent(
@@ -251,9 +251,9 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
             // 必须有目标单位
             if (target.targetUnit.IsNull) return;
 
-            // 1. 计算最终治疗量
-            //    TODO: 根据增加治疗效果等修改
-            float finalHeal = heal.amount;
+            // 1. 计算基础治疗量
+            //    TODO: 后续再把治疗增幅等统一收进结算层
+            float finalHeal = heal.healFunc(source.caster, source.ability, target.targetUnit, heal);
 
             // 2. 回复目标生命值
             AttributeHelper.ModifyCurrent(

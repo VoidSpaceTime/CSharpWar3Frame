@@ -32,11 +32,6 @@ public class ArrowShotTemplate : IAbilityTemplate
         Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.Range, 800f);
         Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.CooldownDuration, 8f);
         Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.ManaCost, 75f);
-        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.ProjectileSpeed, 900f);
-        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.ProjectileDistance, 800f);
-        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.HitWidth, 80f);
-        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.DamageAmount, 50 + 25 * level);
-
         // 线性弹道（朝目标方向飞行，沿途命中敌人）
         ability.AddComponent(new LinearProjectileData
         {
@@ -51,7 +46,7 @@ public class ArrowShotTemplate : IAbilityTemplate
         // 伤害效果（对命中的每个目标造成伤害）
         ability.AddComponent(new DamageEffectData
         {
-            amount = 50 + 25 * level,
+            damageFunc = (caster, entity, target, damage) => 100f,
             damageType = DamageType.Magical,
             damageSrc = DamageSrc.Skill
         });
@@ -78,12 +73,7 @@ public class FireballTemplate : IAbilityTemplate
         Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.Range, 600f);
         Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.CooldownDuration, 10f);
         Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.ManaCost, 120f);
-        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.ProjectileSpeed, 700f);
-        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.ArrivalThreshold, 30f);
         Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.Radius, 200f);
-        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.MaxTargets, 0f);
-        Helpers.AbilityHelper.SetBaseValue(ability, Helpers.AbilityHelper.DamageAmount, 75 + 25 * level);
-
         // 追踪弹道 → 飞到目标身上
         ability.AddComponent(new ProjectileData
         {
@@ -102,7 +92,7 @@ public class FireballTemplate : IAbilityTemplate
         // 对搜索到的每个目标造成伤害
         ability.AddComponent(new DamageEffectData
         {
-            amount = 75 + 25 * level,
+            damageFunc = (caster, entity, target, damage) => 100f,
             damageType = DamageType.Magical,
             damageSrc = DamageSrc.Skill
         });

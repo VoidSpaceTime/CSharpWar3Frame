@@ -35,8 +35,6 @@ public static partial class AbilityHelper
     public static readonly int Width = Register("Width");
     /// <summary>技能高度</summary>
     public static readonly int Height = Register("Height");
-    /// <summary>技能最大充能数</summary>
-    public static readonly int ChargesMax = Register("ChargesMax");
     /// <summary>技能引导时长</summary>
     public static readonly int ChannelDuration = Register("ChannelDuration");
     /// <summary>技能伤害数值</summary>

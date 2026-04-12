@@ -49,12 +49,21 @@ public struct EffectPending : ITag;
 #region 伤害效果
 
 /// <summary>
+/// 伤害计算委托。
+/// 参数：施法者、来源技能、目标单位、伤害效果配置。
+/// </summary>
+public delegate float DamageFormulaFunc(Entity caster, Entity ability, Entity target, DamageEffectData damage);
+
+/// <summary>
 /// 伤害效果组件 - 附加到效果 Entity 上表示需要造成伤害
 /// </summary>
 public struct DamageEffectData : IComponent
 {
-    /// <summary>伤害数值</summary>
-    public float amount;
+    /// <summary>
+    /// 伤害计算委托。
+    /// 优先通过静态委托直接计算基础伤害。
+    /// </summary>
+    public DamageFormulaFunc damageFunc;
 
     /// <summary>伤害类型（物理/魔法/真实）</summary>
     public DamageType damageType;
@@ -68,11 +77,29 @@ public struct DamageEffectData : IComponent
 #region 治疗效果
 
 /// <summary>
+/// 伤害计算委托。
+/// 参数：施法者、来源技能、目标单位、伤害效果配置。
+/// </summary>
+public delegate float HealFormulaFunc(Entity caster, Entity ability, Entity target, HealEffectData heal);
+
+/// <summary>
 /// 治疗效果组件
 /// </summary>
 public struct HealEffectData : IComponent
 {
-    /// <summary>治疗量</summary>
+    /// <summary>
+    /// 治疗计算委托。
+    /// 优先通过静态委托直接计算基础治疗量。
+    /// </summary>
+    public HealFormulaFunc healFunc;
+
+    /// <summary>
+    /// 治疗值来源类型 ID。
+    /// 优先从参数层读取，旧 amount 仅作兼容兜底。
+    /// </summary>
+    public int valueTypeId;
+
+    /// <summary>兼容旧路径的治疗量兜底。</summary>
     public float amount;
 }
 
@@ -121,48 +148,64 @@ public enum TargetFilter
     // ========== 阵营 ==========
     /// <summary>自己</summary>
     Self = 1 << 0,
+
     /// <summary>友方（不含自己）</summary>
     Ally = 1 << 1,
+
     /// <summary>敌方</summary>
     Enemy = 1 << 2,
+
     /// <summary>中立</summary>
     Neutral = 1 << 3,
 
     // ========== 单位类型 ==========
     /// <summary>英雄</summary>
     Hero = 1 << 4,
+
     /// <summary>普通单位</summary>
     Normal = 1 << 5,
+
     /// <summary>建筑</summary>
     Building = 1 << 6,
+
     /// <summary>召唤物</summary>
     Summon = 1 << 7,
+
     /// <summary>守卫（无敌单位）</summary>
     Ward = 1 << 8,
 
     // ========== 状态 ==========
     /// <summary>存活的</summary>
     Alive = 1 << 9,
+
     /// <summary>已死亡的</summary>
     Dead = 1 << 10,
+
     /// <summary>无敌的</summary>
     Invulnerable = 1 << 11,
+
     /// <summary>隐身的</summary>
     Invisible = 1 << 12,
+
     /// <summary>魔免的</summary>
     MagicImmune = 1 << 13,
 
     // ========== 常用预设组合 ==========
     /// <summary>所有敌方存活目标</summary>
     EnemyAlive = Enemy | Alive,
+
     /// <summary>所有友方存活目标</summary>
     AllyAlive = Ally | Alive,
+
     /// <summary>所有存活目标（不含自己）</summary>
     AllAlive = Enemy | Ally | Alive,
+
     /// <summary>所有存活目标（含自己）</summary>
     AllAliveIncludeSelf = Enemy | Ally | Self | Alive,
+
     /// <summary>敌方英雄</summary>
     EnemyHero = Enemy | Hero | Alive,
+
     /// <summary>敌方非建筑</summary>
     EnemyNonBuilding = Enemy | Hero | Normal | Summon | Alive,
 }

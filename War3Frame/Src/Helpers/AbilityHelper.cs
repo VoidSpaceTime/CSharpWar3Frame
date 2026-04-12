@@ -22,6 +22,10 @@ public static partial class AbilityHelper
                 Description = string.Empty,
                 state = AbilityState.Ready
             },
+            new AbilityMountInfo
+            {
+                mountType = AbilityMountType.NonSlot
+            },
             new AbilityRuntime()
         );
 

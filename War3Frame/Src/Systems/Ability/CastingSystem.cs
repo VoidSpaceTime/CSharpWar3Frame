@@ -58,6 +58,10 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
             if (dist <= castRange)
             {
                 // 在范围内，直接开始施法
+                ability.AddComponent(new AbilityTriggerInfo
+                {
+                    triggerType = AbilityTriggerType.ActiveCast
+                });
                 StartCasting(unit, request, abilityBase);
             }
             else
@@ -116,6 +120,11 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
             targetX = request.targetX,
             targetY = request.targetY,
             timer = castTime
+        });
+
+        request.ability.AddComponent(new AbilityFlowNodeInfo
+        {
+            nodeType = AbilityFlowNodeType.Cast
         });
 
         // 扣除资源消耗

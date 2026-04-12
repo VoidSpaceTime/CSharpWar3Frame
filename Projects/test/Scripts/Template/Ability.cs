@@ -29,8 +29,6 @@ public class FireBlastTemplate : IAbilityTemplate
         AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 6f);
         AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 700f);
         AbilityHelper.SetBaseValue(ability, AbilityHelper.Radius, 180f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.DamageAmount, 60 + 20 * level);
-
         ability.AddComponent(new AreaSearchData
         {
             filter = TargetFilter.EnemyAlive,
@@ -39,7 +37,7 @@ public class FireBlastTemplate : IAbilityTemplate
 
         ability.AddComponent(new DamageEffectData
         {
-            amount = 60 + 20 * level,
+            damageFunc = ((caster, entity, target, damage) => { return 100f; }),
             damageType = DamageType.Magical,
             damageSrc = DamageSrc.Skill
         });
@@ -71,16 +69,13 @@ public class LavaBallTemplate : IAbilityTemplate
         AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 10f);
         AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 800f);
         AbilityHelper.SetBaseValue(ability, AbilityHelper.Radius, 220f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.DamageAmount, 90 + 30 * level);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.ProjectileSpeed, 650f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.ArrivalThreshold, 35f);
 
         // 熔岩球飞行阶段
         ability.AddComponent(new ProjectileData
         {
             model = "Abilities\\Weapons\\FireBallMissile\\FireBallMissile.mdl",
-            speed = 650f,               // 迁移期兼容：当前运行时仍直接读取该字段
-            arrivalThreshold = 35f      // 迁移期兼容：当前运行时仍直接读取该字段
+            speed = 650f, // 迁移期兼容：当前运行时仍直接读取该字段
+            arrivalThreshold = 35f // 迁移期兼容：当前运行时仍直接读取该字段
         });
 
         // 落点范围搜索
@@ -93,9 +88,70 @@ public class LavaBallTemplate : IAbilityTemplate
         // 落点范围伤害
         ability.AddComponent(new DamageEffectData
         {
-            amount = 90 + 30 * level,   // 迁移期兼容：后续建议交给统一伤害公式/结算层
+            damageFunc = (caster, entity, target, damage) => 100f,
             damageType = DamageType.Magical,
             damageSrc = DamageSrc.Skill
+        });
+    }
+}
+
+/// <summary>
+/// 示例技能模板：坚韧天赋。
+/// 展示“挂载技能也可以通过统一属性贡献层为单位提供长期加成”的最新用法。
+/// </summary>
+[AbilityTemplate("talent_vitality")]
+public class TalentVitalityTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        ability.AddComponent(new AbilityBase
+        {
+            templateName = "talent_vitality",
+            level = level,
+            Name = "坚韧天赋",
+            Description = "挂载后提高单位生命上限。",
+            state = AbilityState.Ready,
+            targetType = AbilityTargetType.None
+        });
+
+        ability.AddComponent(new AttributeContributionEntry
+        {
+            attrTypeId = AttributeHelper.Health,
+            modifyType = ModifyType.Flat,
+            value = 120 + 80 * level,
+            priority = 0
+        });
+    }
+}
+
+/// <summary>
+/// 示例技能模板：治疗波。
+/// 展示治疗效果与伤害效果一样，也走委托公式主路径。
+/// </summary>
+[AbilityTemplate("healing_wave")]
+public class HealingWaveTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        ability.AddComponent(new AbilityBase
+        {
+            templateName = "healing_wave",
+            level = level,
+            Name = "治疗波",
+            Description = "治疗目标单位。",
+            state = AbilityState.Ready,
+            targetType = AbilityTargetType.Unit
+        });
+
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 60);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 6f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 500f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.HealAmount, 100 + 50 * level);
+
+        ability.AddComponent(new HealEffectData
+        {
+           healFunc = (caster, entity, target, heal) => 100f, 
+            valueTypeId = AbilityHelper.HealAmount
         });
     }
 }

@@ -50,6 +50,10 @@ public class AbilityAttachWorkflowSystem : QuerySystem<AbilityAttachRequest>
 
         ability.AddComponent(new AbilitySlotIndex { slotIndex = slotIndex });
         ability.AddComponent(new AbilityOwner(unit));
+        ability.AddComponent(new AbilityMountInfo
+        {
+            mountType = AbilityMountType.Slot
+        });
 
         if (ability.TryGetComponent<AttributeContributionEntry>(out _))
         {
@@ -95,6 +99,10 @@ public class AbilityRemoveWorkflowSystem : QuerySystem<AbilityRemoveRequest>
         ability.Value.AddTag<AbilityAttrRemoveRequest>();
         ability.Value.RemoveComponent<AbilityOwner>();
         ability.Value.RemoveComponent<AbilitySlotIndex>();
+        ability.Value.AddComponent(new AbilityMountInfo
+        {
+            mountType = AbilityMountType.NonSlot
+        });
 
         if (destroyAbility)
         {

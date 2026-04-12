@@ -72,43 +72,4 @@ public static partial class AbilityHelper
         return GetFinalValue(ability, Radius);
     }
 
-    /// <summary>
-    /// 获取弹道速度。
-    /// </summary>
-    public static float GetProjectileSpeed(Entity ability)
-    {
-        return GetFinalValue(ability, ProjectileSpeed);
-    }
-
-    /// <summary>
-    /// 获取弹道最大距离。
-    /// </summary>
-    public static float GetProjectileDistance(Entity ability)
-    {
-        return GetFinalValue(ability, ProjectileDistance);
-    }
-
-    /// <summary>
-    /// 获取命中宽度。
-    /// </summary>
-    public static float GetHitWidth(Entity ability)
-    {
-        return GetFinalValue(ability, HitWidth);
-    }
-
-    /// <summary>
-    /// 获取到达判定阈值。
-    /// </summary>
-    public static float GetArrivalThreshold(Entity ability)
-    {
-        return GetFinalValue(ability, ArrivalThreshold);
-    }
-
-    /// <summary>
-    /// 获取最大目标数量。
-    /// </summary>
-    public static int GetMaxTargets(Entity ability)
-    {
-        return (int)GetFinalValue(ability, MaxTargets);
-    }
 }
