@@ -436,6 +436,7 @@ namespace War3FrameBuild.CommandManager
             Directory.CreateDirectory(Path.Combine(Config.War3, "Maps", "Test"));
 
             var modeLni = "slk";
+            if (BuildMode is BuildModeEnum.Test or BuildModeEnum.Build)
             {
                 modeLni = "obj";
             }
