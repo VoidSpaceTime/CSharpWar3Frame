@@ -1,138 +1,82 @@
 ﻿using FastMDX;
 using IniParser;
+using IniParser.Model;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Emit;
 using NAudio.Wave;
 using Serilog;
+using System.Reflection;
+using System.Threading.Tasks;
+using War3Frame;
 using War3FrameBuild.Extension;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using static War3Frame.Assets;
 
-namespace War3FrameBuild.CommandManager;
-
-public partial class CommandManager
+namespace War3FrameBuild.CommandManager
 {
-    public int GetAudioFileDuration(string file)
+    public partial class CommandManager
     {
-        if (Path.GetExtension(file) is ".wav")
-            using (var reader = new WaveFileReader(file))
+        #region Build Methods
+
+        public readonly Dictionary<string, (string Path, string Name, List<string> Extention)> AssetsTypes = new()
+        {
+            { "image", ("war3mapImage", "【图片】Image", new List<string> { ".tga", ".blp" }) },
+            { "model", ("war3mapModel", "【模型】Model", new List<string> { ".mdl", ".mdx" }) },
+            { "bgm", ("war3mapBgm", "【乐曲】Bgm", new List<string> { ".mp3", ".wav" }) },
+            { "vcm", ("war3mapVoice", "【音效】Vcm", new List<string> { ".mp3", ".wav" }) },
+            { "v3d", ("war3mapVoice", "【音效】V3d", new List<string> { ".mp3", ".wav" }) },
+            { "vwp", ("war3mapVwp", "【音效】Vwp", new List<string> { ".yaml" }) },
+            { "vwp-voice", ("war3mapVoice", "【音效】Vwp", new List<string> { ".mp3", ".wav" }) },
+        };
+
+        private class AssetsPickPathRewriter : CSharpSyntaxRewriter
+        {
+            private readonly CommandManager commandManager;
+
+            public AssetsPickPathRewriter(CommandManager manager)
             {
-                return (int)reader.TotalTime.TotalMilliseconds;
+                commandManager = manager;
             }
 
-        if (Path.GetExtension(file) is ".mp3")
-            using (var reader = new Mp3FileReader(file))
+            // helper: 执行前已确保 argument 非 null
+            // 统一提取参数字符串，去掉两边引号并保留单个反斜线
+            // 例如："Sound\\Interface\\Error.wav" -> Sound\Interface\Error.wav
+            // 或当表达式为字符串字面量时直接取其 Token.ValueText
+            private string GetArgumentString(ArgumentSyntax arg)
             {
-                return (int)reader.TotalTime.TotalMilliseconds;
+                var expr = arg.Expression;
+                if (expr is LiteralExpressionSyntax lit && lit.IsKind(SyntaxKind.StringLiteralExpression))
+                {
+                    return lit.Token.ValueText;
+                }
+
+                var s = arg.ToString();
+                if (s.StartsWith("\"") && s.EndsWith("\""))
+                {
+                    s = s.Substring(1, s.Length - 2);
+                }
+
+                // 反斜线规范为单个
+                s = s.Replace("\\\\", "\\");
+                return s;
             }
 
-        Log.Error($"音频文件不存在：{file}");
-        return 0;
-    }
-
-    public int GetWar3AuidoDuration(string path)
-    {
-        var yamlPath = Path.Combine(Template, "war3sounds.yaml");
-        if (File.Exists(yamlPath))
-        {
-            if (War3SoundsYaml is null)
+            public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node)
             {
-                var yaml = File.ReadAllText(yamlPath);
-                var war3SoundDurationConfig = new DeserializerBuilder()
-                    .WithNamingConvention(UnderscoredNamingConvention.Instance)
-                    .Build();
-                War3SoundsYaml = war3SoundDurationConfig.Deserialize<War3Sounds>(yaml);
-            }
-
-            var dur = War3SoundsYaml.sounds.Where(o => o.path == path)
-                .FirstOrDefault(new SoundItem { path = string.Empty, duration = 0 });
-            if (dur.duration != 0) return dur.duration;
-
-            Log.Error($"(原生)音频文件不存在：{path}");
-            return 0;
-        }
-
-        Log.Error($"(原生)音频配置不存在：{path}");
-        return 0;
-    }
-
-    /// <summary>
-    ///     模型贴图,复制到目标文件夹内,
-    /// </summary>
-    /// <param name="modelFile"></param>
-    /// <param name="targetModelFolder"></param>
-    /// <returns></returns>
-    public static bool CopyTexturesToResourceSync(string modelFile, string targetModelFolder)
-    {
-        if (!File.Exists(modelFile)) return false;
-
-        if (!Directory.Exists(targetModelFolder)) return false;
-        //Directory.CreateDirectory(targetModelFolder);
-        var model = new MDX(modelFile);
-        //File.Copy(modelFile, Path.Combine(targetFolder, modelFolder, Path.GetFileName(modelFile)), true);
-        var modelFolder = Directory.GetParent(modelFile).FullName;
-        foreach (var texture in model.Textures)
-        {
-            var textureFile = Path.Combine(modelFolder, texture.Name);
-            if (File.Exists(textureFile)) File.Copy(textureFile, Path.Combine(targetModelFolder, texture.Name), true);
-        }
-
-        return true;
-    }
-
-    #region Build Methods
-
-    public readonly Dictionary<string, (string Path, string Name, List<string> Extention)> AssetsTypes = new()
-    {
-        { "image", ("war3mapImage", "【图片】Image", new List<string> { ".tga", ".blp" }) },
-        { "model", ("war3mapModel", "【模型】Model", new List<string> { ".mdl", ".mdx" }) },
-        { "bgm", ("war3mapBgm", "【乐曲】Bgm", new List<string> { ".mp3", ".wav" }) },
-        { "vcm", ("war3mapVoice", "【音效】Vcm", new List<string> { ".mp3", ".wav" }) },
-        { "v3d", ("war3mapVoice", "【音效】V3d", new List<string> { ".mp3", ".wav" }) },
-        { "vwp", ("war3mapVwp", "【音效】Vwp", new List<string> { ".yaml" }) },
-        { "vwp-voice", ("war3mapVoice", "【音效】Vwp", new List<string> { ".mp3", ".wav" }) }
-    };
-
-    private class AssetsPickPathRewriter : CSharpSyntaxRewriter
-    {
-        private readonly CommandManager commandManager;
-
-        public AssetsPickPathRewriter(CommandManager manager)
-        {
-            commandManager = manager;
-        }
-
-        // helper: 执行前已确保 argument 非 null
-        // 统一提取参数字符串，去掉两边引号并保留单个反斜线
-        // 例如："Sound\\Interface\\Error.wav" -> Sound\Interface\Error.wav
-        // 或当表达式为字符串字面量时直接取其 Token.ValueText
-        private string GetArgumentString(ArgumentSyntax arg)
-        {
-            var expr = arg.Expression;
-            if (expr is LiteralExpressionSyntax lit && lit.IsKind(SyntaxKind.StringLiteralExpression))
-                return lit.Token.ValueText;
-
-            var s = arg.ToString();
-            if (s.StartsWith("\"") && s.EndsWith("\"")) s = s.Substring(1, s.Length - 2);
-
-            // 反斜线规范为单个
-            s = s.Replace("\\\\", "\\");
-            return s;
-        }
-
-        public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node)
-        {
-            if (node.Expression is MemberAccessExpressionSyntax memberAccess)
-            {
-                var flag = false;
-                var arguments = node.ArgumentList.Arguments.ToList();
-                // 构建新的参数列表
-                var newArguments = new List<ExpressionSyntax>();
-                if (arguments.Count >= 1)
-                    switch (memberAccess.Name.Identifier.Text)
+                if (node.Expression is MemberAccessExpressionSyntax memberAccess)
+                {
+                    var flag = false;
+                    var arguments = node.ArgumentList.Arguments.ToList();
+                    // 构建新的参数列表
+                    var newArguments = new List<ExpressionSyntax>();
+                    if (arguments.Count >= 1)
                     {
-                        case "AddSelecation":
+                        switch (memberAccess.Name.Identifier.Text)
+                        {
+                            case "AddSelecation":
                             {
                                 var absDir = Path.Combine(commandManager.Config.Assets, "war3mapSelection",
                                     GetArgumentString(arguments[0]).Replace('/', '\\'));
@@ -156,7 +100,7 @@ public partial class CommandManager
 
                                 break;
                             }
-                        case "AddTerrain":
+                            case "AddTerrain":
                             {
                                 var dir = GetArgumentString(arguments[0]);
                                 if (dir != "")
@@ -164,7 +108,7 @@ public partial class CommandManager
                                     var terrainDir = Path.Combine(commandManager.Config.Assets, "war3mapTerrain", dir);
                                     if (Directory.Exists(terrainDir))
                                     {
-                                        var flagT = true;
+                                        bool flagT = true;
                                         var cliffDir = Path.Combine(terrainDir, "Cliff");
                                         if (Directory.Exists(cliffDir) is false)
                                         {
@@ -200,7 +144,7 @@ public partial class CommandManager
 
                                 break;
                             }
-                        case "AddFont":
+                            case "AddFont":
                             {
                                 var file = GetArgumentString(arguments[0]);
                                 var ext = Path.GetExtension(file);
@@ -223,16 +167,20 @@ public partial class CommandManager
 
                                 Log.Information($"【字体】引入：{file}");
                                 if (file is "default")
+                                {
                                     File.Copy(Path.Combine(commandManager.Template, "lni", "assets", "ARHei2月液晶.ttf"),
                                         Path.Combine(commandManager.BuildDstPath, "map", "fonts.ttf"), true);
+                                }
 
                                 else
+                                {
                                     File.Copy(fontFile, Path.Combine(commandManager.BuildDstPath, "map", "fonts.ttf"),
                                         true);
+                                }
 
                                 break;
                             }
-                        case "AddLoading":
+                            case "AddLoading":
                             {
                                 var directory = GetArgumentString(arguments[0]);
                                 File.Delete(Path.Combine(commandManager.BuildDstPath, "resource", "Framework",
@@ -241,14 +189,14 @@ public partial class CommandManager
                                     directory);
                                 var loadingFile = Path.Combine(commandManager.Config.Assets, "war3MapLoading",
                                     directory + ".tga");
-                                var loaded = false;
+                                bool loaded = false;
                                 if (Directory.Exists(loadingPath))
                                 {
                                     File.Copy(
                                         Path.Combine(commandManager.Template, "lni", "assets", "LoadingScreenDir.mdx"),
                                         Path.Combine(commandManager.BuildDstPath, "resource", "Framework",
                                             "LoadingScreen.mdx"), true);
-                                    var loadingSites = new[] { "pic", "bc", "bg" };
+                                    string[] loadingSites = new[] { "pic", "bc", "bg" };
                                     foreach (var s in loadingSites)
                                     {
                                         loadingFile = Path.Combine(loadingPath, s + ".tga");
@@ -289,7 +237,7 @@ public partial class CommandManager
                                     }
                                     else
                                     {
-                                        var data = parser.ReadFile(iniPath);
+                                        IniData data = parser.ReadFile(iniPath);
                                         data["载入图"]["路径"] = "Framework\\LoadingScreen.mdx";
                                         // 保存
                                         parser.WriteFile("config.ini", data);
@@ -302,7 +250,7 @@ public partial class CommandManager
 
                                 break;
                             }
-                        case "AddPreview":
+                            case "AddPreview":
                             {
                                 var file = GetArgumentString(arguments[0]);
                                 if (file is "")
@@ -311,7 +259,10 @@ public partial class CommandManager
                                 }
                                 else
                                 {
-                                    if (Path.GetExtension(file) == "") file = file + ".tga";
+                                    if (Path.GetExtension(file) == "")
+                                    {
+                                        file = file + ".tga";
+                                    }
 
                                     var previewFile = Path.Combine(commandManager.Config.Assets, "war3mapPreview",
                                         file);
@@ -326,7 +277,7 @@ public partial class CommandManager
 
                                 break;
                             }
-                        case "AddImage":
+                            case "AddImage":
                             {
                                 var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("image",
                                     GetArgumentString(arguments[0]), commandManager.IsSkip);
@@ -335,10 +286,14 @@ public partial class CommandManager
                                 {
                                     // 如果第二个参数为空字符串，则替换为 null
                                     if (arguments.Count > 1)
+                                    {
                                         newArguments.Add(arguments[1].Expression);
+                                    }
                                     else
+                                    {
                                         newArguments.Add(
                                             SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression));
+                                    }
 
                                     newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
                                         SyntaxFactory.Literal(pickPath)));
@@ -347,7 +302,7 @@ public partial class CommandManager
 
                                 break;
                             }
-                        case "AddModel":
+                            case "AddModel":
                             {
                                 var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("model",
                                     GetArgumentString(arguments[0]), commandManager.IsSkip);
@@ -357,10 +312,14 @@ public partial class CommandManager
                                 {
                                     // 如果第二个参数为空字符串，则替换为 null
                                     if (GetArgumentString(arguments[1]) is "")
+                                    {
                                         newArguments.Add(
                                             SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression));
+                                    }
                                     else
+                                    {
                                         newArguments.Add(arguments[1].Expression);
+                                    }
 
                                     newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
                                         SyntaxFactory.Literal(pickPath)));
@@ -369,104 +328,138 @@ public partial class CommandManager
 
                                 break;
                             }
-                        case "AddBGM":
+                            case "AddBGM":
                             {
                                 var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("bgm",
                                     GetArgumentString(arguments[0]).Replace("\"", ""), commandManager.IsSkip);
                                 newArguments.Add(arguments[0].Expression);
                                 if (status is true && arguments.Count < 5)
                                 {
-                                    var duration = 0;
+                                    int duration = 0;
                                     if (isWar3)
+                                    {
                                         duration = commandManager.GetWar3AuidoDuration(pickPath);
+                                    }
                                     else
+                                    {
                                         duration = commandManager.GetAudioFileDuration(sourcePath);
+                                    }
 
                                     // 如果第二个参数为空字符串，则替换为 null
                                     if (arguments.Count > 1 && GetArgumentString(arguments[1]) is "")
+                                    {
                                         newArguments.Add(
                                             SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression));
+                                    }
                                     else
+                                    {
                                         newArguments.Add(arguments[1].Expression);
-
-                                    newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
-                                        SyntaxFactory.Literal(pickPath)));
-                                    newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
-                                        SyntaxFactory.Literal(duration)));
-                                    if (arguments.Count > 4) newArguments.Add(arguments[4].Expression);
-
-                                    flag = true;
-                                }
-
-                                break;
-                            }
-                        case "AddVCM":
-                            {
-                                var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("vcm",
-                                    GetArgumentString(arguments[0]), commandManager.IsSkip);
-                                newArguments.Add(arguments[0].Expression);
-                                if (status is true && arguments.Count < 5)
-                                {
-                                    var duration = 0;
-                                    if (isWar3)
-                                        duration = commandManager.GetWar3AuidoDuration(pickPath);
-                                    else
-                                        duration = commandManager.GetAudioFileDuration(sourcePath);
-
-                                    // 如果第二个参数为空字符串，则替换为 null
-                                    if (arguments.Count > 1 && GetArgumentString(arguments[1]) is "")
-                                        newArguments.Add(
-                                            SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression));
-                                    else
-                                        newArguments.Add(arguments[1].Expression);
-
-                                    newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
-                                        SyntaxFactory.Literal(pickPath)));
-                                    newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
-                                        SyntaxFactory.Literal(duration)));
-                                    if (arguments.Count > 4) newArguments.Add(arguments[4].Expression);
-
-                                    flag = true;
-                                }
-
-                                break;
-                            }
-                        case "AddV3D":
-                            {
-                                var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("v3d",
-                                    GetArgumentString(arguments[0]).Replace("\"", ""), commandManager.IsSkip);
-                                newArguments.Add(arguments[0].Expression);
-                                if (status is true && arguments.Count < 5)
-                                {
-                                    var duration = 0;
-                                    if (isWar3)
-                                        duration = commandManager.GetWar3AuidoDuration(pickPath);
-                                    else
-                                        duration = commandManager.GetAudioFileDuration(sourcePath);
-
-                                    // 如果第二个参数为空字符串，则替换为 null
-                                    if (GetArgumentString(arguments[1]) is "" && arguments.Count > 1)
-                                        newArguments.Add(
-                                            SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression));
-                                    else
-                                        newArguments.Add(arguments[1].Expression);
+                                    }
 
                                     newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
                                         SyntaxFactory.Literal(pickPath)));
                                     newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
                                         SyntaxFactory.Literal(duration)));
                                     if (arguments.Count > 4)
+                                    {
                                         newArguments.Add(arguments[4].Expression);
-                                    else
-                                        newArguments.Add(
-                                            SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression));
+                                    }
 
                                     flag = true;
                                 }
 
                                 break;
                             }
-                        case "AddVWP":
+                            case "AddVCM":
+                            {
+                                var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("vcm",
+                                    GetArgumentString(arguments[0]), commandManager.IsSkip);
+                                newArguments.Add(arguments[0].Expression);
+                                if (status is true && arguments.Count < 5)
+                                {
+                                    int duration = 0;
+                                    if (isWar3)
+                                    {
+                                        duration = commandManager.GetWar3AuidoDuration(pickPath);
+                                    }
+                                    else
+                                    {
+                                        duration = commandManager.GetAudioFileDuration(sourcePath);
+                                    }
+
+                                    // 如果第二个参数为空字符串，则替换为 null
+                                    if (arguments.Count > 1 && GetArgumentString(arguments[1]) is "")
+                                    {
+                                        newArguments.Add(
+                                            SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression));
+                                    }
+                                    else
+                                    {
+                                        newArguments.Add(arguments[1].Expression);
+                                    }
+
+                                    newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
+                                        SyntaxFactory.Literal(pickPath)));
+                                    newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
+                                        SyntaxFactory.Literal(duration)));
+                                    if (arguments.Count > 4)
+                                    {
+                                        newArguments.Add(arguments[4].Expression);
+                                    }
+
+                                    flag = true;
+                                }
+
+                                break;
+                            }
+                            case "AddV3D":
+                            {
+                                var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("v3d",
+                                    GetArgumentString(arguments[0]).Replace("\"", ""), commandManager.IsSkip);
+                                newArguments.Add(arguments[0].Expression);
+                                if (status is true && arguments.Count < 5)
+                                {
+                                    int duration = 0;
+                                    if (isWar3)
+                                    {
+                                        duration = commandManager.GetWar3AuidoDuration(pickPath);
+                                    }
+                                    else
+                                    {
+                                        duration = commandManager.GetAudioFileDuration(sourcePath);
+                                    }
+
+                                    // 如果第二个参数为空字符串，则替换为 null
+                                    if (GetArgumentString(arguments[1]) is "" && arguments.Count > 1)
+                                    {
+                                        newArguments.Add(
+                                            SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression));
+                                    }
+                                    else
+                                    {
+                                        newArguments.Add(arguments[1].Expression);
+                                    }
+
+                                    newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
+                                        SyntaxFactory.Literal(pickPath)));
+                                    newArguments.Add(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
+                                        SyntaxFactory.Literal(duration)));
+                                    if (arguments.Count > 4)
+                                    {
+                                        newArguments.Add(arguments[4].Expression);
+                                    }
+                                    else
+                                    {
+                                        newArguments.Add(
+                                            SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression));
+                                    }
+
+                                    flag = true;
+                                }
+
+                                break;
+                            }
+                            case "AddVWP":
                             {
                                 var (status, isWar3, pickPath, sourcePath) = commandManager.AnalysisFile("vwp",
                                     GetArgumentString(arguments[0]).Replace("\"", ""), commandManager.IsSkip);
@@ -474,7 +467,7 @@ public partial class CommandManager
                                 // 如果使用原生资源
                                 if (status is true && File.Exists(sourcePath))
                                 {
-                                    var yaml = File.ReadAllText(sourcePath);
+                                    string yaml = File.ReadAllText(sourcePath);
                                     var war3SoundDurationConfig = new DeserializerBuilder()
                                         .WithNamingConvention(UnderscoredNamingConvention.Instance)
                                         .Build()
@@ -498,16 +491,16 @@ public partial class CommandManager
 
                                         var tupleExprs = kv.Value
                                             .Select(t => (ExpressionSyntax)SyntaxFactory.TupleExpression(
-                                                SyntaxFactory.SeparatedList(new[]
+                                                SyntaxFactory.SeparatedList<ArgumentSyntax>(new[]
                                                 {
-                                                SyntaxFactory.Argument(
-                                                    SyntaxFactory.LiteralExpression(
-                                                        SyntaxKind.StringLiteralExpression,
-                                                        SyntaxFactory.Literal(t.pickPath))),
-                                                SyntaxFactory.Argument(
-                                                    SyntaxFactory.LiteralExpression(
-                                                        SyntaxKind.NumericLiteralExpression,
-                                                        SyntaxFactory.Literal(t.durtion)))
+                                                    SyntaxFactory.Argument(
+                                                        SyntaxFactory.LiteralExpression(
+                                                            SyntaxKind.StringLiteralExpression,
+                                                            SyntaxFactory.Literal(t.pickPath))),
+                                                    SyntaxFactory.Argument(
+                                                        SyntaxFactory.LiteralExpression(
+                                                            SyntaxKind.NumericLiteralExpression,
+                                                            SyntaxFactory.Literal(t.durtion)))
                                                 })))
                                             .ToList();
 
@@ -519,7 +512,7 @@ public partial class CommandManager
 
                                         var complexInit = SyntaxFactory.InitializerExpression(
                                             SyntaxKind.ComplexElementInitializerExpression,
-                                            SyntaxFactory.SeparatedList(new ExpressionSyntax[]
+                                            SyntaxFactory.SeparatedList<ExpressionSyntax>(new ExpressionSyntax[]
                                                 { keyExpr, listCreation }));
 
                                         complexInits.Add(complexInit);
@@ -537,8 +530,8 @@ public partial class CommandManager
                                         .ObjectCreationExpression(SyntaxFactory.ParseTypeName("VwpSound"))
                                         .WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(new[]
                                         {
-                                        SyntaxFactory.Argument(aliasExpr),
-                                        SyntaxFactory.Argument(dictCreation)
+                                            SyntaxFactory.Argument(aliasExpr),
+                                            SyntaxFactory.Argument(dictCreation)
                                         })));
 
                                     newArguments.Add(vwpCreation);
@@ -547,7 +540,7 @@ public partial class CommandManager
 
                                 break;
                             }
-                        case "AddUI":
+                            case "AddUI":
                             {
                                 var uiPath = Path.Combine(commandManager.Config.Assets, "war3mapUI");
                                 var folder = GetArgumentString(arguments[0]).Replace("\"", "");
@@ -569,15 +562,19 @@ public partial class CommandManager
                                     //assets
                                     var assetsDir = Path.Combine(uiFolder, "assets");
                                     if (Directory.Exists(assetsDir))
+                                    {
                                         Directory.EnumerateFiles(assetsDir).ToList().ForEach(file =>
                                         {
                                             var destFile = Path.Combine(commandManager.BuildDstPath, "resource", folder,
                                                 file);
                                             if (Path.GetExtension(file).ToLower() == ".mdx")
+                                            {
                                                 destFile = Path.ChangeExtension(destFile, ".mdl");
+                                            }
 
                                             File.Copy(file, destFile, true);
                                         });
+                                    }
 
                                     //script
                                     var scriptsDir = Path.Combine(uiFolder, "scripts");
@@ -594,121 +591,229 @@ public partial class CommandManager
 
                                 break;
                             }
+                        }
                     }
 
-                // 如果 flag 为 true，则返回新的节点；否则保留原始调用
-                if (flag)
+                    // 如果 flag 为 true，则返回新的节点；否则保留原始调用
+                    if (flag)
+                    {
+                        // var argList = SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(elementInits));
+                        // 修正为：将 elementInits（ExpressionSyntax 列表）转换为 ArgumentSyntax 列表
+                        var argList = SyntaxFactory.ArgumentList(
+                            SyntaxFactory.SeparatedList<ArgumentSyntax>(
+                                newArguments.Select(expr => SyntaxFactory.Argument(expr))
+                            )
+                        );
+                        return node.WithArgumentList(argList);
+                    }
+                }
+
+                return base.VisitInvocationExpression(node);
+            }
+        }
+
+        /// <summary>
+        /// 判断资源文件是否存在，并返回游戏内部资源路径
+        /// </summary>
+        /// <typeparam name="TKind">资源类型</typeparam>
+        /// <param name="path">资源路径</param>
+        /// <param name="alias">别名</param>
+        /// <param name="skipDetect">是否跳过检测</param>
+        /// <returns>状态和路径的元组</returns>
+        public (bool status, bool isWar3, string pickPath, string sourcePath) AnalysisFile(string kind, string path,
+            bool skipDetect)
+        {
+            var analyser = path.Replace("/", "\\");
+            while (analyser.Contains("\\\\"))
+            {
+                analyser = analyser.Replace("\\\\", "\\");
+            }
+
+            var ext = Path.GetExtension(analyser).ToLower();
+            var isContaine = AssetsTypes.TryGetValue(kind, out var support);
+            var status = true;
+            if (ext == "" && isContaine)
+            {
+                ext = support.Extention.First();
+                analyser = Path.ChangeExtension(analyser, ext);
+            }
+
+            var isWar3 = false;
+            var sourcePath = Path.Combine(Config.Assets, support.Path, analyser); //资源文件
+            var pickPath = string.Empty;
+            // 是否资源文件
+            if (File.Exists(sourcePath))
+            {
+                // 复制assets文件到temp
+                if (!skipDetect)
                 {
-                    // var argList = SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(elementInits));
-                    // 修正为：将 elementInits（ExpressionSyntax 列表）转换为 ArgumentSyntax 列表
-                    var argList = SyntaxFactory.ArgumentList(
-                        SyntaxFactory.SeparatedList(
-                            newArguments.Select(expr => SyntaxFactory.Argument(expr))
-                        )
-                    );
-                    return node.WithArgumentList(argList);
+                    pickPath = Path.Combine(support.Path, analyser);
+                    var dstPath = Path.Combine(BuildDstPath, "resource", support.Path, analyser);
+                    var dstFolder = Directory.GetParent(dstPath).FullName;
+                    if (!Directory.Exists(dstFolder))
+                    {
+                        Directory.CreateDirectory(dstFolder);
+                    }
+
+                    File.Copy(sourcePath, dstPath, true);
+                    if (ext is ".mdl" or ".mdx")
+                    {
+                        CopyTexturesToResourceSync(sourcePath, Directory.GetParent(dstPath).FullName);
+                    }
+                }
+            }
+            else // 否则projects资源文件
+            {
+                var r = analyser;
+                if (analyser.StartsWith("resource\\"))
+                {
+                    r = r.Replace("resource\\", "");
+                }
+
+                sourcePath = Path.Combine(Projects, ProjectName, "w3x", "resource", r);
+                if (File.Exists(sourcePath))
+                {
+                    pickPath = Path.Combine("resource", r);
+                }
+
+                var nativeFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "units", "buildings", "abilities", "doodads", "replaceabletextures", "ui", "glues", "textures",
+                    "sound", "environment", "terrainart", "splats", "scripts", "objects", "sharedmodels"
+                };
+                var firstSeg = analyser.Split(new[] { '\\' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ??
+                               string.Empty;
+                //原生资源
+                if (!string.IsNullOrEmpty(firstSeg) && nativeFolders.Contains(firstSeg.ToLower()))
+                {
+                    isWar3 = true;
+                    pickPath = analyser;
+                    sourcePath = string.Empty;
                 }
             }
 
-            return base.VisitInvocationExpression(node);
-        }
-    }
-
-    /// <summary>
-    ///     判断资源文件是否存在，并返回游戏内部资源路径
-    /// </summary>
-    /// <typeparam name="TKind">资源类型</typeparam>
-    /// <param name="path">资源路径</param>
-    /// <param name="alias">别名</param>
-    /// <param name="skipDetect">是否跳过检测</param>
-    /// <returns>状态和路径的元组</returns>
-    public (bool status, bool isWar3, string pickPath, string sourcePath) AnalysisFile(string kind, string path,
-        bool skipDetect)
-    {
-        var analyser = path.Replace("/", "\\");
-        while (analyser.Contains("\\\\")) analyser = analyser.Replace("\\\\", "\\");
-
-        var ext = Path.GetExtension(analyser).ToLower();
-        var isContaine = AssetsTypes.TryGetValue(kind, out var support);
-        var status = true;
-        if (ext == "" && isContaine)
-        {
-            ext = support.Extention.First();
-            analyser = Path.ChangeExtension(analyser, ext);
-        }
-
-        var isWar3 = false;
-        var sourcePath = Path.Combine(Config.Assets, support.Path, analyser); //资源文件
-        var pickPath = string.Empty;
-        // 是否资源文件
-        if (File.Exists(sourcePath))
-        {
-            // 复制assets文件到temp
-            if (!skipDetect)
+            if (string.IsNullOrEmpty(pickPath) && isWar3 is false)
             {
-                pickPath = Path.Combine(support.Path, analyser);
-                var dstPath = Path.Combine(BuildDstPath, "resource", support.Path, analyser);
-                var dstFolder = Directory.GetParent(dstPath).FullName;
-                if (!Directory.Exists(dstFolder)) Directory.CreateDirectory(dstFolder);
-
-                File.Copy(sourcePath, dstPath, true);
-                if (ext is ".mdl" or ".mdx")
-                    CopyTexturesToResourceSync(sourcePath, Directory.GetParent(dstPath).FullName);
+                status = false;
+                Log.Error($"{kind}-资源文件不存在：{path}");
             }
+
+            pickPath = pickPath.Replace("/", "\\");
+            return (status, isWar3, pickPath, sourcePath);
         }
-        else // 否则projects资源文件
+
+        public void SupplementAssetsPackPath(string[] targetPaths)
         {
-            var r = analyser;
-            if (analyser.StartsWith("resource\\")) r = r.Replace("resource\\", "");
-
-            sourcePath = Path.Combine(Projects, ProjectName, "w3x", "resource", r);
-            if (File.Exists(sourcePath)) pickPath = Path.Combine("resource", r);
-
-            var nativeFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            foreach (var path in targetPaths)
             {
-                "units", "buildings", "abilities", "doodads", "replaceabletextures", "ui", "glues", "textures",
-                "sound", "environment", "terrainart", "splats", "scripts", "objects", "sharedmodels"
-            };
-            var firstSeg = analyser.Split(new[] { '\\' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ??
-                           string.Empty;
-            //原生资源
-            if (!string.IsNullOrEmpty(firstSeg) && nativeFolders.Contains(firstSeg.ToLower()))
+                var code = File.ReadAllText(path);
+                var tree = CSharpSyntaxTree.ParseText(code);
+                var root = tree.GetRoot();
+                // 要处理toc
+
+                var rewriter = new AssetsPickPathRewriter(this);
+                var newRoot = rewriter.Visit(root);
+                if (newRoot is not null)
+                {
+                    // 格式化生成的语法树以保证空格和标点正确
+                    var formatted = newRoot.NormalizeWhitespace().ToFullString();
+                    File.WriteAllText(path, formatted);
+                }
+            }
+
+            return;
+        }
+
+        #endregion
+
+        public int GetAudioFileDuration(string file)
+        {
+            if (Path.GetExtension(file) is ".wav")
             {
-                isWar3 = true;
-                pickPath = analyser;
-                sourcePath = string.Empty;
+                using (var reader = new WaveFileReader(file))
+                {
+                    return (int)reader.TotalTime.TotalMilliseconds;
+                }
+            }
+            else if (Path.GetExtension(file) is ".mp3")
+            {
+                using (var reader = new Mp3FileReader(file))
+                {
+                    return (int)reader.TotalTime.TotalMilliseconds;
+                }
+            }
+            else
+            {
+                Log.Error($"音频文件不存在：{file}");
+                return 0;
             }
         }
 
-        if (string.IsNullOrEmpty(pickPath) && isWar3 is false)
+        public int GetWar3AuidoDuration(string path)
         {
-            status = false;
-            Log.Error($"{kind}-资源文件不存在：{path}");
-        }
-
-        pickPath = pickPath.Replace("/", "\\");
-        return (status, isWar3, pickPath, sourcePath);
-    }
-
-    public void SupplementAssetsPackPath(string[] targetPaths)
-    {
-        foreach (var path in targetPaths)
-        {
-            var code = File.ReadAllText(path);
-            var tree = CSharpSyntaxTree.ParseText(code);
-            var root = tree.GetRoot();
-            // 要处理toc
-
-            var rewriter = new AssetsPickPathRewriter(this);
-            var newRoot = rewriter.Visit(root);
-            if (newRoot is not null)
+            var yamlPath = Path.Combine(Template, "war3sounds.yaml");
+            if (File.Exists(yamlPath))
             {
-                // 格式化生成的语法树以保证空格和标点正确
-                var formatted = newRoot.NormalizeWhitespace().ToFullString();
-                File.WriteAllText(path, formatted);
+                if (War3SoundsYaml is null)
+                {
+                    string yaml = File.ReadAllText(yamlPath);
+                    var war3SoundDurationConfig = new DeserializerBuilder()
+                        .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                        .Build();
+                    War3SoundsYaml = war3SoundDurationConfig.Deserialize<War3Sounds>(yaml);
+                }
+
+                var dur = War3SoundsYaml.sounds.Where(o => o.path == path)
+                    .FirstOrDefault(new SoundItem() { path = string.Empty, duration = 0 });
+                if (dur.duration != 0)
+                {
+                    return dur.duration;
+                }
+                else
+                {
+                    Log.Error($"(原生)音频文件不存在：{path}");
+                    return 0;
+                }
+            }
+            else
+            {
+                Log.Error($"(原生)音频配置不存在：{path}");
+                return 0;
             }
         }
-    }
 
-    #endregion
+        /// <summary>
+        /// 模型贴图,复制到目标文件夹内, 
+        /// </summary>
+        /// <param name="modelFile"></param>
+        /// <param name="targetModelFolder"></param>
+        /// <returns></returns>
+        static public bool CopyTexturesToResourceSync(string modelFile, string targetModelFolder)
+        {
+            if (!File.Exists(modelFile))
+            {
+                return false;
+            }
+
+            if (!Directory.Exists(targetModelFolder))
+            {
+                return false;
+                //Directory.CreateDirectory(targetModelFolder);
+            }
+
+            var model = new MDX(modelFile);
+            //File.Copy(modelFile, Path.Combine(targetFolder, modelFolder, Path.GetFileName(modelFile)), true);
+            var modelFolder = Directory.GetParent(modelFile).FullName;
+            foreach (var texture in model.Textures)
+            {
+                var textureFile = Path.Combine(modelFolder, texture.Name);
+                if (File.Exists(textureFile))
+                {
+                    File.Copy(textureFile, Path.Combine(targetModelFolder, texture.Name), true);
+                }
+            }
+
+            return true;
+        }
+    }
 }
