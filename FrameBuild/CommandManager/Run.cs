@@ -99,6 +99,7 @@ namespace War3FrameBuild.CommandManager
         // 预编译正则表达式以提高性能
         private static readonly Regex ModulePathRegex = new(@"string ModulePath = .*", RegexOptions.Compiled);
         private static readonly Regex ModuleNameRegex = new(@"string ModuleName = .*", RegexOptions.Compiled);
+        private static readonly Regex IsNativeRegex = new(@"bool IsNative = .*", RegexOptions.Compiled);
 
         /// <summary>
         /// 创建 w2l 进程启动信息
@@ -233,7 +234,11 @@ namespace War3FrameBuild.CommandManager
             content = ModuleNameRegex.Replace(content, $"string ModuleName = \"{dllName}.dll\"");
             if (BuildMode is BuildModeEnum.Release)
             {
-                content = ModuleNameRegex.Replace(content, $"bool IsNative = true");
+                content = IsNativeRegex.Replace(content, "bool IsNative = true");
+            }
+            else
+            {
+                content = IsNativeRegex.Replace(content, "bool IsNative = false");
             }
 
             File.WriteAllText(callbackInBuild, content);
