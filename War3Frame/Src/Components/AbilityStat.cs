@@ -26,7 +26,7 @@ public struct AbilityStatOwner : ILinkComponent
     public Entity GetIndexedValue() => ability;
 }
 
-public struct HasAbilityStat : IRelation<Entity>
+public struct HasAbilityStat : ILinkRelation
 {
     public Entity statEntity;
     public int typeId;

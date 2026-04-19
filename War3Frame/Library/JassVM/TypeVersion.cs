@@ -95,12 +95,26 @@ public partial class War3
     private static nint SelectVersion(Select data)
     {
         var moduleHandle = GetModuleHandleW("game.dll");
-        var offset = GetVersion() switch
+        if (moduleHandle == 0)
+        {
+            // 宿主模块不可用时直接安全失败，避免伪造 game.dll + 0 地址。
+            return 0;
+        }
+
+        var version = GetVersion();
+        var offset = version switch
         {
             TypeVersion.V24E => data.V24E,
             TypeVersion.V27A => data.V27A,
             _ => 0
         };
+
+        if (offset == 0)
+        {
+            // 当前版本没有有效偏移时直接安全失败，后续调用方会按 0 地址处理。
+            return 0;
+        }
+
         return moduleHandle + offset;
     }
 

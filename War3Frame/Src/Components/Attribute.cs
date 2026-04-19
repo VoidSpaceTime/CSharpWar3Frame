@@ -63,7 +63,7 @@ public struct AttrOwner : ILinkComponent
 /// Unit 拥有属性的关系 (1:N)
 /// 使用 IRelation 允许一个 Unit 拥有多个属性
 /// </summary>
-public struct HasAttr : IRelation<Entity>
+public struct HasAttr : ILinkRelation
 {
     public Entity GetRelationKey() => attrEntity;
 
