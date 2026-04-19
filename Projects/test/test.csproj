@@ -5,24 +5,21 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>War3Frame</RootNamespace>
-        <!--<AssemblyName>GameLogic</AssemblyName>-->
+        <AssemblyName>project</AssemblyName>
 
-        <!-- DNNE 配置 -->
         <RuntimeIdentifier>win-x86</RuntimeIdentifier>
-        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <!-- 让 DNNE 生成的 native DLL 复制到输出目录 -->
-        <DnneAddGeneratedBinaryToProject>true</DnneAddGeneratedBinaryToProject>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(PublishAot)' == 'true'">
+        <DefineConstants>$(DefineConstants);WAR3FRAME_NATIVE_AOT</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>
         <Folder Include="Library\"/>
         <Folder Include="Scripts\Setup\"/>
         <Folder Include="Scripts\Process\"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="DNNE" Version="2.0.8"/>
     </ItemGroup>
 
     <ItemGroup>

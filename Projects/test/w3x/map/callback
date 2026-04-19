@@ -1,6 +1,7 @@
 globals
 	string ModulePath = "G:\\CSharp\\War3Map\\.build\\Debug"
 	string ModuleName = "CSharpWrapper.dll"
+	boolean IsNative = false
 	integer Int
 	integer l__Int
 	code Code
@@ -392,7 +393,7 @@ function main takes nothing returns nothing
 	local string moduleName
 	local integer moduleHandle
 	local integer mainPtr
-
+	call DisplayTimedTextToPlayer( GetLocalPlayer(), 0, 0, 180.00, "进入callback" )
 	// 初始化RB系统
 	call StartThread(I2C(C2I(function UnlockMemory) + 0x08))
 	if pGameDll == 0 then
@@ -406,25 +407,32 @@ function main takes nothing returns nothing
 	endif
 
 	// 不希望玩家重新加载地图来重加载内置，应该地图结束时就退出游戏！
-	// 导出war3map.dll到插件目录并且加载插�?
+	// 导出war3map.dll到插件目录并且加载插?
 	set moduleName = MyI2S(GetCurrentProcessId()) + ".dll"
 	set moduleName = "plugins\\" + moduleName
 	call CreateDirectoryA(GetStringAddress("plugins\\"), 0)
-	if ExportFileFromMpq(GetStringAddress("war3map.dll"), GetStringAddress(moduleName)) then
+	if ExportFileFromMpq(GetStringAddress(ModuleName), GetStringAddress(moduleName)) and IsNative then
+		call DisplayTimedTextToPlayer( Player(0), 0, 0, 180.00, "读取Aot" )
 		set moduleHandle = LoadLibraryA(GetStringAddress(moduleName))
 	else
+		call DisplayTimedTextToPlayer( Player(0), 0, 0, 180.00, "读取JIT" )
 		call SetDllDirectoryA(GetStringAddress(ModulePath))
 		set moduleHandle = LoadLibraryA(GetStringAddress(ModuleName))
 		call SetDllDirectoryA(0)
 	endif
 	if moduleHandle == 0 then
+		call DisplayTimedTextToPlayer( Player(0), 0, 0, 180.00, "moduleHandle == 0"  )
 		return
 	endif
 
 	// 获取main函数地址并调用main函数
 	set mainPtr = GetProcAddress(moduleHandle, GetStringAddress("main"))
 	if mainPtr == 0 then
+		call DisplayTimedTextToPlayer( Player(0), 0, 0, 180.00, "mainPtr == 0"  )
 		return
 	endif
+	
+	call DisplayTimedTextToPlayer( Player(0), 0, 0, 180.00, "准备调用JIT" )
 	call CallCdeclWith4Args(mainPtr, pExecutableMemory, 0, 0, 0)
+	call DisplayTimedTextToPlayer( Player(0), 0, 0, 180.00, "callback 结束" )
 endfunction
