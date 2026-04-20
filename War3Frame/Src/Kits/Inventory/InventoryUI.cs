@@ -95,10 +95,10 @@ public class InventoryPanel : UIPanel
                 {
                     if (itemEntity.TryGetComponent<ItemBase>(out var baseInfo))
                     {
-                        _slots[slot.index].SetContent(baseInfo.icon);
+                        /*_slots[slot.index].SetContent(baseInfo.icon);
 
                         // 存储 tooltip 数据供 Hover 使用
-                        _slotTooltips[slot.index] = (baseInfo.name, baseInfo.description);
+                        _slotTooltips[slot.index] = (baseInfo.name, baseInfo.description);*/
                     }
                     else
                     {
