@@ -8,7 +8,7 @@ ffi.cdef[[
     BOOL ChangeWindowMessageFilterEx( HWND hwnd, UINT message, DWORD action, int pChangeFilterStruct);    
 ]]
 
-loaddll 'user32'
+loaddll 'user32.dll'
 local user32 = ffi.load('user32')
 
 local wmsg = {}

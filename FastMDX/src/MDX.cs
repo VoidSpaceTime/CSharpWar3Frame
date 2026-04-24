@@ -3,143 +3,120 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace FastMDX;
+namespace FastMDX {
+    using static MainBlocks;
 
-using static MainBlocks;
+    public partial class MDX {
+        const uint VERSION = 800u;
 
-public partial class MDX
-{
-    private const uint VERSION = 800u;
+        public MDX() { }
 
-    public MDX()
-    {
-    }
-
-    public MDX(string filePath)
-    {
-        using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1, false);
-        LoadFrom(stream, stream.Length);
-    }
-
-    public MDX(Stream stream)
-    {
-        LoadFrom(stream, stream.Length - stream.Position);
-    }
-
-    public MDX(Stream stream, uint fileSize)
-    {
-        LoadFrom(stream, fileSize);
-    }
-
-    private unsafe void LoadFrom(Stream stream, long fileSize)
-    {
-        if (fileSize > int.MaxValue)
-            throw new Exception("File is too large!");
-
-        var mdxHeader = new MDXHeader();
-        if (stream.Read(new Span<byte>(&mdxHeader, sizeof(MDXHeader))) < sizeof(MDXHeader) || !mdxHeader.Check())
-            throw new Exception("Not a MDX file!");
-
-        if (mdxHeader.version != VERSION)
-            throw new Exception("Not supported file version!");
-
-        fileSize -= sizeof(MDXHeader);
-        if (fileSize == 0)
-            return;
-
-        using var ds = new DataStream((uint)fileSize);
-        stream.Read(new Span<byte>(ds.Pointer, (int)fileSize));
-
-        var unknownBlocks = new List<BinaryBlock>();
-
-        while (ds.Offset < ds.Size)
-        {
-            var blockHeader = ds.ReadStruct<BlockHeader>();
-            ds.CheckReadBounds(blockHeader.size);
-
-            _knownParsers.TryGetValue(blockHeader.tag, out var parser);
-
-            if (parser is null)
-                unknownBlocks.Add(new BinaryBlock
-                    { Tag = blockHeader.tag, Data = ds.ReadStructArray<byte>(blockHeader.size) });
-            else
-                parser.ReadFrom(this, ds, blockHeader.size);
+        public MDX(string filePath) {
+            using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1, false);
+            LoadFrom(stream, stream.Length);
         }
 
-        if (unknownBlocks.Count > 0)
-            UnknownBlocks = unknownBlocks.ToArray();
-    }
+        public MDX(Stream stream) => LoadFrom(stream, stream.Length - stream.Position);
 
-    public void SaveTo(string filePath)
-    {
-        using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Write, 1, false);
-        SaveTo(stream);
-        stream.Flush(true);
-    }
+        public MDX(Stream stream, uint fileSize) => LoadFrom(stream, fileSize);
 
-    public unsafe void SaveTo(Stream stream)
-    {
-        using var ds = new DataStream();
+        unsafe void LoadFrom(Stream stream, long fileSize) {
+            if(fileSize > int.MaxValue)
+                throw new Exception("File is too large!");
 
-        var mdxHeader = new MDXHeader();
-        mdxHeader.Default();
-        mdxHeader.version = VERSION;
+            var mdxHeader = new MDXHeader();
+            if((stream.Read(new Span<byte>(&mdxHeader, sizeof(MDXHeader))) < sizeof(MDXHeader)) || !mdxHeader.Check())
+                throw new Exception("Not a MDX file!");
 
-        ds.WriteStruct(ref mdxHeader);
+            if(mdxHeader.version != VERSION)
+                throw new Exception("Not supported file version!");
 
-        foreach (var parser in _knownParsers)
-            if (parser.Value.HasData(this))
-            {
-                ds.WriteStruct(parser.Key);
+            fileSize -= sizeof(MDXHeader);
+            if(fileSize == 0)
+                return;
 
-                var offset = ds.Offset;
-                ds.Skip(sizeof(uint));
+            using var ds = new DataStream((uint)fileSize);
+            stream.Read(new Span<byte>(ds.Pointer, (int)fileSize));
 
-                parser.Value.WriteTo(this, ds);
+            var unknownBlocks = new List<BinaryBlock>();
 
-                ds.SetValueAt(offset, ds.Offset - (offset + sizeof(uint)));
+            while(ds.Offset < ds.Size) {
+                var blockHeader = ds.ReadStruct<BlockHeader>();
+                ds.CheckReadBounds(blockHeader.size);
+
+                _knownParsers.TryGetValue(blockHeader.tag, out var parser);
+
+                if(parser is null)
+                    unknownBlocks.Add(new BinaryBlock { Tag = blockHeader.tag, Data = ds.ReadStructArray<byte>(blockHeader.size) });
+                else
+                    parser.ReadFrom(this, ds, blockHeader.size);
             }
 
-        if (UnknownBlocks?.Length > 0)
-            foreach (var block in UnknownBlocks)
-                if (block?.Data?.Length > 0)
-                {
-                    ds.WriteStruct(block.Tag);
-                    ds.WriteStructArray(block.Data);
+            if(unknownBlocks.Count > 0)
+                UnknownBlocks = unknownBlocks.ToArray();
+        }
+
+        public void SaveTo(string filePath) {
+            using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Write, 1, false);
+            SaveTo(stream);
+            stream.Flush(true);
+        }
+
+        public unsafe void SaveTo(Stream stream) {
+            using var ds = new DataStream();
+
+            var mdxHeader = new MDXHeader();
+            mdxHeader.Default();
+            mdxHeader.version = VERSION;
+
+            ds.WriteStruct(ref mdxHeader);
+
+            foreach(var parser in _knownParsers) {
+                if(parser.Value.HasData(this)) {
+                    ds.WriteStruct(parser.Key);
+
+                    var offset = ds.Offset;
+                    ds.Skip(sizeof(uint));
+
+                    parser.Value.WriteTo(this, ds);
+
+                    ds.SetValueAt(offset, ds.Offset - (offset + sizeof(uint)));
                 }
+            }
 
-        stream.Write(new ReadOnlySpan<byte>(ds.Pointer, (int)ds.Offset));
-    }
+            if(UnknownBlocks?.Length > 0)
+                foreach(var block in UnknownBlocks)
+                    if(block?.Data?.Length > 0) {
+                        ds.WriteStruct(block.Tag);
+                        ds.WriteStructArray(block.Data);
+                    }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    private struct MDXHeader
-    {
-        internal MainBlocks header, versionHeader;
-        internal uint versionSize, version;
-
-        internal bool Check()
-        {
-            return header == MDLX && versionHeader == VERS && versionSize == sizeof(uint);
+            stream.Write(new ReadOnlySpan<byte>(ds.Pointer, (int)ds.Offset));
         }
 
-        internal void Default()
-        {
-            header = MDLX;
-            versionHeader = VERS;
-            versionSize = sizeof(uint);
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        struct MDXHeader {
+            internal MainBlocks header, versionHeader;
+            internal uint versionSize, version;
+
+            internal bool Check() => (header == MDLX) && (versionHeader == VERS) && (versionSize == sizeof(uint));
+
+            internal void Default() {
+                header = MDLX;
+                versionHeader = VERS;
+                versionSize = sizeof(uint);
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        struct BlockHeader {
+            internal MainBlocks tag;
+            internal uint size;
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    private struct BlockHeader
-    {
-        internal MainBlocks tag;
-        internal uint size;
+    public class BinaryBlock {
+        public MainBlocks Tag;
+        public byte[] Data;
     }
-}
-
-public class BinaryBlock
-{
-    public byte[] Data;
-    public MainBlocks Tag;
 }
