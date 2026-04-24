@@ -1,17 +1,20 @@
-﻿namespace FastMDX {
-    using static InnerBlocks;
+﻿namespace FastMDX;
 
-    public struct TextureCoordinateSet : IDataRW {
-        public Vec2[] TextureCoordinates;
+using static InnerBlocks;
 
-        void IDataRW.ReadFrom(DataStream ds) {
-            ds.CheckTag(UVBS);
-            TextureCoordinates = ds.ReadStructArray<Vec2>();
-        }
+public struct TextureCoordinateSet : IDataRW
+{
+    public Vec2[] TextureCoordinates;
 
-        void IDataRW.WriteTo(DataStream ds) {
-            ds.WriteStruct(UVBS);
-            ds.WriteStructArray(TextureCoordinates);
-        }
+    void IDataRW.ReadFrom(DataStream ds)
+    {
+        ds.CheckTag(UVBS);
+        TextureCoordinates = ds.ReadStructArray<Vec2>();
+    }
+
+    void IDataRW.WriteTo(DataStream ds)
+    {
+        ds.WriteStruct(UVBS);
+        ds.WriteStructArray(TextureCoordinates);
     }
 }

@@ -1,22 +1,26 @@
 <Solution>
-  <Configurations>
-    <Platform Name="Any CPU" />
-    <Platform Name="x64" />
-    <Platform Name="x86" />
-  </Configurations>
-  <Folder Name="/Core/">
-    <Project Path="War3Frame/War3Frame.csproj" Id="a394ca00-b153-492d-886c-50b16367da9f" />
-  </Folder>
-  <Folder Name="/Projects/">
-    <Project Path="Projects/demo/demo.csproj" Id="4194040a-9a22-43f3-ade0-9dcee3225eaf" />
-    <Project Path="Projects/test/test.csproj" />
-  </Folder>
-  <Folder Name="/War3Builder/">
-    <Project Path="CSharpWar3Frame/CSharpWar3FrameConsole.csproj" />
-    <Project Path="FrameBuild/War3FrameBuild.csproj" Id="f6a68a3d-602b-4229-b268-4ca0821bb6d3" />
-  </Folder>
-  <Folder Name="/War3Builder/Common/">
-    <Project Path="FastMDX/FastMDX.csproj" />
-    <Project Path="ModelFormat/ModelFormat.csproj" Id="433f4c35-c1a6-4fc7-afe0-e003ce3990e6" />
-  </Folder>
+    <Configurations>
+        <Platform Name="Any CPU" />
+        <Platform Name="x64" />
+        <Platform Name="x86" />
+    </Configurations>
+    <Folder Name="/Core/">
+        <Project Path="War3Frame.Generator/War3Frame.Generator.csproj" />
+        <Project Path="War3Frame/War3Frame.csproj" Id="a394ca00-b153-492d-886c-50b16367da9f" />
+    </Folder>
+    <Folder Name="/Projects/">
+        <Project Path="Projects/demo/demo.csproj" Id="4194040a-9a22-43f3-ade0-9dcee3225eaf" />
+        <Project Path="Projects/test/test.csproj" />
+    </Folder>
+    <Folder Name="/War3Builder/">
+        <Project Path="BridgeToJIT/BridgeToJIT.vcxproj" Id="1d3ed8f5-8cf1-4a0d-81d9-220172a0dc09">
+            <Platform Solution="Debug|Any CPU" Project="Win32" />
+        </Project>
+        <Project Path="CSharpWar3Frame/CSharpWar3FrameConsole.csproj" />
+        <Project Path="FrameBuild/War3FrameBuild.csproj" Id="f6a68a3d-602b-4229-b268-4ca0821bb6d3" />
+    </Folder>
+    <Folder Name="/War3Builder/Common/">
+        <Project Path="FastMDX/FastMDX.csproj" />
+        <Project Path="ModelFormat/ModelFormat.csproj" Id="433f4c35-c1a6-4fc7-afe0-e003ce3990e6" />
+    </Folder>
 </Solution>

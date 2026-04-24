@@ -1,34 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <RootNamespace>War3Frame</RootNamespace>
-    <!--<AssemblyName>GameLogic</AssemblyName>-->
-    
-    <!-- DNNE 配置 -->
-    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
-    <EnableDynamicLoading>true</EnableDynamicLoading>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <!-- 让 DNNE 生成的 native DLL 复制到输出目录 -->
-    <DnneAddGeneratedBinaryToProject>true</DnneAddGeneratedBinaryToProject>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>War3Frame</RootNamespace>
+        <AssemblyName>project</AssemblyName>
 
-  <ItemGroup>
-    <Folder Include="Library\" />
-    <Folder Include="Scripts\Setup\" />
-    <Folder Include="Scripts\Template\" />
-    <Folder Include="Scripts\Process\" />
-  </ItemGroup>
+        <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="DNNE" Version="2.0.8" />
-  </ItemGroup>
+    <PropertyGroup Condition="'$(PublishAot)' == 'true'">
+        <DefineConstants>$(DefineConstants);WAR3FRAME_NATIVE_AOT</DefineConstants>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\War3Frame\War3Frame.csproj" />
-    <TrimmerRootAssembly Include="Friflo.Engine.ECS" />
-  </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Library\"/>
+        <Folder Include="Scripts\Setup\"/>
+        <Folder Include="Scripts\Process\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\War3Frame\War3Frame.csproj"/>
+        <TrimmerRootAssembly Include="Friflo.Engine.ECS"/>
+    </ItemGroup>
 
 </Project>
