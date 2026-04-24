@@ -1,23 +1,27 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace FastMDX {
-    public struct Bone : IDataRW {
-        public Node Node;
-        public LocalProperties Properties;
+namespace FastMDX;
 
-        void IDataRW.ReadFrom(DataStream ds) {
-            ds.ReadData(ref Node);
-            ds.ReadStruct(ref Properties);
-        }
+public struct Bone : IDataRW
+{
+    public Node Node;
+    public LocalProperties Properties;
 
-        void IDataRW.WriteTo(DataStream ds) {
-            ds.WriteData(ref Node);
-            ds.WriteStruct(ref Properties);
-        }
+    void IDataRW.ReadFrom(DataStream ds)
+    {
+        ds.ReadData(ref Node);
+        ds.ReadStruct(ref Properties);
+    }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct LocalProperties {
-            public int GeosetId, GeosetAnimationId;
-        }
+    void IDataRW.WriteTo(DataStream ds)
+    {
+        ds.WriteData(ref Node);
+        ds.WriteStruct(ref Properties);
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct LocalProperties
+    {
+        public int GeosetId, GeosetAnimationId;
     }
 }

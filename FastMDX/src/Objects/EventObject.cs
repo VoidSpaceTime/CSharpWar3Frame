@@ -1,25 +1,28 @@
-﻿namespace FastMDX {
-    using static InnerBlocks;
+﻿namespace FastMDX;
 
-    public struct EventObject : IDataRW {
-        public Node Node;
-        public int GlobalSequenceId;
-        public uint[] Tracks;
+using static InnerBlocks;
 
-        void IDataRW.ReadFrom(DataStream ds) {
-            ds.ReadData(ref Node);
-            ds.CheckTag(KEVT);
-            var tracksCount = ds.ReadStruct<uint>();
-            ds.ReadStruct(ref GlobalSequenceId);
-            Tracks = ds.ReadStructArray<uint>(tracksCount);
-        }
+public struct EventObject : IDataRW
+{
+    public Node Node;
+    public int GlobalSequenceId;
+    public uint[] Tracks;
 
-        void IDataRW.WriteTo(DataStream ds) {
-            ds.WriteData(ref Node);
-            ds.WriteStruct(KEVT);
-            ds.WriteStruct((uint)Tracks.Length);
-            ds.WriteStruct(GlobalSequenceId);
-            ds.WriteStructArray(Tracks, false);
-        }
+    void IDataRW.ReadFrom(DataStream ds)
+    {
+        ds.ReadData(ref Node);
+        ds.CheckTag(KEVT);
+        var tracksCount = ds.ReadStruct<uint>();
+        ds.ReadStruct(ref GlobalSequenceId);
+        Tracks = ds.ReadStructArray<uint>(tracksCount);
+    }
+
+    void IDataRW.WriteTo(DataStream ds)
+    {
+        ds.WriteData(ref Node);
+        ds.WriteStruct(KEVT);
+        ds.WriteStruct((uint)Tracks.Length);
+        ds.WriteStruct(GlobalSequenceId);
+        ds.WriteStructArray(Tracks, false);
     }
 }

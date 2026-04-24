@@ -1,30 +1,36 @@
 ﻿using System;
 using System.Text;
 
-namespace FastMDX {
-    static class BinaryString {
-        internal static unsafe string Decode(byte* bytes, uint len) {
-            for(var i = 0; i < len; i++)
-                if(bytes[i] == 0)
-                    return Encoding.ASCII.GetString(bytes, i);
+namespace FastMDX;
 
-            return Encoding.ASCII.GetString(bytes, (int)len);
-        }
+internal static class BinaryString
+{
+    internal static unsafe string Decode(byte* bytes, uint len)
+    {
+        for (var i = 0; i < len; i++)
+            if (bytes[i] == 0)
+                return Encoding.ASCII.GetString(bytes, i);
 
-        internal static unsafe void Encode(string str, byte* bytes, uint len) {
-            var lp = (long*)bytes;
-            var lc = len / sizeof(long);
+        return Encoding.ASCII.GetString(bytes, (int)len);
+    }
 
-            for(uint i = 0; i < lc; i++)
-                lp[i] = 0L;
+    internal static unsafe void Encode(string str, byte* bytes, uint len)
+    {
+        var lp = (long*)bytes;
+        var lc = len / sizeof(long);
 
-            for(var i = lc * sizeof(long); i < len; i++)
-                bytes[i] = 0;
+        for (uint i = 0; i < lc; i++)
+            lp[i] = 0L;
 
-            if(str?.Length > 0) {
-                var count = Math.Min(str.Length, (int)len);
-                fixed(char* c = str)
-                    Encoding.ASCII.GetBytes(c, count, bytes, count);
+        for (var i = lc * sizeof(long); i < len; i++)
+            bytes[i] = 0;
+
+        if (str?.Length > 0)
+        {
+            var count = Math.Min(str.Length, (int)len);
+            fixed (char* c = str)
+            {
+                Encoding.ASCII.GetBytes(c, count, bytes, count);
             }
         }
     }
