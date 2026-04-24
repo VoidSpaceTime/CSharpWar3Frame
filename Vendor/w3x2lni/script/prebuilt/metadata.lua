@@ -88,10 +88,6 @@ local cant_empty = {
     gar1 = true,
 }
 
-local cant_cut_in_reforge = {
-    ghk1 = true,
-}
-
 local typedefine
 
 local function sortpairs(t)
@@ -212,9 +208,6 @@ local function parse_id(w2l, metadata, id, meta, type, has_level)
     end
     if cant_empty[id] then
         data.cantempty = true
-    end
-    if war3.reforge and cant_cut_in_reforge[id] then
-        data.cantcut = true
     end
     local lkey = key:lower()
     if objs then

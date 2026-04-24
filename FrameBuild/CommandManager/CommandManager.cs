@@ -11,10 +11,7 @@ namespace War3FrameBuild.CommandManager
         /// 临时目录 Temp->
         /// </summary>
         public string Temp { get; set; }
-        /// <summary>
-        /// 临时项目目录
-        /// </summary>
-        public string TempProjectBuildPath { get; set; }
+        public string TempBuildPath { get; set; }
         /// <summary>
         /// Projects目录 Pwd->Projects
         /// </summary>
@@ -41,7 +38,7 @@ namespace War3FrameBuild.CommandManager
             Template = Path.Combine(Config.Pwd, "FrameBuild", "Template");
             Temp = Path.Combine(Config.Pwd, ".temp");
             PwdProject = Path.Combine(Projects, ProjectName);
-            TempProjectBuildPath = Path.Combine(Temp, ProjectName);
+            TempBuildPath = Path.Combine(Temp, ProjectName);
             BuildMode = buildMode;
             BuildDstPath = Path.Combine(Temp, BuildMode.ToString(), ProjectName);
             IsSkip = false;

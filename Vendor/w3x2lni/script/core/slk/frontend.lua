@@ -102,7 +102,7 @@ local function update_version(w2l, w3i)
     w2l:set_setting(w2l.setting)
 end
 
-local function mark_keep_obj_before_merge(type, objs)
+local function mark_keep_oBJ_before_merge(type, objs)
     if type == 'ability' then
         for id, obj in pairs(objs) do
             for k in pairs(obj) do
@@ -117,7 +117,7 @@ local function mark_keep_obj_before_merge(type, objs)
     end
 end
 
-local function mark_keep_obj_after_merge(type, objs)
+local function mark_keep_oBJ_after_merge(type, objs)
     local used = {}
     for id, obj in pairs(objs) do
         local lid = id:lower()
@@ -152,11 +152,11 @@ local function update_then_merge(w2l, slks, objs, lnis, slk)
             end
         end
         if w2l.setting.mode == 'slk' then
-            mark_keep_obj_before_merge(type, obj)
+            mark_keep_oBJ_before_merge(type, obj)
         end
         slk[type] = w2l:frontend_merge(type, data, obj)
         if w2l.setting.mode == 'slk' then
-            mark_keep_obj_after_merge(type, slk[type])
+            mark_keep_oBJ_after_merge(type, slk[type])
         end
         if report then
             for i = 1, 10 do

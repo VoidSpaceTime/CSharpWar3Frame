@@ -1,11 +1,20 @@
-﻿namespace War3Frame;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-public partial class AssetsInit
+namespace War3Frame
 {
-    public static void ImageBuffInit(Assets assets)
+    public partial class AssetsInit
     {
-        assets.AddImage
-            ("icon/ability/Invulnerable");
-        assets.AddImage("icon/ability/SigntDay", "别名");
+        public static void ImageBuffInit(Assets assets)
+        {
+
+            assets.AddImage
+                ("icon/ability/Invulnerable");
+            assets.AddImage("icon/ability/SigntDay", "别名");
+
+        }
     }
 }

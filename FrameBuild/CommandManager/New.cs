@@ -26,15 +26,15 @@ namespace War3FrameBuild.CommandManager
                 Log.Error("不允许存在空名称项目"); return false;
             }
             var projectPath =PwdProject;
-            var demoDir = Path.Combine(Projects, "demo");
+            var damoDir = Path.Combine(Projects, "demo");
             if (Directory.Exists(projectPath))
             {
                 Log.Error($"项目已存在,请使用run {ProjectName} 命令直接测试"); return false;
             }
-            else if (Directory.Exists(demoDir))
+            else if (Directory.Exists(damoDir))
             {
                 Directory.CreateDirectory(projectPath);
-                DirectoryExtensions.CopyDir(demoDir, projectPath);
+                DirectoryExtensions.CopyDir(damoDir, projectPath);
                 File.Move(Path.Combine(projectPath, "demo.csproj"), Path.Combine(projectPath, $"{ProjectName}.csproj"));
             }
             else

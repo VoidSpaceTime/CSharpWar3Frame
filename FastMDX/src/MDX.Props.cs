@@ -1,61 +1,56 @@
-﻿using System.Collections.Generic;
+﻿namespace FastMDX {
+    using static MainBlocks;
+    using Parsers = System.Collections.Generic.Dictionary<MainBlocks, IBlockParser>;
 
-namespace FastMDX;
+    public partial class MDX {
+        public ModelInfo Info;
+        public Sequence[] Sequences;
+        public GlobalSequence[] GlobalSequences;
+        public Material[] Materials;
+        public Texture[] Textures;
+        public TextureAnimation[] TextureAnimations;
+        public Geoset[] Geosets;
+        public GeosetAnimation[] GeosetAnimations;
+        public Bone[] Bones;
+        public Light[] Lights;
+        public Helper[] Helpers;
+        public Attachment[] Attachments;
+        public Pivot[] Pivots;
+        public ParticleEmitter[] ParticleEmitters;
+        public ParticleEmitter2[] ParticleEmitters2;
+        public RibbonEmitter[] RibbonEmitters;
+        public EventObject[] EventObjects;
+        public Camera[] Cameras;
+        public CollisionShape[] CollisionShapes;
 
-using static MainBlocks;
-using Parsers = Dictionary<MainBlocks, IBlockParser>;
+        static readonly Parsers _knownParsers = new Parsers {
+            [MODL] = new StructParser<ModelInfo>(mdx => ref mdx.Info),
+            [SEQS] = new StructArrayParser<Sequence>(mdx => ref mdx.Sequences),
+            [GLBS] = new StructArrayParser<GlobalSequence>(mdx => ref mdx.GlobalSequences),
+            [MTLS] = new DataArrayParser<Material>(mdx => ref mdx.Materials),
+            [TEXS] = new StructArrayParser<Texture>(mdx => ref mdx.Textures),
+            [TXAN] = new DataArrayParser<TextureAnimation>(mdx => ref mdx.TextureAnimations),
+            [GEOS] = new DataArrayParser<Geoset>(mdx => ref mdx.Geosets),
+            [GEOA] = new DataArrayParser<GeosetAnimation>(mdx => ref mdx.GeosetAnimations),
+            [BONE] = new DataArrayParser<Bone>(mdx => ref mdx.Bones),
+            [LITE] = new DataArrayParser<Light>(mdx => ref mdx.Lights),
+            [HELP] = new DataArrayParser<Helper>(mdx => ref mdx.Helpers),
+            [ATCH] = new DataArrayParser<Attachment>(mdx => ref mdx.Attachments),
+            [PIVT] = new StructArrayParser<Pivot>(mdx => ref mdx.Pivots),
+            [PREM] = new DataArrayParser<ParticleEmitter>(mdx => ref mdx.ParticleEmitters),
+            [PRE2] = new DataArrayParser<ParticleEmitter2>(mdx => ref mdx.ParticleEmitters2),
+            [RIBB] = new DataArrayParser<RibbonEmitter>(mdx => ref mdx.RibbonEmitters),
+            [EVTS] = new DataArrayParser<EventObject>(mdx => ref mdx.EventObjects),
+            [CAMS] = new DataArrayParser<Camera>(mdx => ref mdx.Cameras),
+            [CLID] = new DataArrayParser<CollisionShape>(mdx => ref mdx.CollisionShapes),
+        };
 
-public partial class MDX
-{
-    private static readonly Parsers _knownParsers = new()
-    {
-        [MODL] = new StructParser<ModelInfo>(mdx => ref mdx.Info),
-        [SEQS] = new StructArrayParser<Sequence>(mdx => ref mdx.Sequences),
-        [GLBS] = new StructArrayParser<GlobalSequence>(mdx => ref mdx.GlobalSequences),
-        [MTLS] = new DataArrayParser<Material>(mdx => ref mdx.Materials),
-        [TEXS] = new StructArrayParser<Texture>(mdx => ref mdx.Textures),
-        [TXAN] = new DataArrayParser<TextureAnimation>(mdx => ref mdx.TextureAnimations),
-        [GEOS] = new DataArrayParser<Geoset>(mdx => ref mdx.Geosets),
-        [GEOA] = new DataArrayParser<GeosetAnimation>(mdx => ref mdx.GeosetAnimations),
-        [BONE] = new DataArrayParser<Bone>(mdx => ref mdx.Bones),
-        [LITE] = new DataArrayParser<Light>(mdx => ref mdx.Lights),
-        [HELP] = new DataArrayParser<Helper>(mdx => ref mdx.Helpers),
-        [ATCH] = new DataArrayParser<Attachment>(mdx => ref mdx.Attachments),
-        [PIVT] = new StructArrayParser<Pivot>(mdx => ref mdx.Pivots),
-        [PREM] = new DataArrayParser<ParticleEmitter>(mdx => ref mdx.ParticleEmitters),
-        [PRE2] = new DataArrayParser<ParticleEmitter2>(mdx => ref mdx.ParticleEmitters2),
-        [RIBB] = new DataArrayParser<RibbonEmitter>(mdx => ref mdx.RibbonEmitters),
-        [EVTS] = new DataArrayParser<EventObject>(mdx => ref mdx.EventObjects),
-        [CAMS] = new DataArrayParser<Camera>(mdx => ref mdx.Cameras),
-        [CLID] = new DataArrayParser<CollisionShape>(mdx => ref mdx.CollisionShapes)
-    };
+        public BinaryBlock[] UnknownBlocks;
+    }
 
-    public Attachment[] Attachments;
-    public Bone[] Bones;
-    public Camera[] Cameras;
-    public CollisionShape[] CollisionShapes;
-    public EventObject[] EventObjects;
-    public GeosetAnimation[] GeosetAnimations;
-    public Geoset[] Geosets;
-    public GlobalSequence[] GlobalSequences;
-    public Helper[] Helpers;
-    public ModelInfo Info;
-    public Light[] Lights;
-    public Material[] Materials;
-    public ParticleEmitter[] ParticleEmitters;
-    public ParticleEmitter2[] ParticleEmitters2;
-    public Pivot[] Pivots;
-    public RibbonEmitter[] RibbonEmitters;
-    public Sequence[] Sequences;
-    public TextureAnimation[] TextureAnimations;
-    public Texture[] Textures;
-
-    public BinaryBlock[] UnknownBlocks;
-}
-
-internal interface IBlockParser
-{
-    public void ReadFrom(MDX mdx, DataStream ds, uint blockSize);
-    public void WriteTo(MDX mdx, DataStream ds);
-    public bool HasData(MDX mdx);
+    interface IBlockParser {
+        public void ReadFrom(MDX mdx, DataStream ds, uint blockSize);
+        public void WriteTo(MDX mdx, DataStream ds);
+        public bool HasData(MDX mdx);
+    }
 }
