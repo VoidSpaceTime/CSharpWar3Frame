@@ -88,10 +88,20 @@ public partial class CommandManager
         var w3xTableDir = Path.Combine(w3xDir, "table");
         var tempTableDir = Path.Combine(TempProjectBuildPath, "table");
         // 复制project的table文件夹
-        if (File.GetLastWriteTime(w3xTableDir) > File.GetLastWriteTime(tempTableDir))
+        var shouldRefreshTable =
+            Directory.Exists(tempTableDir) is false ||
+            Directory.GetLastWriteTime(w3xTableDir) > Directory.GetLastWriteTime(tempTableDir);
+
+        if (shouldRefreshTable)
         {
-            Directory.Delete(tempTableDir, true);
-            DirectoryExtensions.CopyDir(Path.Combine(w3xDir, "table"), Path.Combine(tempTableDir, "table"));
+            // 首次 bootstrap 时 temp table 目录可能还不存在，此时不应直接删除。
+            if (Directory.Exists(tempTableDir))
+            {
+                Directory.Delete(tempTableDir, true);
+            }
+
+            // table staging 目标必须保持 flat `.temp/<project>/table`，不能嵌套成 `table/table`。
+            DirectoryExtensions.CopyDir(Path.Combine(w3xDir, "table"), tempTableDir);
         }
 
         if (Directory.Exists(Path.Combine(TempProjectBuildPath, "resource")))
