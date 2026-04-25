@@ -1,30 +1,33 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <RootNamespace>War3Frame</RootNamespace>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <RootNamespace>War3Frame</RootNamespace>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <IsAotCompatible>True</IsAotCompatible>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <IsAotCompatible>True</IsAotCompatible>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <IsAotCompatible>True</IsAotCompatible>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <IsAotCompatible>True</IsAotCompatible>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Friflo.Engine.ECS" Version="3.4.2" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Friflo.Engine.ECS" Version="3.4.2"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <Compile Remove="Src\Systems\Native\EffectNativeSystem.cs" />
-    <Compile Remove="Src\Helpers\UnitHelper.cs" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\War3Frame.Generator\War3Frame.Generator.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
+    </ItemGroup>
 
-
+    <ItemGroup>
+      <Compile Remove="Src\Systems\EffectSystem.cs" />
+    </ItemGroup>
 
 </Project>

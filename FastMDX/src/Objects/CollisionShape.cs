@@ -1,43 +1,47 @@
-﻿namespace FastMDX {
-    public struct CollisionShape : IDataRW {
-        public Node Node;
-        public ShapeType Type;
-        public Vec3 Vertices1, Vertices2;
-        public float Radius;
+﻿namespace FastMDX;
 
-        void IDataRW.ReadFrom(DataStream ds) {
-            ds.ReadData(ref Node);
-            ds.ReadStruct(ref Type);
+public struct CollisionShape : IDataRW
+{
+    public Node Node;
+    public ShapeType Type;
+    public Vec3 Vertices1, Vertices2;
+    public float Radius;
 
-            if((uint)Type > 3)
-                throw new ParsingException();
+    void IDataRW.ReadFrom(DataStream ds)
+    {
+        ds.ReadData(ref Node);
+        ds.ReadStruct(ref Type);
 
-            ds.ReadStruct(ref Vertices1);
+        if ((uint)Type > 3)
+            throw new ParsingException();
 
-            if(Type != ShapeType.Sphere)
-                ds.ReadStruct(ref Vertices2);
+        ds.ReadStruct(ref Vertices1);
 
-            if((Type == ShapeType.Sphere) || (Type == ShapeType.Cylinder))
-                ds.ReadStruct(ref Radius);
-        }
+        if (Type != ShapeType.Sphere)
+            ds.ReadStruct(ref Vertices2);
 
-        void IDataRW.WriteTo(DataStream ds) {
-            ds.WriteData(ref Node);
-            ds.WriteStruct(Type);
-            ds.WriteStruct(ref Vertices1);
+        if (Type == ShapeType.Sphere || Type == ShapeType.Cylinder)
+            ds.ReadStruct(ref Radius);
+    }
 
-            if(Type != ShapeType.Sphere)
-                ds.WriteStruct(ref Vertices2);
+    void IDataRW.WriteTo(DataStream ds)
+    {
+        ds.WriteData(ref Node);
+        ds.WriteStruct(Type);
+        ds.WriteStruct(ref Vertices1);
 
-            if((Type == ShapeType.Sphere) || (Type == ShapeType.Cylinder))
-                ds.WriteStruct(Radius);
-        }
+        if (Type != ShapeType.Sphere)
+            ds.WriteStruct(ref Vertices2);
 
-        public enum ShapeType : uint {
-            Box,
-            Plane,
-            Sphere,
-            Cylinder,
-        }
+        if (Type == ShapeType.Sphere || Type == ShapeType.Cylinder)
+            ds.WriteStruct(Radius);
+    }
+
+    public enum ShapeType : uint
+    {
+        Box,
+        Plane,
+        Sphere,
+        Cylinder
     }
 }

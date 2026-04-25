@@ -5,6 +5,13 @@ namespace War3Frame
 {
     public partial class War3
     {
+        private const int JassIntegerType = 4;
+
+        private static void ReportNativeSafetyIssue(string message)
+        {
+            Console.WriteLine($"[War3Frame.Native] {message}");
+        }
+
         private static nint GetNativeTable()
         {
             unsafe
@@ -128,6 +135,12 @@ namespace War3Frame
         private static Lazy<uint> NativeCodeId = new(() =>
         {
             var vm = GetMainJassVM();
+            if (!vm)
+            {
+                ReportNativeSafetyIssue("主 JassVM 不可用，无法初始化 NativeCodeId。");
+                return 0;
+            }
+
             SetNativeFunction("IsNoDefeatCheat", Marshal.GetFunctionPointerForDelegate<Action>(NativeCodeCallback));
             return vm.GetJassHashedId("IsNoDefeatCheat");
         });
@@ -142,8 +155,32 @@ namespace War3Frame
 
         private static void NativeCodeCallback()
         {
-            (int type, uint value) = GetCurrentJassVM().GetJassRegVariableValue(0);
-            NativeCodeDelegates[(int)value]();
+            if (!TryGetCurrentJassVM(out var vm))
+            {
+                ReportNativeSafetyIssue("当前 JassVM 不可用，已跳过 native callback 分发。");
+                return;
+            }
+
+            if (!vm.TryGetJassRegVariableValue(0, out var type, out var value))
+            {
+                ReportNativeSafetyIssue("无法读取 callback 寄存器值，已跳过 native callback 分发。");
+                return;
+            }
+
+            if (type != JassIntegerType)
+            {
+                ReportNativeSafetyIssue($"callback 寄存器类型无效: {type}");
+                return;
+            }
+
+            if (value >= (uint)NativeCodeDelegates.Count)
+            {
+                ReportNativeSafetyIssue($"callback 索引越界: {value}");
+                return;
+            }
+
+            var callback = NativeCodeDelegates[(int)value];
+            callback();
         }
 
         private static unsafe nint BuildOpcodes(nint idx)
@@ -190,7 +227,14 @@ namespace War3Frame
             {
                 nint opcodes = BuildOpcodes(idx);
                 if (opcodes == 0) return 0;
-                return GetMainJassVM().CreateOpcodeId(opcodes);
+                var vm = GetMainJassVM();
+                if (!vm)
+                {
+                    ReportNativeSafetyIssue("主 JassVM 不可用，无法创建匿名 native code。");
+                    return 0;
+                }
+
+                return vm.CreateOpcodeId(opcodes);
             }
         }
 
@@ -213,17 +257,33 @@ namespace War3Frame
                 nint opcodes = BuildOpcodes(idx);
                 if (opcodes == 0) return 0;
                 var name = $"__cs_{_namedCodeIndex++}";
-                return GetMainJassVM().CreateJassFunction(name, opcodes);
+                var vm = GetMainJassVM();
+                if (!vm)
+                {
+                    ReportNativeSafetyIssue("主 JassVM 不可用，无法创建具名 native code。");
+                    return 0;
+                }
+
+                return vm.CreateJassFunction(name, opcodes);
             }
         }
+
+        private static void EnsureNativeFunctionAvailable(nint func)
+        {
+            if (func == 0)
+            {
+                throw new InvalidOperationException("原生函数地址无效，已停止调用。");
+            }
+        }
+
         public static void CallNative(nint func, params object[] args)
         {
+            EnsureNativeFunctionAvailable(func);
             unsafe
             {
                 List<nint> jstr = [];
                 int[] values = new int[args.Length];
                 float[] floats = new float[args.Length];
-                int result;
                 fixed (float* floatPtr = floats)
                 {
                     for (int i = 0; i < args.Length; i++)
@@ -232,6 +292,9 @@ namespace War3Frame
                         {
                             case int v:
                                 values[i] = v;
+                                break;
+                            case nint v:
+                                values[i] = Convert.ToInt32(v);
                                 break;
                             case float v:
                                 floats[i] = v;
@@ -265,6 +328,7 @@ namespace War3Frame
         }
         public static T CallNative<T>(nint func, params object[] args)
         {
+            EnsureNativeFunctionAvailable(func);
             unsafe
             {
                 List<nint> jstr = [];
@@ -350,6 +414,7 @@ namespace War3Frame
 
         private static unsafe int CallCdeclFunction(nint func, int[] args)
         {
+            EnsureNativeFunctionAvailable(func);
             switch (args.Length)
             {
                 case 0:

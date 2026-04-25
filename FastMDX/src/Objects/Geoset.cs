@@ -1,115 +1,121 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace FastMDX {
-    using static InnerBlocks;
+namespace FastMDX;
 
-    public struct Geoset : IDataRW {
-        public Vec3[] VertexPositions, VertexNormals;
-        public FaceTypeGroup[] FaceTypeGroups;
-        public uint[] FaceGroups, MatrixGroups, MatrixIndices;
-        public ushort[] Faces;
-        public byte[] VertexGroups;
-        public LocalProperties Properties;
-        public Extent[] SequenceExtents;
-        public TextureCoordinateSet[] TextureCoordinateSets;
+using static InnerBlocks;
 
-        void IDataRW.ReadFrom(DataStream ds) {
-            ds.Skip(sizeof(uint));
+public struct Geoset : IDataRW
+{
+    public Vec3[] VertexPositions, VertexNormals;
+    public FaceTypeGroup[] FaceTypeGroups;
+    public uint[] FaceGroups, MatrixGroups, MatrixIndices;
+    public ushort[] Faces;
+    public byte[] VertexGroups;
+    public LocalProperties Properties;
+    public Extent[] SequenceExtents;
+    public TextureCoordinateSet[] TextureCoordinateSets;
 
-            ds.CheckTag(VRTX);
-            VertexPositions = ds.ReadStructArray<Vec3>();
+    void IDataRW.ReadFrom(DataStream ds)
+    {
+        ds.Skip(sizeof(uint));
 
-            ds.CheckTag(NRMS);
-            VertexNormals = ds.ReadStructArray<Vec3>();
+        ds.CheckTag(VRTX);
+        VertexPositions = ds.ReadStructArray<Vec3>();
 
-            ds.CheckTag(PTYP);
-            FaceTypeGroups = ds.ReadStructArray<FaceTypeGroup>();
+        ds.CheckTag(NRMS);
+        VertexNormals = ds.ReadStructArray<Vec3>();
 
-            ds.CheckTag(PCNT);
-            FaceGroups = ds.ReadStructArray<uint>();
+        ds.CheckTag(PTYP);
+        FaceTypeGroups = ds.ReadStructArray<FaceTypeGroup>();
 
-            ds.CheckTag(PVTX);
-            Faces = ds.ReadStructArray<ushort>();
+        ds.CheckTag(PCNT);
+        FaceGroups = ds.ReadStructArray<uint>();
 
-            ds.CheckTag(GNDX);
-            VertexGroups = ds.ReadStructArray<byte>();
+        ds.CheckTag(PVTX);
+        Faces = ds.ReadStructArray<ushort>();
 
-            ds.CheckTag(MTGC);
-            MatrixGroups = ds.ReadStructArray<uint>();
+        ds.CheckTag(GNDX);
+        VertexGroups = ds.ReadStructArray<byte>();
 
-            ds.CheckTag(MATS);
-            MatrixIndices = ds.ReadStructArray<uint>();
+        ds.CheckTag(MTGC);
+        MatrixGroups = ds.ReadStructArray<uint>();
 
-            ds.ReadStruct(ref Properties);
+        ds.CheckTag(MATS);
+        MatrixIndices = ds.ReadStructArray<uint>();
 
-            SequenceExtents = ds.ReadStructArray<Extent>();
+        ds.ReadStruct(ref Properties);
 
-            ds.CheckTag(UVAS);
-            TextureCoordinateSets = ds.ReadDataArray<TextureCoordinateSet>();
-        }
+        SequenceExtents = ds.ReadStructArray<Extent>();
 
-        void IDataRW.WriteTo(DataStream ds) {
-            var offset = ds.Offset;
-            ds.Skip(sizeof(uint));
+        ds.CheckTag(UVAS);
+        TextureCoordinateSets = ds.ReadDataArray<TextureCoordinateSet>();
+    }
 
-            ds.WriteStruct(VRTX);
-            ds.WriteStructArray(VertexPositions);
+    void IDataRW.WriteTo(DataStream ds)
+    {
+        var offset = ds.Offset;
+        ds.Skip(sizeof(uint));
 
-            ds.WriteStruct(NRMS);
-            ds.WriteStructArray(VertexNormals);
+        ds.WriteStruct(VRTX);
+        ds.WriteStructArray(VertexPositions);
 
-            ds.WriteStruct(PTYP);
-            ds.WriteStructArray(FaceTypeGroups);
+        ds.WriteStruct(NRMS);
+        ds.WriteStructArray(VertexNormals);
 
-            ds.WriteStruct(PCNT);
-            ds.WriteStructArray(FaceGroups);
+        ds.WriteStruct(PTYP);
+        ds.WriteStructArray(FaceTypeGroups);
 
-            ds.WriteStruct(PVTX);
-            ds.WriteStructArray(Faces);
+        ds.WriteStruct(PCNT);
+        ds.WriteStructArray(FaceGroups);
 
-            ds.WriteStruct(GNDX);
-            ds.WriteStructArray(VertexGroups);
+        ds.WriteStruct(PVTX);
+        ds.WriteStructArray(Faces);
 
-            ds.WriteStruct(MTGC);
-            ds.WriteStructArray(MatrixGroups);
+        ds.WriteStruct(GNDX);
+        ds.WriteStructArray(VertexGroups);
 
-            ds.WriteStruct(MATS);
-            ds.WriteStructArray(MatrixIndices);
+        ds.WriteStruct(MTGC);
+        ds.WriteStructArray(MatrixGroups);
 
-            ds.WriteStruct(ref Properties);
+        ds.WriteStruct(MATS);
+        ds.WriteStructArray(MatrixIndices);
 
-            ds.WriteStructArray(SequenceExtents);
+        ds.WriteStruct(ref Properties);
 
-            ds.WriteStruct(UVAS);
-            ds.WriteDataArray(TextureCoordinateSets);
+        ds.WriteStructArray(SequenceExtents);
 
-            ds.SetValueAt(offset, ds.Offset - offset);
-        }
+        ds.WriteStruct(UVAS);
+        ds.WriteDataArray(TextureCoordinateSets);
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct LocalProperties {
-            public int MaterialId;
-            public uint SelectionGroup;
-            public SelectionType SelectionType;
-            public Extent Extent;
-        }
+        ds.SetValueAt(offset, ds.Offset - offset);
+    }
 
-        public enum FaceTypeGroup : uint {
-            Points,
-            Lines,
-            LineLoop,
-            LineStrip,
-            Triangles,
-            TriangleStrip,
-            TriangleFan,
-            Quads,
-            QuadStrip,
-            Polygons,
-        }
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct LocalProperties
+    {
+        public int MaterialId;
+        public uint SelectionGroup;
+        public SelectionType SelectionType;
+        public Extent Extent;
+    }
 
-        public enum SelectionType : uint {
-            None,
-            Unselectable = 4,
-        }
+    public enum FaceTypeGroup : uint
+    {
+        Points,
+        Lines,
+        LineLoop,
+        LineStrip,
+        Triangles,
+        TriangleStrip,
+        TriangleFan,
+        Quads,
+        QuadStrip,
+        Polygons
+    }
+
+    public enum SelectionType : uint
+    {
+        None,
+        Unselectable = 4
     }
 }

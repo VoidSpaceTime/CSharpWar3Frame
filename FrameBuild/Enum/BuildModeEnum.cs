@@ -1,8 +1,8 @@
-﻿namespace War3FrameBuild.CommandManager
-{
-    public enum BuildModeEnum
-    {
-        Test, Build, Release,
-    };
+﻿namespace War3FrameBuild.CommandManager;
 
+public enum BuildModeEnum
+{
+    Test,
+    Build,
+    Release
 }

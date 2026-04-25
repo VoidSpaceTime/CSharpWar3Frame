@@ -1,48 +1,54 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace FastMDX {
-    public struct Transform<T> : IDataRW, IOptionalBlock where T : unmanaged {
-        public LocalProperties Properties;
-        public Track<T>[] Tracks;
-        public TrackInter<T>[] TracksInter;
+namespace FastMDX;
 
-        void IDataRW.ReadFrom(DataStream ds) {
-            var tracksCount = ds.ReadStruct<uint>();
-            ds.ReadStruct(ref Properties);
+public struct Transform<T> : IDataRW, IOptionalBlock where T : unmanaged
+{
+    public LocalProperties Properties;
+    public Track<T>[] Tracks;
+    public TrackInter<T>[] TracksInter;
 
-            if((uint)Properties.InterpolationType > 1)
-                TracksInter = ds.ReadStructArray<TrackInter<T>>(tracksCount);
-            else
-                Tracks = ds.ReadStructArray<Track<T>>(tracksCount);
-        }
+    void IDataRW.ReadFrom(DataStream ds)
+    {
+        var tracksCount = ds.ReadStruct<uint>();
+        ds.ReadStruct(ref Properties);
 
-        void IDataRW.WriteTo(DataStream ds) {
-            if((uint)Properties.InterpolationType > 1)
-                ds.WriteStruct((uint)TracksInter.Length);
-            else
-                ds.WriteStruct((uint)Tracks.Length);
+        if ((uint)Properties.InterpolationType > 1)
+            TracksInter = ds.ReadStructArray<TrackInter<T>>(tracksCount);
+        else
+            Tracks = ds.ReadStructArray<Track<T>>(tracksCount);
+    }
 
-            ds.WriteStruct(ref Properties);
+    void IDataRW.WriteTo(DataStream ds)
+    {
+        if ((uint)Properties.InterpolationType > 1)
+            ds.WriteStruct((uint)TracksInter.Length);
+        else
+            ds.WriteStruct((uint)Tracks.Length);
 
-            if((uint)Properties.InterpolationType > 1)
-                ds.WriteStructArray(TracksInter, false);
-            else
-                ds.WriteStructArray(Tracks, false);
-        }
+        ds.WriteStruct(ref Properties);
 
-        bool IOptionalBlock.HasData => ((uint)Properties.InterpolationType > 1) ? (TracksInter?.Length > 0) : (Tracks?.Length > 0);
+        if ((uint)Properties.InterpolationType > 1)
+            ds.WriteStructArray(TracksInter, false);
+        else
+            ds.WriteStructArray(Tracks, false);
+    }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct LocalProperties {
-            public InterpolationType InterpolationType;
-            public int GlobalSequenceId;
-        }
+    bool IOptionalBlock.HasData =>
+        (uint)Properties.InterpolationType > 1 ? TracksInter?.Length > 0 : Tracks?.Length > 0;
 
-        public enum InterpolationType : uint {
-            None,
-            Linear,
-            Hermite,
-            Bezier,
-        }
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct LocalProperties
+    {
+        public InterpolationType InterpolationType;
+        public int GlobalSequenceId;
+    }
+
+    public enum InterpolationType : uint
+    {
+        None,
+        Linear,
+        Hermite,
+        Bezier
     }
 }

@@ -7,6 +7,7 @@ namespace War3Frame
         public class JassVM(nint realJassVM)
         {
             readonly nint RealJassVM = realJassVM;
+            public bool IsAvailable => RealJassVM != 0;
 
             public static bool operator true(JassVM jassVM) => jassVM != null && jassVM.RealJassVM != 0;
             public static bool operator false(JassVM jassVM) => jassVM == null || jassVM.RealJassVM == 0;
@@ -155,10 +156,29 @@ namespace War3Frame
 
             public (int type, uint value) GetJassRegVariableValue(byte i)
             {
+                if (!TryGetJassRegVariableValue(i, out var type, out var value))
+                {
+                    throw new InvalidOperationException("当前 JassVM 不可用，无法读取寄存器值。");
+                }
+
+                return (type, value);
+            }
+
+            public bool TryGetJassRegVariableValue(byte i, out int type, out uint value)
+            {
+                type = 0;
+                value = 0;
+                if (RealJassVM == 0)
+                {
+                    return false;
+                }
+
                 unsafe
                 {
                     nint t = GetJassRegVariable(i);
-                    return (*(int*)(t + 0x1C), *(uint*)(t + 0x20));
+                    type = *(int*)(t + 0x1C);
+                    value = *(uint*)(t + 0x20);
+                    return true;
                 }
             }
 
@@ -170,7 +190,7 @@ namespace War3Frame
                     if (handleContext == 0)
                         return;
 
-                    var func = (delegate* unmanaged[Stdcall]<nint, int, nint, void>)*(nint*)(RealJassVM + 0x28A0);
+                    var func = (delegate* unmanaged[Fastcall]<nint, int, nint, void>)*(nint*)(RealJassVM + 0x28A0);
                     func(handle, sub ? 1 : 0, handleContext);
                 }
             }
@@ -219,9 +239,30 @@ namespace War3Frame
         {
             unsafe
             {
-                nint addr = *(nint*)GetJassEnvAddress();
+                nint jassEnvAddress = GetJassEnvAddress();
+                if (jassEnvAddress == 0)
+                {
+                    return new JassVM(0);
+                }
+
+                nint addr = *(nint*)jassEnvAddress;
+                if (addr == 0)
+                {
+                    return new JassVM(0);
+                }
+
                 addr = *(nint*)(addr + 0x14);
+                if (addr == 0)
+                {
+                    return new JassVM(0);
+                }
+
                 addr = *(nint*)(addr + 0x90);
+                if (addr == 0)
+                {
+                    return new JassVM(0);
+                }
+
                 return new JassVM(*(nint*)(addr + 0x04 * i));
             }
         }
@@ -232,21 +273,54 @@ namespace War3Frame
             return MainJassVM.Value;
         }
 
-        private static JassVM GetCurrentJassVM()
+        private static bool TryGetCurrentJassVM(out JassVM vm)
         {
             unsafe
             {
-                nint addr = *(nint*)GetJassEnvAddress();
-                addr = *(nint*)(addr + 0x14);
-                int i = *(int*)(addr + 0x14);
-                if (i > 0)
+                nint jassEnvAddress = GetJassEnvAddress();
+                if (jassEnvAddress == 0)
                 {
-                    addr = *(nint*)(addr + 0x0C);
-                    nint realJassVM = *(nint*)(addr + 0x04 * (i - 1));
-                    return new JassVM(realJassVM);
+                    vm = new JassVM(0);
+                    return false;
                 }
-                return new JassVM(0);
+
+                nint addr = *(nint*)jassEnvAddress;
+                if (addr == 0)
+                {
+                    vm = new JassVM(0);
+                    return false;
+                }
+
+                addr = *(nint*)(addr + 0x14);
+                if (addr == 0)
+                {
+                    vm = new JassVM(0);
+                    return false;
+                }
+
+                int i = *(int*)(addr + 0x14);
+                if (i <= 0)
+                {
+                    vm = new JassVM(0);
+                    return false;
+                }
+
+                addr = *(nint*)(addr + 0x0C);
+                if (addr == 0)
+                {
+                    vm = new JassVM(0);
+                    return false;
+                }
+
+                nint realJassVM = *(nint*)(addr + 0x04 * (i - 1));
+                vm = new JassVM(realJassVM);
+                return vm.IsAvailable;
             }
+        }
+
+        private static JassVM GetCurrentJassVM()
+        {
+            return TryGetCurrentJassVM(out var vm) ? vm : new JassVM(0);
         }
 
         public static void AddHandleReference(nint handle)

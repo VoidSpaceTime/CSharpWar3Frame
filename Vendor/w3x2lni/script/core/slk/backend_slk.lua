@@ -226,7 +226,7 @@ local function is_usable_id(str)
     return true
 end
 
-local function load_data(meta, obj, key, slk_data, oBJ_data)
+local function load_data(meta, obj, key, slk_data, obj_data)
     if not obj[key] then
         return
     end
@@ -234,18 +234,18 @@ local function load_data(meta, obj, key, slk_data, oBJ_data)
     local tp = meta.type
     if type(obj[key]) == 'table' then
         local over_level
-        oBJ_data[key] = {}
+        obj_data[key] = {}
         if slk_type == 'doodad' then
             for i = 11, #obj[key] do
                 if obj[key][i] ~= obj[key][10] then
-                    oBJ_data[key][i] = obj[key][i]
+                    obj_data[key][i] = obj[key][i]
                     over_level = true
                 end
             end
             for i = 1, 10 do
                 local value = to_type(tp, obj[key][i])
                 if value and tp == 3 and not is_usable_string(value:sub(2, -2)) then
-                    oBJ_data[key][i] = value:sub(2, -2)
+                    obj_data[key][i] = value:sub(2, -2)
                     report_failed(obj, displaykey, lang.report.STRING_CAN_CONVERT_NUMBER, value)
                 else
                     slk_data[('%s%02d'):format(displaykey, i)] = value
@@ -254,14 +254,14 @@ local function load_data(meta, obj, key, slk_data, oBJ_data)
         else
             for i = 5, #obj[key] do
                 if obj[key][i] ~= obj[key][4] then
-                    oBJ_data[key][i] = obj[key][i]
+                    obj_data[key][i] = obj[key][i]
                     over_level = true
                 end
             end
             for i = 1, 4 do
                 local value = to_type(tp, obj[key][i])
                 if value and tp == 3 and not is_usable_string(value:sub(2, -2)) then
-                    oBJ_data[key][i] = value:sub(2, -2)
+                    obj_data[key][i] = value:sub(2, -2)
                     report_failed(obj, displaykey, lang.report.STRING_CAN_CONVERT_NUMBER, value)
                 else
                     slk_data[displaykey..i] = value
@@ -274,7 +274,7 @@ local function load_data(meta, obj, key, slk_data, oBJ_data)
     else
         local value = to_type(tp, obj[key])
         if value and tp == 3 and not is_usable_string(value:sub(2, -2)) then
-            oBJ_data[key] = value:sub(2, -2)
+            obj_data[key] = value:sub(2, -2)
             report_failed(obj, displaykey, lang.report.STRING_CAN_CONVERT_NUMBER, value)
         else
             slk_data[displaykey] = value
@@ -290,22 +290,22 @@ local function load_obj(id, obj, slk_name)
         object[id] = obj
         return nil
     end
-    local oBJ_data = object[id]
-    if not oBJ_data then
-        oBJ_data = {}
-        object[id] = oBJ_data
-        oBJ_data._id     = obj._id
-        oBJ_data._slk    = not obj._keep_obj
-        oBJ_data._code   = obj._code
-        oBJ_data._mark   = obj._mark
-        oBJ_data._parent = obj._parent
-        oBJ_data._keep_obj = obj._keep_obj
+    local obj_data = object[id]
+    if not obj_data then
+        obj_data = {}
+        object[id] = obj_data
+        obj_data._id     = obj._id
+        obj_data._slk    = not obj._keep_obj
+        obj_data._code   = obj._code
+        obj_data._mark   = obj._mark
+        obj_data._parent = obj._parent
+        obj_data._keep_obj = obj._keep_obj
     end
     if not obj._slk_id and not is_usable_id(obj._id) then
         obj._slk_id = find_unused_id()
-        oBJ_data._slk_id = obj._slk_id
+        obj_data._slk_id = obj._slk_id
         if slk_type == 'ability' then
-            oBJ_data.name = obj.name
+            obj_data.name = obj.name
         end
         report_failed(obj, 'id', lang.report.OBJECT_ID_CAN_CONVERT_NUMBER, '')
         if not obj._slk_id then
@@ -325,11 +325,11 @@ local function load_obj(id, obj, slk_name)
     obj._slk = true
     for _, key in ipairs(keys) do
         local meta = metadata[slk_type][key]
-        load_data(meta, obj, key, slk_data, oBJ_data)
+        load_data(meta, obj, key, slk_data, obj_data)
     end
     if metadata[obj._code] then
         for key, meta in pairs(metadata[obj._code]) do
-            load_data(meta, obj, key, slk_data, oBJ_data)
+            load_data(meta, obj, key, slk_data, obj_data)
         end
     end
     return slk_data

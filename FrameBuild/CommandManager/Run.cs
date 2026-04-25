@@ -1,4 +1,5 @@
-﻿using Serilog;
+using Serilog;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -26,6 +27,7 @@ namespace War3FrameBuild.CommandManager
                 RedirectStandardError = true,
             };
             psi.ArgumentList.Add("-launchwar3");
+            psi.ArgumentList.Add(Path.Combine(Config.War3, "war3.exe"));
             psi.ArgumentList.Add("-loadfile");
             psi.ArgumentList.Add(w3xFire);
 
@@ -90,46 +92,8 @@ namespace War3FrameBuild.CommandManager
             // 打包地图
             Log.Verbose("开始打包地图");
             var startTime = DateTime.Now;
-            var w2lProc = CreateW2lProcessInfo();
-            w2lProc.ArgumentList.Add(modeLni);
-            w2lProc.ArgumentList.Add(BuildDstPath);
-            w2lProc.ArgumentList.Add(dstW3xFire);
-            w2lProc.ArgumentList.Add("-ydwe");
-            w2lProc.ArgumentList.Add(Config.We);
+            StartW3XToLni(new[] { modeLni, BuildDstPath, dstW3xFire, "-ydwe", Config.We });
 
-            using var w2l = new Process { StartInfo = w2lProc, EnableRaisingEvents = true };
-            try
-            {
-                if (!w2l.Start())
-                {
-                    Log.Error("w2l 进程启动失败");
-                    return;
-                }
-                // 异步读取输出，避免子进程因输出缓冲区满而阻塞
-                w2l.OutputDataReceived += (s, e) =>
-                {
-                    if (e.Data != null)
-                    {
-                        Log.Debug(e.Data);
-                    }
-                };
-                w2l.ErrorDataReceived += (s, e) =>
-                {
-                    if (e.Data != null)
-                    {
-                        Log.Warning(e.Data);
-                    }
-                };
-                w2l.BeginOutputReadLine();
-                w2l.BeginErrorReadLine();
-            }
-            catch (Exception e)
-            {
-                Log.Error("w2l 进程启动失败");
-                return;
-            }
-
-            w2l.WaitForExit();
             Log.Debug($"打包地图，路径：{dstW3xFire}");
             Log.Verbose($"打包地图，耗时：{(DateTime.Now - startTime).TotalSeconds.ToString()}");
         }
@@ -137,6 +101,7 @@ namespace War3FrameBuild.CommandManager
         // 预编译正则表达式以提高性能
         private static readonly Regex ModulePathRegex = new(@"string ModulePath = .*", RegexOptions.Compiled);
         private static readonly Regex ModuleNameRegex = new(@"string ModuleName = .*", RegexOptions.Compiled);
+        private static readonly Regex IsNativeRegex = new(@"bool IsNative = .*", RegexOptions.Compiled);
 
         /// <summary>
         /// 创建 w2l 进程启动信息
@@ -149,23 +114,32 @@ namespace War3FrameBuild.CommandManager
             RedirectStandardError = true,
         };
 
-        /// <summary>
-        /// 处理 callback 文件内容替换
-        /// </summary>
-        /// <param name="sourceFile">源文件路径</param>
-        /// <param name="destFile">目标文件路径（可与源文件相同）</param>
-        /// <param name="modulePath">模块路径</param>
-        /// <param name="dllName">DLL 名称</param>
-        private void ProcessCallbackFile(string sourceFile, string destFile, string modulePath, string dllName)
+        private bool StartW3XToLni(string[] args)
         {
-            var content = File.ReadAllText(sourceFile);
-            var escapedPath = modulePath.Replace("\\", "/").Replace("/", "\\\\");
+            // 地图文件较新，需要拆包同步
+            var w2lProc = CreateW2lProcessInfo();
+            foreach (var arg in args)
+            {
+                w2lProc.ArgumentList.Add(arg);
+            }
 
-            content = ModulePathRegex.Replace(content, $"string ModulePath = \"{escapedPath}\"");
-            content = ModuleNameRegex.Replace(content, $"string ModuleName = \"{dllName}.dll\"");
+            using var w2l = new Process { StartInfo = w2lProc, EnableRaisingEvents = true };
+            if (!w2l.Start())
+            {
+                Log.Error("w2l 进程启动失败");
+                return false;
+            }
 
-            File.WriteAllText(destFile, content);
+            w2l.WaitForExit();
+            /*if (w2l.ExitCode != 0)
+            {
+                var errorOutput = w2l.StandardError.ReadToEndAsync().Result;
+                Log.Warning($"w2l 执行警告 (ExitCode={w2l.ExitCode}): {errorOutput}");
+            }*/
+
+            return true;
         }
+
 
         /// <summary>
         /// 清理构建目录中的特定文件和文件夹
@@ -189,26 +163,31 @@ namespace War3FrameBuild.CommandManager
         /// <returns></returns>
         private async Task<bool> BuildMap(bool isCache, bool noTest)
         {
-            var temProjectDir = Path.Combine(Temp, ProjectName);
-            var temProjectW3xFile = Path.Combine(Temp, $"{ProjectName}.w3x");
-            var buoyFile = Path.Combine(temProjectDir, ".we");
-
             // 同步地图文件
-            if (!await SyncMapFilesAsync(temProjectW3xFile, buoyFile, isCache))
-                return false;
+            SyncW3xFile(isCache);
 
             if (!isCache)
             {
                 // 准备构建目录
-                PrepareDirectory();
+                if (BuildMode is BuildModeEnum.Release)
+                {
+                    Log.Debug("准备发布打包");
+                    if (Directory.Exists(BuildDstPath))
+                        Directory.Delete(BuildDstPath, true);
+                }
+                else
+                {
+                    // 非 release 模式采用增量覆盖
+                    CleanBuildDirectory();
+                }
 
                 // 复制项目文件
-                var mapDir = Path.Combine(BuildDstPath, "map");
-                DirectoryExtensions.CopyDir(temProjectDir, BuildDstPath);
-                DirectoryExtensions.CopyDir(Path.Combine(Template, "lni", "assets", "UI"), Path.Combine(mapDir, "UI"));
+                DirectoryExtensions.CopyDir(TempProjectBuildPath, BuildDstPath);
+                DirectoryExtensions.CopyDir(Path.Combine(Template, "lni", "assets", "UI"),
+                    Path.Combine(BuildDstPath, "map", "UI"));
 
                 // 处理 callback 文件
-                if (!ProcessCallback(mapDir))
+                if (!ProcessCallback())
                     return false;
 
                 Log.Verbose($"构建地图完毕：{BuildMode}");
@@ -226,93 +205,41 @@ namespace War3FrameBuild.CommandManager
         }
 
         /// <summary>
-        /// 同步地图文件（检测 WE 保存状态）
-        /// </summary>
-        private async Task<bool> SyncMapFilesAsync(string mapFile, string buoyFile, bool isCache)
-        {
-            var mapWriteTime = File.GetLastWriteTime(mapFile);
-            var buoyWriteTime = File.GetLastWriteTime(buoyFile);
-
-            if (mapWriteTime > buoyWriteTime)
-            {
-                // 地图文件较新，需要拆包同步
-                var w2lProc = CreateW2lProcessInfo();
-                w2lProc.ArgumentList.Add("lni");
-                w2lProc.ArgumentList.Add(mapFile);
-
-                using var w2l = new Process { StartInfo = w2lProc, EnableRaisingEvents = true };
-                if (!w2l.Start())
-                {
-                    Log.Error("w2l 进程启动失败");
-                    return false;
-                }
-
-                await w2l.WaitForExitAsync();
-                if (w2l.ExitCode != 0)
-                {
-                    var errorOutput = await w2l.StandardError.ReadToEndAsync();
-                    Log.Warning($"w2l 执行警告 (ExitCode={w2l.ExitCode}): {errorOutput}");
-                }
-
-                File.Delete(buoyFile);
-                File.Copy(Path.Combine(Template, "lni", "x.we"), buoyFile);
-                Backup();
-                Log.Information("同步完毕[检测到有新的地图保存行为，以'WE'为主版本]");
-            }
-            else if (!isCache)
-            {
-                Pickup();
-                Log.Information("同步完毕[检测到没有新的地图保存行为，以'project'为主版本]");
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// 准备构建目录
-        /// </summary>
-        private void PrepareDirectory()
-        {
-            if (BuildMode is BuildModeEnum.Release)
-            {
-                Log.Debug("准备发布打包");
-                if (Directory.Exists(BuildDstPath))
-                    Directory.Delete(BuildDstPath, true);
-            }
-            else
-            {
-                // 非 release 模式采用增量覆盖
-                CleanBuildDirectory();
-            }
-        }
-
-        /// <summary>
         /// 处理 callback 文件
         /// </summary>
-        private bool ProcessCallback(string mapDir)
+        private bool ProcessCallback()
         {
+            var mapDir = Path.Combine(BuildDstPath, "map");
             var callbackInBuild = Path.Combine(mapDir, "callback");
-            var callbackInTemplate = Path.Combine(Template, "callback");
-            var dllName = BuildMode is BuildModeEnum.Release ? ProjectName : $"{ProjectName}NE";
-
-            string sourceFile;
+            var dllName = BuildMode is BuildModeEnum.Release ? "project.dll" : $"BridgeToJIT.dll";
+            string sourceFile = Path.Combine(PwdProject, "w3x", "map", "callback");
             if (File.Exists(callbackInBuild))
             {
-                sourceFile = callbackInBuild;
-            }
-            else if (File.Exists(callbackInTemplate))
-            {
-                sourceFile = callbackInTemplate;
-            }
-            else
-            {
-                Log.Error("CallBack 文件丢失");
-                return false;
+                File.Delete(callbackInBuild);
             }
 
-            ProcessCallbackFile(sourceFile, callbackInBuild, mapDir, dllName);
+            if (!File.Exists(sourceFile))
+            {
+                sourceFile = Path.Combine(Template, "callback");
+                if (!File.Exists(sourceFile))
+                {
+                    Log.Error("CallBack文件丢失");
+                    return false;
+                }
+            }
+
+
+            var content = File.ReadAllText(sourceFile);
+            var escapedPath = mapDir.Replace("\\", "/").Replace("/", "\\\\");
+
+            content = ModulePathRegex.Replace(content, $"string ModulePath = \"{escapedPath}\"");
+            content = ModuleNameRegex.Replace(content, $"string ModuleName = \"{dllName}\"");
+            content = IsNativeRegex.Replace(content, $"bool IsNative = {(BuildMode is BuildModeEnum.Release).ToString()}");
+
+            File.WriteAllText(callbackInBuild, content);
             return true;
         }
+
 
         /// <summary>
         /// 脚本文件打包成dll
@@ -321,28 +248,64 @@ namespace War3FrameBuild.CommandManager
         /// <param name="projectsPath"></param>
         /// <param name="publishDir"></param>
         /// <returns></returns>
-        private async Task PublishProject(bool isNative, string projectsPath, string publishDir)
+        private async Task PublishProject()
         {
+            var projectsPath = Path.Combine(PwdProject, $"{ProjectName}.csproj");
+            var publishMapDir = Path.Combine(BuildDstPath, "map");
+            var isNative = BuildMode == BuildModeEnum.Release;
+            var projectName = Path.GetFileNameWithoutExtension(projectsPath);
             /*// 目前只会 AOT 打包
             isNative = true;*/
-            // -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false -p:PublishSingleFile=true --self-contained true
-            var aotCommand = isNative ? " -p:PublishAot=true -p:DebugType=None -p:DebugSymbols=false " : "";
-            string command = @$"publish {projectsPath} -c Release -r win-x86  {aotCommand}  -o {publishDir}";
-
-            var psi = new ProcessStartInfo("dotnet", command)
+            var psi = new ProcessStartInfo("dotnet")
             {
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
+            psi.ArgumentList.Add("publish");
+            psi.ArgumentList.Add(projectsPath);
+            psi.ArgumentList.Add("-c");
+            psi.ArgumentList.Add("Release");
+            psi.ArgumentList.Add("-r");
+            psi.ArgumentList.Add("win-x86");
 
-            Log.Debug($"准备执行 dotnet publish，输出目录: {publishDir}");
+
+            if (isNative)
+            {
+                psi.ArgumentList.Add("--self-contained");
+                psi.ArgumentList.Add("true");
+                psi.ArgumentList.Add("-p:PublishAot=true");
+                psi.ArgumentList.Add("-p:DebugType=None");
+                psi.ArgumentList.Add("-p:DebugSymbols=false");
+            }
+
+            psi.ArgumentList.Add("-o");
+            psi.ArgumentList.Add(publishMapDir);
+
+            Log.Debug($"准备执行 dotnet publish，输出目录: {publishMapDir}");
 
             using var proc = new Process() { StartInfo = psi, EnableRaisingEvents = true };
             // 异步读取输出，避免子进程因输出缓冲区满而阻塞
             var stdoutSb = new StringBuilder();
             var stderrSb = new StringBuilder();
+            proc.OutputDataReceived += (s, e) =>
+            {
+                if (e.Data != null)
+                {
+                    stdoutSb.AppendLine(e.Data);
+                    Log.Debug(e.Data);
+                }
+            };
+            proc.ErrorDataReceived += (s, e) =>
+            {
+                if (e.Data != null)
+                {
+                    stderrSb.AppendLine(e.Data);
+                    Log.Warning(e.Data);
+                }
+            };
+
             try
             {
                 if (!proc.Start())
@@ -351,25 +314,11 @@ namespace War3FrameBuild.CommandManager
                     return;
                 }
 
-                // 异步读取输出，避免子进程因输出缓冲区满而阻塞
-                proc.OutputDataReceived += (s, e) =>
-                {
-                    if (e.Data != null)
-                    {
-                        stdoutSb.AppendLine(e.Data);
-                        Log.Debug(e.Data);
-                    }
-                };
-                proc.ErrorDataReceived += (s, e) =>
-                {
-                    if (e.Data != null)
-                    {
-                        stderrSb.AppendLine(e.Data);
-                        Log.Warning(e.Data);
-                    }
-                };
                 proc.BeginOutputReadLine();
                 proc.BeginErrorReadLine();
+
+
+                await proc.WaitForExitAsync();
             }
             catch (Exception ex)
             {
@@ -377,39 +326,64 @@ namespace War3FrameBuild.CommandManager
                 return;
             }
 
-            // 等待发布进程完成
-            proc.WaitForExit();
             // 读取收集到的输出
             var stderr = stderrSb.ToString();
-            if (!string.IsNullOrEmpty(stderr))
+            if (proc.ExitCode != 0)
             {
-                Log.Error($"dotnet publish 错误: {stderr}");
-            }
-            else
-            {
-                Log.Information("dotnet publish 完成");
+                Log.Error($"dotnet publish 失败，ExitCode={proc.ExitCode}");
+                if (stdoutSb.Length > 0)
+                {
+                    Log.Error($"dotnet publish 输出: {stdoutSb}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(stderr))
+                {
+                    Log.Error($"dotnet publish 错误: {stderr}");
+                }
+
+                return;
             }
 
-            // DNNE: 复制 native DLL 到输出目录
+            if (!string.IsNullOrWhiteSpace(stderr))
+            {
+                Log.Warning($"dotnet publish 警告: {stderr}");
+            }
+
+            Log.Information("dotnet publish 完成");
+
             if (!isNative)
             {
-                // 获取项目目录和项目名
-                var projectDir = Path.GetDirectoryName(projectsPath)!;
-                var projectName = Path.GetFileNameWithoutExtension(projectsPath);
-
-                // DNNE 生成的 native DLL 路径
-                var dnneNativeDll = Path.Combine(projectDir, "obj", "Release", "net10.0", "win-x86", "dnne", "bin",
-                    $"{projectName}NE.dll");
-
-                if (File.Exists(dnneNativeDll))
+                var bridgeBuildDir = Path.Combine(Config.Pwd, "BridgeToJIT", ".build", "Debug");
+                var bridgeSourceDir = File.Exists(Path.Combine(bridgeBuildDir, "BridgeToJIT.dll"))
+                    ? bridgeBuildDir
+                    : Template;
+                var bridgeFiles = new[]
                 {
-                    var destDll = Path.Combine(publishDir, $"{projectName}NE.dll");
-                    File.Copy(dnneNativeDll, destDll, true);
-                    Log.Information($"DNNE native DLL 已复制: {destDll}");
+                    "BridgeToJIT.dll",
+                    "BridgeToJIT.runtimeconfig.json",
+                    "BridgeToJIT.deps.json",
+                    "Ijwhost.dll"
+                };
+                var copiedBridgeFile = false;
+
+                foreach (var bridgeFile in bridgeFiles)
+                {
+                    var sourcePath = Path.Combine(bridgeSourceDir, bridgeFile);
+                    if (!File.Exists(sourcePath))
+                    {
+                        continue;
+                    }
+
+                    var destPath = Path.Combine(publishMapDir, bridgeFile);
+                    File.Copy(sourcePath, destPath, true);
+                    Log.Information($"Bridge文件已复制: {destPath}");
+                    copiedBridgeFile = true;
                 }
-                else
+
+                if (!copiedBridgeFile)
                 {
-                    Log.Warning($"DNNE native DLL 未找到: {dnneNativeDll}");
+                    Log.Warning($"BridgeToJIT 构建产物未找到: {bridgeSourceDir}");
+                    return;
                 }
             }
 
@@ -442,20 +416,20 @@ namespace War3FrameBuild.CommandManager
             }
 
             var tasks = new List<Task>();
-            var projectsPath = Path.Combine(Projects, ProjectName, $"{ProjectName}.csproj");
-            var pubilshDir = Path.Combine(BuildDstPath, "map");
+
 
             // 打包dll->
-            // await PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir);
             tasks.Add(BuildMap(isCache, noTest));
-            tasks.Add(PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir));
+            tasks.Add(PublishProject());
 
-            var res = Task.WhenAll(tasks);
+            await Task.WhenAll(tasks);
+            /*BuildMap(isCache, noTest).Wait();
+            PublishProject(BuildMode is BuildModeEnum.Release, projectsPath, pubilshDir).Wait();*/
+
             // 确保前面所有异步步骤均已完成后再进行打包
             PackupMap(modeLni, dstW3xFire);
 
             DeleteOtherConfig();
-
 
             if (noTest)
             {
