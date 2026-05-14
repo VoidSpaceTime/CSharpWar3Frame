@@ -53,6 +53,25 @@ public struct EffectAnimationRequest : IComponent
     public string link;
 }
 
+public struct EffectDestroyRequest : IComponent
+{
+    public bool hideFirst;
+}
+
+public struct EffectTransformRequest : IComponent
+{
+    public EffectTransformOperation operation;
+    public float value;
+}
+
+public enum EffectTransformOperation
+{
+    Reset,
+    RotateX,
+    RotateY,
+    RotateZ
+}
+
 /// <summary>
 /// 特效基础数据。
 /// 承载模型、外观与生命周期等公共信息。

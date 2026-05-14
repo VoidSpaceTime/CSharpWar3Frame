@@ -25,3 +25,29 @@ public struct PlayerNative : IComponent
     public int index;
     public Entity getentity;
 }
+
+public struct PlayerNameNativeRequest : IComponent
+{
+    public string name;
+}
+
+public struct PlayerColorNativeRequest : IComponent
+{
+    public int color;
+}
+
+public struct PlayerAllianceNativeRequest : IComponent
+{
+    public Entity target;
+    public PlayerAllianceNativeKind kind;
+    public bool flag;
+}
+
+public enum PlayerAllianceNativeKind
+{
+    BasicAlliance,
+    Vision,
+    Control,
+    FullControl,
+    Neutral
+}

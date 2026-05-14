@@ -14,12 +14,6 @@ public static class UnitHelper
     /// <summary>
     ///     从模板创建单位
     /// </summary>
-    /// <param name="templateName">模板名称</param>
-    /// <param name="player">所属玩家</param>
-    /// <param name="x">X 坐标</param>
-    /// <param name="y">Y 坐标</param>
-    /// <param name="facing">朝向角度（默认 270）</param>
-    /// <returns>创建的单位 Entity</returns>
     public static Entity CreateUnit(
         string templateName,
         JPlayer player,
@@ -32,7 +26,7 @@ public static class UnitHelper
             isAlive =  true,
             lifePhase = UnitLifecyclePhase.Alive,
         });
-        Game.FlushImmediateSystems();
+
         return entity;
     }
 
@@ -73,8 +67,71 @@ public static class UnitHelper
             unit.AddComponent(state);
         }
 
-        // 生命周期仅写入意图并立即触发执行层
-        Game.FlushImmediateSystems();
+    }
+
+    /// <summary>
+    /// 让单位进入死亡流程。
+    /// </summary>
+    public static void KillUnit(Entity unit)
+    {
+        if (unit.IsNull) return;
+
+        if (unit.TryGetComponent<UnitLifeState>(out var state))
+        {
+            if (state.lifePhase != UnitLifecyclePhase.Alive)
+            {
+                return;
+            }
+
+            state.isAlive = false;
+            state.lifePhase = UnitLifecyclePhase.Death;
+            unit.AddComponent(state);
+            unit.AddComponent(new TimerTask
+            {
+                mode = TimerTaskMode.Once,
+                interval = Game.DefaultCorpseDuration,
+                remaining = Game.DefaultCorpseDuration,
+                paused = false,
+                owner = unit,
+                kind = TimerTaskKind.CorpseCleanup,
+                triggerCount = 0,
+                maxTriggerCount = 1
+            });
+        }
+    }
+
+    #endregion
+
+    #region 生命周期推进
+
+    /// <summary>
+    /// 推进单位生命周期阶段。
+    /// 根据当前阶段执行对应的副作用：Death → Corpse、ClearCorpse → Remove、Remove → Dispose
+    /// </summary>
+    public static void TransitionLifecycle(Entity entity)
+    {
+        if (!entity.TryGetComponent<UnitLifeState>(out var state))
+        {
+            return;
+        }
+
+        if (state.lifePhase == UnitLifecyclePhase.Death)
+        {
+            // Death → Corpse
+            state.lifePhase = UnitLifecyclePhase.Corpse;
+            entity.AddComponent(state);
+        }
+        else if (state.lifePhase == UnitLifecyclePhase.ClearCorpse)
+        {
+            // ClearCorpse → Remove
+            state.lifePhase = UnitLifecyclePhase.Remove;
+            entity.AddComponent(state);
+        }
+        else if (state.lifePhase == UnitLifecyclePhase.Remove)
+        {
+            // Remove → Dispose
+            CleanupFinalizeEntityDispose(entity);
+        }
     }
 
     #endregion
@@ -111,42 +168,10 @@ public static class UnitHelper
 
     #endregion
 
-    /// <summary>
-    /// 让单位进入死亡流程。
-    /// 会写入生命周期阶段、挂接尸体清理计时器，并立即刷新即时系统。
-    /// </summary>
-    public static void KillUnit(Entity unit)
-    {
-        if (unit.IsNull) return;
-
-        if (unit.TryGetComponent<UnitLifeState>(out var state))
-        {
-            if (state.lifePhase != UnitLifecyclePhase.Alive)
-            {
-                return;
-            }
-
-            state.isAlive = false;
-            state.lifePhase = UnitLifecyclePhase.Death;
-            unit.AddComponent(state);
-            unit.AddComponent(new TimerTask
-            {
-                mode = TimerTaskMode.Once,
-                interval = Game.DefaultCorpseDuration,
-                remaining = Game.DefaultCorpseDuration,
-                paused = false,
-                owner = unit,
-                kind = TimerTaskKind.CorpseCleanup,
-                triggerCount = 0,
-                maxTriggerCount = 1
-            });
-            Game.FlushImmediateSystems();
-        }
-    }
+    #region 移动
 
     /// <summary>
     /// 让单位移动到指定位置，并在到达后交由上层任务流继续处理。
-    /// helper 只写入 move 意图与 continuation，不拥有任务执行语义。
     /// </summary>
     public static void MoveToTask(Entity unit, float targetX, float targetY, float arrivalDistance, MoveReason reason = MoveReason.PlayerCommand)
     {
@@ -173,9 +198,28 @@ public static class UnitHelper
             targetX = targetX,
             targetY = targetY
         });
-
-        Game.FlushImmediateSystems();
     }
+
+    /// <summary>
+    /// 执行原生移动命令
+    /// </summary>
+    public static void RequestMoveCommand(Entity unit, MoveOrderType orderType, float targetX, float targetY, int commandToken = 0)
+    {
+        if (!unit.HasComponent<UnitNative>())
+        {
+            return;
+        }
+
+        unit.AddComponent(new MoveNativeCommandRequest
+        {
+            commandToken = commandToken,
+            orderType = orderType,
+            targetX = targetX,
+            targetY = targetY
+        });
+    }
+
+    #endregion
 
     /// <summary>
     /// 执行单位的 ECS 终态收尾。

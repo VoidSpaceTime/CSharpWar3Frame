@@ -1,28 +1,26 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
+using War3Frame.Components.AbilityEffectExtend;
 using War3Frame.Helpers;
-using War3Frame.Src.Systems;
+using War3Frame.Systems;
+using War3Frame.TemplateInit;
 
 namespace War3Frame;
 
 // ============================================================================
 // 技能效果处理系统
-// 按照处理顺序排列：范围搜索 → 弹道 → 伤害 → 治疗 → Buff 施加
+// 按照处理顺序排列：弹道推进/生命周期 → 范围搜索 → 伤害 → 治疗 → Buff 施加 → 清理
 // ============================================================================
 
 /// <summary>
 /// 范围搜索系统 - 处理 AOE 效果
-/// 在指定区域内搜索目标，为每个目标创建子效果 Entity
-/// 处理优先级最高，因为需要先找到目标才能应用其他效果
+/// 在指定区域内搜索目标，为每个目标创建子效果 Entity。
 /// </summary>
+[SystemRegister(SystemKind.Interval, 110)]
 public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, EffectTargetInfo>
 {
-    /// <summary>
-    /// 初始化范围搜索系统，仅处理待处理的效果实体。
-    /// </summary>
     public AreaSearchSystem()
     {
-        // 只处理待处理的效果
         Filter.AnyTags(Tags.Get<EffectPending>());
     }
 
@@ -33,38 +31,29 @@ public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, Effect
         Query.ForEachEntity((ref AreaSearchData area, ref EffectSource source,
             ref EffectTargetInfo target, Entity effectEntity) =>
         {
-            // 如果有弹道组件，先等弹道到达再搜索
-            if (effectEntity.HasComponent<ProjectileData>() && !effectEntity.Tags.Has<ProjectileArrived>())
+            if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
                 return;
 
             var radius = AbilityHelper.GetRadius(source.ability);
 
-            // 搜索范围内的目标
             var targets = FindTargetsInArea(
                 source.caster, area.centerX, area.centerY,
                 radius, area.filter, area.customFilterId, area.maxTargets);
 
-            // 为每个目标创建子效果 Entity
             foreach (var targetUnit in targets)
             {
                 AbilityEffectHelper.CreateChildEffect(effectEntity, targetUnit);
             }
 
-            // 范围搜索效果 Entity 处理完毕，标记删除
             toDelete.Add(effectEntity);
         });
 
-        // 删除已处理的 AOE 效果 Entity
         foreach (var entity in toDelete)
         {
             entity.DeleteEntity();
         }
     }
 
-    /// <summary>
-    /// 在指定区域搜索目标
-    /// TODO: 根据你的碰撞/空间查询系统实现遍历逻辑
-    /// </summary>
     private List<Entity> FindTargetsInArea(Entity caster, float x, float y,
         float radius, TargetFilter filter, string? customFilterId, int maxTargets)
     {
@@ -79,7 +68,6 @@ public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, Effect
         //     float dy = pos.y - y;
         //     if (dx * dx + dy * dy > radiusSq) continue;
         //
-        //     // 使用 TargetFilterRegistry 进行综合筛选
         //     if (!TargetFilterRegistry.PassFilter(filter, customFilterId, caster, unit))
         //         continue;
         //
@@ -92,15 +80,11 @@ public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, Effect
 }
 
 /// <summary>
-/// 弹道系统 - 处理弹道飞行
-/// 弹道到达目标后，添加 ProjectileArrived 标记
-/// 其他效果系统（伤害/治疗/Buff）检测到此标记后才执行
+/// 追踪/指向型弹道系统。
 /// </summary>
-public class ProjectileSystem : QuerySystem<ProjectileData, EffectTargetInfo, Position>
+[SystemRegister(SystemKind.Interval, 100)]
+public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, EffectTargetInfo, Position, ProjectileRuntimeState>
 {
-    /// <summary>
-    /// 初始化弹道系统，仅处理待处理的效果实体。
-    /// </summary>
     public ProjectileSystem()
     {
         Filter.AnyTags(Tags.Get<EffectPending>());
@@ -108,13 +92,31 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectTargetInfo, Po
 
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref ProjectileData proj, ref EffectTargetInfo target,
-            ref Position pos, Entity effectEntity) =>
-        {
-            // 如果已到达，跳过
-            if (effectEntity.Tags.Has<ProjectileArrived>()) return;
+        var arriveRequests = new List<Entity>();
+        var expireRequests = new List<Entity>();
 
-            // 计算目标位置（如果是追踪目标，实时更新坐标）
+        Query.ForEachEntity((ref ProjectileData projectile, ref EffectSource source, ref EffectTargetInfo target,
+            ref Position pos, ref ProjectileRuntimeState runtimeState, Entity effectEntity) =>
+        {
+            if (!ProjectileFlowHelper.ShouldProcess(runtimeState))
+                return;
+
+            if (runtimeState.phase == ProjectileLifecyclePhase.PendingStart)
+            {
+                ProjectileHookBridge.DispatchStartHooks(effectEntity, ref projectile, ref source, ref target, ref pos,
+                    ref runtimeState);
+                runtimeState.phase = ProjectileLifecyclePhase.InFlight;
+            }
+
+            var decision = ProjectileHookBridge.DispatchTravelHooks(effectEntity, ref projectile, ref source,
+                ref target, ref pos, ref runtimeState);
+            if (decision == ProjectileTravelDecision.RequestExpire)
+            {
+                runtimeState.phase = ProjectileLifecyclePhase.ExpireRequested;
+                expireRequests.Add(effectEntity);
+                return;
+            }
+
             float tx = target.targetX;
             float ty = target.targetY;
             if (!target.targetUnit.IsNull &&
@@ -122,52 +124,187 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectTargetInfo, Po
             {
                 tx = targetPos.x;
                 ty = targetPos.y;
-                // 更新目标坐标以便后续使用
                 target.targetX = tx;
                 target.targetY = ty;
             }
 
-            // 计算到目标的距离
             float dx = tx - pos.x;
             float dy = ty - pos.y;
             float dist = MathF.Sqrt(dx * dx + dy * dy);
 
-            if (dist <= proj.arrivalThreshold)
+            if (dist <= projectile.arrivalThreshold)
             {
-                // ★ 到达目标！
-                effectEntity.AddTag<ProjectileArrived>();
-
-                // 销毁弹道特效
-                if (!proj.effectEntity.IsNull)
+                if (decision != ProjectileTravelDecision.SuppressArrivalThisTick)
                 {
-                    EffectHelper.Destroy(proj.effectEntity, hideFirst: true);
+                    runtimeState.phase = ProjectileLifecyclePhase.ArriveRequested;
+                    arriveRequests.Add(effectEntity);
                 }
+
+                return;
             }
-            else
-            {
-                // 继续飞行
-                float move = proj.speed * Tick.deltaTime;
-                pos.x += dx / dist * move;
-                pos.y += dy / dist * move;
 
-                // 更新弹道特效位置
-                if (!proj.effectEntity.IsNull)
-                {
-                    EffectHelper.SetPosition(proj.effectEntity, pos.x, pos.y, 0);
-                }
+            float move = projectile.speed * Tick.deltaTime;
+            pos.x += dx / dist * move;
+            pos.y += dy / dist * move;
+
+            if (!projectile.effectEntity.IsNull)
+            {
+                EffectHelper.SetPosition(projectile.effectEntity, pos.x, pos.y, pos.z);
             }
         });
+
+        ProjectileFlowHelper.ApplyRequests(arriveRequests, expireRequests);
+    }
+}
+
+/// <summary>
+/// 方向型线性弹道系统。
+/// </summary>
+[SystemRegister(SystemKind.Interval, 101)]
+public class ProjectileLinearSystem : QuerySystem<ProjectileLinearData, EffectSource, EffectTargetInfo, Position, ProjectileRuntimeState>
+{
+    public ProjectileLinearSystem()
+    {
+        Filter.AnyTags(Tags.Get<EffectPending>());
+    }
+
+    protected override void OnUpdate()
+    {
+        var arriveRequests = new List<Entity>();
+        var expireRequests = new List<Entity>();
+
+        Query.ForEachEntity((ref ProjectileLinearData projectile, ref EffectSource source, ref EffectTargetInfo target,
+            ref Position pos, ref ProjectileRuntimeState runtimeState, Entity effectEntity) =>
+        {
+            if (!ProjectileFlowHelper.ShouldProcess(runtimeState))
+                return;
+
+            if (runtimeState.phase == ProjectileLifecyclePhase.PendingStart)
+            {
+                ProjectileHookBridge.DispatchStartHooks(effectEntity, ref projectile, ref source, ref target, ref pos,
+                    ref runtimeState);
+                runtimeState.phase = ProjectileLifecyclePhase.InFlight;
+            }
+
+            var decision = ProjectileHookBridge.DispatchTravelHooks(effectEntity, ref projectile, ref source,
+                ref target, ref pos, ref runtimeState);
+            if (decision == ProjectileTravelDecision.RequestExpire)
+            {
+                runtimeState.phase = ProjectileLifecyclePhase.ExpireRequested;
+                expireRequests.Add(effectEntity);
+                return;
+            }
+
+            float remainingDistance = MathF.Max(0f, projectile.maxDistance - projectile.traveled);
+            if (remainingDistance <= 0f)
+            {
+                if (decision != ProjectileTravelDecision.SuppressArrivalThisTick)
+                {
+                    runtimeState.phase = ProjectileLifecyclePhase.ArriveRequested;
+                    arriveRequests.Add(effectEntity);
+                }
+
+                return;
+            }
+
+            float move = MathF.Min(projectile.speed * Tick.deltaTime, remainingDistance);
+            pos.x += projectile.dirX * move;
+            pos.y += projectile.dirY * move;
+            projectile.traveled += move;
+
+            if (!projectile.effectEntity.IsNull)
+            {
+                EffectHelper.SetPosition(projectile.effectEntity, pos.x, pos.y, pos.z);
+            }
+
+            if (projectile.traveled >= projectile.maxDistance &&
+                decision != ProjectileTravelDecision.SuppressArrivalThisTick)
+            {
+                runtimeState.phase = ProjectileLifecyclePhase.ArriveRequested;
+                arriveRequests.Add(effectEntity);
+            }
+        });
+
+        ProjectileFlowHelper.ApplyRequests(arriveRequests, expireRequests);
+    }
+}
+
+/// <summary>
+/// 弹道生命周期应用系统。
+/// 统一消费到达/过期请求，避免在 movement query 内直接做结构变更。
+/// </summary>
+[SystemRegister(SystemKind.Interval, 102)]
+public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState, EffectSource, EffectTargetInfo, Position>
+{
+    public ProjectileLifecycleApplySystem()
+    {
+        Filter.AnyTags(Tags.Get<EffectPending>());
+    }
+
+    protected override void OnUpdate()
+    {
+        var toArrive = new List<Entity>();
+        var toExpire = new List<Entity>();
+
+        Query.ForEachEntity((ref ProjectileRuntimeState runtimeState, ref EffectSource source,
+            ref EffectTargetInfo target, ref Position pos, Entity effectEntity) =>
+        {
+            if (effectEntity.Tags.Has<ProjectileArriveRequest>())
+            {
+                toArrive.Add(effectEntity);
+            }
+
+            if (effectEntity.Tags.Has<ProjectileExpireRequest>())
+            {
+                toExpire.Add(effectEntity);
+            }
+        });
+
+        foreach (var effectEntity in toArrive)
+        {
+            if (!effectEntity.TryGetComponent<ProjectileRuntimeState>(out var runtimeState) ||
+                !effectEntity.TryGetComponent<EffectSource>(out var source) ||
+                !effectEntity.TryGetComponent<EffectTargetInfo>(out var target) ||
+                !effectEntity.TryGetComponent<Position>(out var pos))
+            {
+                continue;
+            }
+
+            runtimeState.phase = ProjectileLifecyclePhase.Arrived;
+            effectEntity.AddComponent(runtimeState);
+            effectEntity.RemoveTag<ProjectileArriveRequest>();
+            if (!effectEntity.Tags.Has<ProjectileArrived>())
+            {
+                effectEntity.AddTag<ProjectileArrived>();
+            }
+
+            ProjectileFlowHelper.DestroyProjectileVisual(effectEntity);
+            ProjectileHookBridge.DispatchArriveHooks(effectEntity, ref source, ref target, ref pos, ref runtimeState);
+            effectEntity.AddComponent(runtimeState);
+        }
+
+        foreach (var effectEntity in toExpire)
+        {
+            if (!effectEntity.TryGetComponent<ProjectileRuntimeState>(out var runtimeState))
+            {
+                continue;
+            }
+
+            runtimeState.phase = ProjectileLifecyclePhase.Expired;
+            effectEntity.AddComponent(runtimeState);
+            effectEntity.RemoveTag<ProjectileExpireRequest>();
+            ProjectileFlowHelper.DestroyProjectileVisual(effectEntity);
+            effectEntity.DeleteEntity();
+        }
     }
 }
 
 /// <summary>
 /// 伤害效果处理系统 - 对目标造成伤害
 /// </summary>
+[SystemRegister(SystemKind.Interval, 120)]
 public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, EffectTargetInfo>
 {
-    /// <summary>
-    /// 初始化伤害效果系统，仅处理待处理的效果实体。
-    /// </summary>
     public DamageEffectSystem()
     {
         Filter.AnyTags(Tags.Get<EffectPending>());
@@ -180,32 +317,23 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
         Query.ForEachEntity((ref DamageEffectData dmg, ref EffectSource source,
             ref EffectTargetInfo target, Entity effectEntity) =>
         {
-            // 如果有弹道且未到达，等待
-            if (effectEntity.HasComponent<ProjectileData>() && !effectEntity.Tags.Has<ProjectileArrived>())
+            if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
                 return;
 
-            // 如果有范围搜索组件，由 AreaSearchSystem 处理（不在这里直接处理）
             if (effectEntity.HasComponent<AreaSearchData>())
                 return;
 
-            // 必须有目标单位
             if (target.targetUnit.IsNull) return;
 
-            // 1. 计算基础伤害
-            //    TODO: 后续再把增伤/减伤/护盾等统一收进伤害结算层
             float finalDamage = dmg.damageFunc(source.caster, source.ability, target.targetUnit, dmg);
-
-            // 2. 扣除目标生命值
             float remaining = AttributeHelper.ModifyCurrent(
                 target.targetUnit, AttributeHelper.Health, -finalDamage);
 
-            // 3. 检查是否死亡
             if (remaining <= 0)
             {
                 // TODO: 调用 UnitHelper.Kill(target.targetUnit, source.caster);
             }
 
-            // 4. 标记已处理（如果没有其他效果需要处理则删除）
             if (!effectEntity.HasComponent<HealEffectData>() &&
                 !effectEntity.HasComponent<ApplyBuffData>())
             {
@@ -223,11 +351,9 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
 /// <summary>
 /// 治疗效果处理系统 - 回复目标生命值
 /// </summary>
+[SystemRegister(SystemKind.Interval, 121)]
 public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, EffectTargetInfo>
 {
-    /// <summary>
-    /// 初始化治疗效果系统，仅处理待处理的效果实体。
-    /// </summary>
     public HealEffectSystem()
     {
         Filter.AnyTags(Tags.Get<EffectPending>());
@@ -240,26 +366,19 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
         Query.ForEachEntity((ref HealEffectData heal, ref EffectSource source,
             ref EffectTargetInfo target, Entity effectEntity) =>
         {
-            // 如果有弹道且未到达，等待
-            if (effectEntity.HasComponent<ProjectileData>() && !effectEntity.Tags.Has<ProjectileArrived>())
+            if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
                 return;
 
-            // 如果有范围搜索组件，由 AreaSearchSystem 处理
             if (effectEntity.HasComponent<AreaSearchData>())
                 return;
 
-            // 必须有目标单位
             if (target.targetUnit.IsNull) return;
 
-            // 1. 计算基础治疗量
-            //    TODO: 后续再把治疗增幅等统一收进结算层
             float finalHeal = heal.healFunc(source.caster, source.ability, target.targetUnit, heal);
 
-            // 2. 回复目标生命值
             AttributeHelper.ModifyCurrent(
                 target.targetUnit, AttributeHelper.Health, finalHeal);
 
-            // 3. 标记已处理
             if (!effectEntity.HasComponent<DamageEffectData>() &&
                 !effectEntity.HasComponent<ApplyBuffData>())
             {
@@ -277,11 +396,9 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
 /// <summary>
 /// Buff 施加效果系统 - 给目标添加 Buff
 /// </summary>
+[SystemRegister(SystemKind.Interval, 122)]
 public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectTargetInfo>
 {
-    /// <summary>
-    /// 初始化 Buff 效果系统，仅处理待处理的效果实体。
-    /// </summary>
     public BuffEffectSystem()
     {
         Filter.AnyTags(Tags.Get<EffectPending>());
@@ -294,18 +411,14 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
         Query.ForEachEntity((ref ApplyBuffData buffData, ref EffectSource source,
             ref EffectTargetInfo target, Entity effectEntity) =>
         {
-            // 如果有弹道且未到达，等待
-            if (effectEntity.HasComponent<ProjectileData>() && !effectEntity.Tags.Has<ProjectileArrived>())
+            if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
                 return;
 
-            // 如果有范围搜索组件，由 AreaSearchSystem 处理
             if (effectEntity.HasComponent<AreaSearchData>())
                 return;
 
-            // 必须有目标单位
             if (target.targetUnit.IsNull) return;
 
-            // 施加 Buff（使用已有的 BuffHelper）
             BuffHelper.AddTimedBuff(
                 Game.Store,
                 target.targetUnit,
@@ -318,7 +431,6 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
                 buffData.refreshBehavior
             );
 
-            // 标记已处理
             toDelete.Add(effectEntity);
         });
 
@@ -330,14 +442,11 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
 }
 
 /// <summary>
-/// 效果清理系统 - 清理所有已处理完毕的效果 Entity
-/// 作为最后的兜底，确保没有遗留的效果 Entity
+/// 效果清理系统 - 清理所有已处理完毕的效果 Entity。
 /// </summary>
+[SystemRegister(SystemKind.Interval, 130)]
 public class EffectCleanupSystem : QuerySystem<EffectSource>
 {
-    /// <summary>
-    /// 初始化效果清理系统，仅处理待处理的效果实体。
-    /// </summary>
     public EffectCleanupSystem()
     {
         Filter.AnyTags(Tags.Get<EffectPending>());
@@ -349,15 +458,12 @@ public class EffectCleanupSystem : QuerySystem<EffectSource>
 
         Query.ForEachEntity((ref EffectSource source, Entity effectEntity) =>
         {
-            // 还有弹道在飞行中，不清理
-            if (effectEntity.HasComponent<ProjectileData>() && !effectEntity.Tags.Has<ProjectileArrived>())
+            if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
                 return;
 
-            // 还有范围搜索未处理，不清理
             if (effectEntity.HasComponent<AreaSearchData>())
                 return;
 
-            // 所有效果都已处理，清理
             bool hasUnprocessed =
                 effectEntity.HasComponent<DamageEffectData>() ||
                 effectEntity.HasComponent<HealEffectData>() ||
@@ -373,5 +479,219 @@ public class EffectCleanupSystem : QuerySystem<EffectSource>
         {
             entity.DeleteEntity();
         }
+    }
+}
+
+internal static class ProjectileFlowHelper
+{
+    public static bool ShouldProcess(ProjectileRuntimeState state)
+    {
+        return state.phase is ProjectileLifecyclePhase.PendingStart or ProjectileLifecyclePhase.InFlight;
+    }
+
+    public static bool HasPendingProjectile(Entity effectEntity)
+    {
+        bool hasProjectile = effectEntity.HasComponent<ProjectileData>() ||
+                             effectEntity.HasComponent<ProjectileLinearData>();
+        return hasProjectile && !effectEntity.Tags.Has<ProjectileArrived>();
+    }
+
+    public static void ApplyRequests(List<Entity> arriveRequests, List<Entity> expireRequests)
+    {
+        foreach (var effectEntity in arriveRequests)
+        {
+            if (!effectEntity.Tags.Has<ProjectileArriveRequest>())
+            {
+                effectEntity.AddTag<ProjectileArriveRequest>();
+            }
+        }
+
+        foreach (var effectEntity in expireRequests)
+        {
+            if (!effectEntity.Tags.Has<ProjectileExpireRequest>())
+            {
+                effectEntity.AddTag<ProjectileExpireRequest>();
+            }
+        }
+    }
+
+    public static void DestroyProjectileVisual(Entity effectEntity)
+    {
+        if (effectEntity.TryGetComponent<ProjectileData>(out var projectile) && !projectile.effectEntity.IsNull)
+        {
+            EffectHelper.Destroy(projectile.effectEntity, hideFirst: true);
+        }
+
+        if (effectEntity.TryGetComponent<ProjectileLinearData>(out var linear) && !linear.effectEntity.IsNull)
+        {
+            EffectHelper.Destroy(linear.effectEntity, hideFirst: true);
+        }
+    }
+}
+
+internal static class ProjectileHookBridge
+{
+    public static void DispatchStartHooks(Entity effectEntity, ref ProjectileData projectile,
+        ref EffectSource source, ref EffectTargetInfo target, ref Position position,
+        ref ProjectileRuntimeState runtimeState)
+    {
+        if (!TryResolveTemplate(source.ability, out var template))
+            return;
+
+        if (template is IProjectileOnStart legacyStart)
+        {
+            var legacyProjectile = CreateLegacyProjectile(source, target, position, projectile.speed);
+            legacyStart.ProjectileOnStart(ref legacyProjectile, ref position, effectEntity);
+            ApplyLegacyProjectile(ref legacyProjectile, ref target, ref projectile.speed);
+        }
+
+        if (template is IProjectileHooksV2 hooksV2)
+        {
+            hooksV2.OnStart(effectEntity, ref source, ref target, ref position, ref runtimeState);
+        }
+    }
+
+    public static void DispatchStartHooks(Entity effectEntity, ref ProjectileLinearData projectile,
+        ref EffectSource source, ref EffectTargetInfo target, ref Position position,
+        ref ProjectileRuntimeState runtimeState)
+    {
+        if (!TryResolveTemplate(source.ability, out var template))
+            return;
+
+        if (template is IProjectileOnStart legacyStart)
+        {
+            var legacyProjectile = CreateLegacyProjectile(source, target, position, projectile.speed);
+            legacyStart.ProjectileOnStart(ref legacyProjectile, ref position, effectEntity);
+            ApplyLegacyProjectile(ref legacyProjectile, ref target, ref projectile.speed);
+        }
+
+        if (template is IProjectileHooksV2 hooksV2)
+        {
+            hooksV2.OnStart(effectEntity, ref source, ref target, ref position, ref runtimeState);
+        }
+    }
+
+    public static ProjectileTravelDecision DispatchTravelHooks(Entity effectEntity, ref ProjectileData projectile,
+        ref EffectSource source, ref EffectTargetInfo target, ref Position position,
+        ref ProjectileRuntimeState runtimeState)
+    {
+        return DispatchTravelHooksCore(effectEntity, ref source, ref target, ref position, ref runtimeState,
+            ref projectile.speed);
+    }
+
+    public static ProjectileTravelDecision DispatchTravelHooks(Entity effectEntity, ref ProjectileLinearData projectile,
+        ref EffectSource source, ref EffectTargetInfo target, ref Position position,
+        ref ProjectileRuntimeState runtimeState)
+    {
+        return DispatchTravelHooksCore(effectEntity, ref source, ref target, ref position, ref runtimeState,
+            ref projectile.speed);
+    }
+
+    public static void DispatchArriveHooks(Entity effectEntity, ref EffectSource source,
+        ref EffectTargetInfo target, ref Position position, ref ProjectileRuntimeState runtimeState)
+    {
+        if (!TryResolveTemplate(source.ability, out var template))
+            return;
+
+        float speed = 0f;
+        if (effectEntity.TryGetComponent<ProjectileData>(out var projectile))
+        {
+            speed = projectile.speed;
+        }
+        else if (effectEntity.TryGetComponent<ProjectileLinearData>(out var linear))
+        {
+            speed = linear.speed;
+        }
+
+        if (template is IProjectileOnArrive legacyArrive)
+        {
+            var legacyProjectile = CreateLegacyProjectile(source, target, position, speed);
+            legacyArrive.ProjectileOnArrive(ref legacyProjectile, ref position, effectEntity);
+        }
+
+        if (template is IProjectileHooksV2 hooksV2)
+        {
+            hooksV2.OnArrive(effectEntity, ref source, ref target, ref position, ref runtimeState);
+        }
+    }
+
+    private static ProjectileTravelDecision DispatchTravelHooksCore(Entity effectEntity,
+        ref EffectSource source, ref EffectTargetInfo target, ref Position position,
+        ref ProjectileRuntimeState runtimeState, ref float speed)
+    {
+        if (!TryResolveTemplate(source.ability, out var template))
+            return ProjectileTravelDecision.Continue;
+
+        var decision = ProjectileTravelDecision.Continue;
+
+        if (template is IProjectileOnTravel legacyTravel)
+        {
+            var legacyProjectile = CreateLegacyProjectile(source, target, position, speed);
+            var allowArrive = legacyTravel.ProjectileOnTravel(ref legacyProjectile, ref position, effectEntity);
+            ApplyLegacyProjectile(ref legacyProjectile, ref target, ref speed);
+            if (!allowArrive)
+            {
+                decision = MergeDecision(decision, ProjectileTravelDecision.SuppressArrivalThisTick);
+            }
+        }
+
+        if (template is IProjectileHooksV2 hooksV2)
+        {
+            decision = MergeDecision(decision,
+                hooksV2.OnTravel(effectEntity, ref source, ref target, ref position, ref runtimeState));
+        }
+
+        return decision;
+    }
+
+    private static ProjectileTravelDecision MergeDecision(
+        ProjectileTravelDecision current,
+        ProjectileTravelDecision incoming)
+    {
+        if (current == ProjectileTravelDecision.RequestExpire || incoming == ProjectileTravelDecision.RequestExpire)
+            return ProjectileTravelDecision.RequestExpire;
+
+        if (current == ProjectileTravelDecision.SuppressArrivalThisTick ||
+            incoming == ProjectileTravelDecision.SuppressArrivalThisTick)
+            return ProjectileTravelDecision.SuppressArrivalThisTick;
+
+        return ProjectileTravelDecision.Continue;
+    }
+
+    private static ProjectileBase CreateLegacyProjectile(
+        EffectSource source,
+        EffectTargetInfo target,
+        Position position,
+        float speed)
+    {
+        return new ProjectileBase
+        {
+            TargetEntity = target.targetUnit.IsNull ? null : target.targetUnit,
+            SourceAbility = source.ability,
+            SourceEntity = source.caster,
+            targetX = target.targetX,
+            targetY = target.targetY,
+            targetZ = position.z,
+            speed = speed,
+            height = position.z,
+            startX = position.x,
+            startY = position.y
+        };
+    }
+
+    private static void ApplyLegacyProjectile(ref ProjectileBase projectile, ref EffectTargetInfo target, ref float speed)
+    {
+        target.targetX = projectile.targetX;
+        target.targetY = projectile.targetY;
+        speed = projectile.speed;
+    }
+
+    private static bool TryResolveTemplate(Entity abilityEntity, out IAbilityTemplate template)
+    {
+        template = null!;
+        if (!abilityEntity.TryGetComponent(out AbilityBase abilityBase))
+            return false;
+
+        return AbilityTemplate.TryGet(abilityBase.templateName, out template);
     }
 }

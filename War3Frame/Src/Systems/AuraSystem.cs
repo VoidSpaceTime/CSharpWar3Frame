@@ -160,9 +160,9 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
 
     private (float x, float y) GetUnitPosition(Entity unit)
     {
-        if (unit.TryGetComponent<UnitNative>(out var native))
+        if (unit.TryGetComponent<Position>(out var position))
         {
-            return (JassApi.GetUnitX(native.unit), JassApi.GetUnitY(native.unit));
+            return (position.x, position.y);
         }
 
         return (0, 0);

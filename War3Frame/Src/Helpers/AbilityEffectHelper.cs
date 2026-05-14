@@ -69,20 +69,12 @@ public static class AbilityEffectHelper
                 proj.arrivalThreshold = 30f;
 
             effectEntity.AddComponent(proj);
-
-            // 弹道需要位置组件来跟踪飞行
-            if (caster.TryGetComponent<Position>(out var casterPos))
-            {
-                effectEntity.AddComponent(new Position
-                {
-                    x = casterPos.x,
-                    y = casterPos.y
-                });
-            }
+            EnsureProjectilePosition(effectEntity, caster);
+            EnsureProjectileRuntimeState(effectEntity);
         }
 
         // 线性弹道效果（方向射击，沿途命中）
-        if (ability.TryGetComponent<LinearProjectileData>(out var linear))
+        if (ability.TryGetComponent<ProjectileLinearData>(out var linear))
         {
             // 计算飞行方向（从施法者指向目标点）
             if (caster.TryGetComponent<Position>(out var casterPos2))
@@ -95,16 +87,12 @@ public static class AbilityEffectHelper
                     linear.dirX = dx / dist;
                     linear.dirY = dy / dist;
                 }
-
-                effectEntity.AddComponent(new Position
-                {
-                    x = casterPos2.x,
-                    y = casterPos2.y
-                });
             }
 
             linear.traveled = 0;
             effectEntity.AddComponent(linear);
+            EnsureProjectilePosition(effectEntity, caster);
+            EnsureProjectileRuntimeState(effectEntity);
         }
 
         return effectEntity;
@@ -148,5 +136,32 @@ public static class AbilityEffectHelper
         // 注意：不复制 AreaSearch 和 Projectile，子效果是直接生效的
 
         return childEntity;
+    }
+
+    private static void EnsureProjectilePosition(Entity effectEntity, Entity caster)
+    {
+        if (effectEntity.TryGetComponent<Position>(out _))
+            return;
+
+        if (caster.TryGetComponent<Position>(out var casterPos))
+        {
+            effectEntity.AddComponent(new Position
+            {
+                x = casterPos.x,
+                y = casterPos.y,
+                z = casterPos.z
+            });
+        }
+    }
+
+    private static void EnsureProjectileRuntimeState(Entity effectEntity)
+    {
+        if (!effectEntity.TryGetComponent<ProjectileRuntimeState>(out _))
+        {
+            effectEntity.AddComponent(new ProjectileRuntimeState
+            {
+                phase = ProjectileLifecyclePhase.PendingStart
+            });
+        }
     }
 }

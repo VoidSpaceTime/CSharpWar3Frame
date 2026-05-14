@@ -47,13 +47,41 @@ public static class AbilitySlotHelper
     /// </summary>
     public static Entity AttachAbilityToSlot(Entity unit, Entity ability, int slotIndex)
     {
-        unit.Store.CreateEntity(new AbilityAttachRequest
+        // 直接实现逻辑，不再转发
+        if (!unit.TryGetComponent<AbilitySlotContainer>(out var container))
+            throw new InvalidOperationException($"单位 {unit.Id} 没有 AbilitySlotContainer 组件");
+
+        if (ability.IsNull || !ability.TryGetComponent<AbilityBase>(out _))
+            throw new InvalidOperationException($"实体 {ability.Id} 不是合法技能实体");
+
+        if (slotIndex < 0 || slotIndex >= container.maxSlots)
+            throw new InvalidOperationException($"槽位索引 {slotIndex} 超出范围 [0, {container.maxSlots})");
+
+        if (IsSlotOccupied(unit, slotIndex))
+            throw new InvalidOperationException($"槽位 {slotIndex} 已被占用");
+
+        if (ability.TryGetComponent<AbilityOwner>(out var owner) && !owner.owner.IsNull)
+            throw new InvalidOperationException($"技能 {ability.Id} 已经装配到单位 {owner.owner.Id}");
+
+        ability.AddComponent(new AbilitySlotIndex { slotIndex = slotIndex });
+        ability.AddComponent(new AbilityOwner(unit));
+        ability.AddComponent(new AbilityMountInfo
         {
-            unit = unit,
-            ability = ability,
-            slotIndex = slotIndex
+            mountType = AbilityMountType.Slot
         });
-        Game.FlushImmediateSystems();
+
+        if (ability.TryGetComponent<AttributeContributionEntry>(out _))
+        {
+            ability.AddComponent(new AttributeContributionSource
+            {
+                kind = Components.ModifierSourceType.Ability
+            });
+            ability.AddTag<AbilityAttrApplyRequest>();
+            ability.RemoveTag<AbilityAttrRemoveRequest>();
+        }
+
+        container.currentCount++;
+        unit.AddComponent(container);
 
         return ability;
     }
@@ -94,13 +122,23 @@ public static class AbilitySlotHelper
         var ability = GetAbilityAtSlot(unit, slotIndex);
         if (ability == null) return false;
 
-        unit.Store.CreateEntity(new AbilityRemoveRequest
+        // 直接实现逻辑
+        if (unit.TryGetComponent<AbilitySlotContainer>(out var container))
         {
-            unit = unit,
-            slotIndex = slotIndex,
-            destroyAbility = true
+            container.currentCount = Math.Max(0, container.currentCount - 1);
+            unit.AddComponent(container);
+        }
+
+        ability.Value.AddTag<AbilityAttrRemoveRequest>();
+        ability.Value.RemoveComponent<AbilityOwner>();
+        ability.Value.RemoveComponent<AbilitySlotIndex>();
+        ability.Value.AddComponent(new AbilityMountInfo
+        {
+            mountType = AbilityMountType.NonSlot
         });
-        Game.FlushImmediateSystems();
+
+        Helpers.AbilityHelper.RemoveAbility(ability.Value);
+
         return true;
     }
 
@@ -115,16 +153,9 @@ public static class AbilitySlotHelper
         {
             if (ability.TryGetComponent<AbilitySlotIndex>(out var slotIndex))
             {
-                unit.Store.CreateEntity(new AbilityRemoveRequest
-                {
-                    unit = unit,
-                    slotIndex = slotIndex.slotIndex,
-                    destroyAbility = true
-                });
+                RemoveAbilityFromSlot(unit, slotIndex.slotIndex);
             }
         }
-
-        Game.FlushImmediateSystems();
     }
 
     #endregion

@@ -75,6 +75,38 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
                 KKApi.DzPlayEffectAnimation(native.effect, animation.animation, animation.link);
                 entity.RemoveComponent<EffectAnimationRequest>();
             }
+
+            if (entity.TryGetComponent<EffectTransformRequest>(out var transform))
+            {
+                switch (transform.operation)
+                {
+                    case EffectTransformOperation.Reset:
+                        YDApi.EXEffectMatReset(native.effect);
+                        break;
+                    case EffectTransformOperation.RotateX:
+                        YDApi.EXEffectMatRotateX(native.effect, transform.value);
+                        break;
+                    case EffectTransformOperation.RotateY:
+                        YDApi.EXEffectMatRotateY(native.effect, transform.value);
+                        break;
+                    case EffectTransformOperation.RotateZ:
+                        YDApi.EXEffectMatRotateZ(native.effect, transform.value);
+                        break;
+                }
+
+                entity.RemoveComponent<EffectTransformRequest>();
+            }
+
+            if (entity.TryGetComponent<EffectDestroyRequest>(out var destroy))
+            {
+                if (destroy.hideFirst)
+                {
+                    KKApi.DzSetEffectVisible(native.effect, false);
+                }
+
+                JassApi.DestroyEffect(native.effect);
+                entity.DeleteEntity();
+            }
         });
     }
 

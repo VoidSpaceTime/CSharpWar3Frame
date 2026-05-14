@@ -57,7 +57,6 @@ public class MoveSystem : QuerySystem<MoveCommand, Position>, ITimedSystem
                 // 继续移动
                 ExecuteMove(unit, move, pos);
             }
-            Game.FlushImmediateSystems();
         });
     }
 
@@ -80,27 +79,15 @@ public class MoveSystem : QuerySystem<MoveCommand, Position>, ITimedSystem
                 commandToken = move.commandToken,
                 hasStarted = true
             });
-            unit.AddComponent(new MoveNativeCommandRequest
-            {
-                commandToken = move.commandToken,
-                orderType = move.orderType,
-                targetX = move.targetX,
-                targetY = move.targetY
-            });
+            UnitHelper.RequestMoveCommand(unit, move.orderType, move.targetX, move.targetY, move.commandToken);
         }
     }
 
     // 到达目标
     private void HandleArrival(Entity unit, MoveCommand move)
     {
-        // 到达后发布 stop 命令，由执行层负责执行
-        unit.AddComponent(new MoveNativeCommandRequest
-        {
-            commandToken = move.commandToken,
-            orderType = MoveOrderType.Stop,
-            targetX = move.targetX,
-            targetY = move.targetY
-        });
+        // 到达后发布 stop 命令
+        UnitHelper.RequestMoveCommand(unit, MoveOrderType.Stop, move.targetX, move.targetY, move.commandToken);
 
         unit.RemoveTag<MovingTag>();
 

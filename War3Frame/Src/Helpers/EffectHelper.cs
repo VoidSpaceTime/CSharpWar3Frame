@@ -1,6 +1,4 @@
 using Friflo.Engine.ECS;
-using War3Frame.Library.Api;
-
 namespace War3Frame;
 
 /// <summary>
@@ -24,10 +22,7 @@ public static class EffectHelper
     {
         if (duration == 0)
         {
-            var onceEffect = JassApi.AddSpecialEffect(model, x, y);
-            YDApi.EXSetEffectZ(onceEffect, z);
-            JassApi.DestroyEffect(onceEffect);
-            return null;
+            duration = 0.02f;
         }
 
         // 创建 ECS Entity
@@ -67,11 +62,7 @@ public static class EffectHelper
     {
         if (duration == 0)
         {
-            if (!unit.TryGetComponent<UnitNative>(out var onceUnitNative)) return null;
-            var onceAttachPoint = GetAttachPointString(attachPoint);
-            var onceHandle = JassApi.AddSpecialEffectTarget(model, onceUnitNative.unit, onceAttachPoint);
-            JassApi.DestroyEffect(onceHandle);
-            return null;
+            duration = 0.02f;
         }
 
         var entity = Game.Store.CreateEntity(
@@ -113,17 +104,7 @@ public static class EffectHelper
     /// <param name="hideFirst">销毁前是否先隐藏（避免闪烁）</param>
     public static void Destroy(Entity entity, bool hideFirst = false)
     {
-        if (entity.TryGetComponent<EffectNative>(out var native))
-        {
-            if (hideFirst)
-            {
-                KKApi.DzSetEffectVisible(native.effect, false);
-            }
-
-            JassApi.DestroyEffect(native.effect);
-        }
-
-        entity.DeleteEntity();
+        entity.AddComponent(new EffectDestroyRequest { hideFirst = hideFirst });
     }
 
     #endregion
@@ -245,8 +226,10 @@ public static class EffectHelper
     /// </summary>
     public static void Reset(Entity entity)
     {
-        if (!entity.TryGetComponent<EffectNative>(out var native)) return;
-        YDApi.EXEffectMatReset(native.effect);
+        entity.AddComponent(new EffectTransformRequest
+        {
+            operation = EffectTransformOperation.Reset
+        });
     }
 
     /// <summary>
@@ -254,8 +237,11 @@ public static class EffectHelper
     /// </summary>
     public static void SetRotateX(Entity entity, float angle)
     {
-        if (!entity.TryGetComponent<EffectNative>(out var native)) return;
-        YDApi.EXEffectMatRotateX(native.effect, angle);
+        entity.AddComponent(new EffectTransformRequest
+        {
+            operation = EffectTransformOperation.RotateX,
+            value = angle
+        });
     }
 
     /// <summary>
@@ -263,8 +249,11 @@ public static class EffectHelper
     /// </summary>
     public static void SetRotateY(Entity entity, float angle)
     {
-        if (!entity.TryGetComponent<EffectNative>(out var native)) return;
-        YDApi.EXEffectMatRotateY(native.effect, angle);
+        entity.AddComponent(new EffectTransformRequest
+        {
+            operation = EffectTransformOperation.RotateY,
+            value = angle
+        });
     }
 
     /// <summary>
@@ -272,8 +261,11 @@ public static class EffectHelper
     /// </summary>
     public static void SetRotateZ(Entity entity, float angle)
     {
-        if (!entity.TryGetComponent<EffectNative>(out var native)) return;
-        YDApi.EXEffectMatRotateZ(native.effect, angle);
+        entity.AddComponent(new EffectTransformRequest
+        {
+            operation = EffectTransformOperation.RotateZ,
+            value = angle
+        });
     }
 
     #endregion

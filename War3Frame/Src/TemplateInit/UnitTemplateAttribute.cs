@@ -81,7 +81,7 @@ public static partial class UnitTemplate
                 x = x,
                 y = y,
                 facing = facing,
-                unitTypeId = JassApi.C2I("hfoo")
+                unitTypeId = FourCc.ToId("hfoo")
             }
         );
 

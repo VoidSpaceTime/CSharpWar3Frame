@@ -54,6 +54,13 @@ public static partial class AbilityTemplate
         return _templates.GetValueOrDefault(templateName);
     }
 
+    public static bool TryGet(string templateName, out IAbilityTemplate template)
+    {
+        var flag = _templates.TryGetValue(templateName, out template);
+        return flag;
+    }
+
+
     /// <summary>
     /// 将模板应用到技能 Entity 上
     /// </summary>

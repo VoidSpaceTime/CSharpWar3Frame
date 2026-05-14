@@ -48,7 +48,6 @@ public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
                     {
                         state.lifePhase = UnitLifecyclePhase.ClearCorpse;
                         timer.owner.AddComponent(state);
-                        Game.FlushImmediateSystems();
                     }
                     break;
                 case TimerTaskKind.BuffExpire:
