@@ -16,11 +16,13 @@ public interface ITimedSystem
 
 /// <summary>
 ///     支持每个 System 独立更新频率的 SystemRoot
-///     直接继承 SystemRoot，完全兼容 ECS 生态
+///     通过条件执行保证系统顺序稳定
 /// </summary>
 public class TimedSystemRoot : SystemRoot
 {
-    private readonly SortedDictionary<BaseSystem, TimerInfo> _timerInfos = new();
+    private readonly Dictionary<BaseSystem, TimerInfo> _timerInfos = new();
+    private readonly Dictionary<BaseSystem, SystemGroup> _systemGroups = new();
+    private readonly List<BaseSystem> _systems = [];
 
     public TimedSystemRoot(EntityStore store) : base(store)
     {
@@ -36,13 +38,13 @@ public class TimedSystemRoot : SystemRoot
     /// </summary>
     public new void Add(BaseSystem system)
     {
-        base.Add(system);
-
-        // 优先使用 System 自定义的 Interval
         var interval = DefaultInterval;
-        if (system is ITimedSystem timedSystem && timedSystem.Interval > 0) interval = timedSystem.Interval;
+        if (system is ITimedSystem timedSystem && timedSystem.Interval > 0)
+        {
+            interval = timedSystem.Interval;
+        }
 
-        if (interval > 0) _timerInfos[system] = new TimerInfo { Interval = interval };
+        Add(system, interval);
     }
 
     /// <summary>
@@ -50,8 +52,23 @@ public class TimedSystemRoot : SystemRoot
     /// </summary>
     public void Add(BaseSystem system, float interval)
     {
-        base.Add(system);
-        if (interval > 0) _timerInfos[system] = new TimerInfo { Interval = interval };
+        if (_systemGroups.ContainsKey(system))
+        {
+            SetInterval(system, interval);
+            return;
+        }
+
+        var group = new SystemGroup(system.Name);
+        group.Add(system);
+
+        base.Add(group);
+        _systemGroups[system] = group;
+        _systems.Add(system);
+
+        if (interval > 0)
+        {
+            _timerInfos[system] = new TimerInfo { Interval = interval };
+        }
     }
 
     /// <summary>
@@ -76,33 +93,58 @@ public class TimedSystemRoot : SystemRoot
     }
 
     /// <summary>
-    ///     重写 Update - 对有间隔的 System，临时移除再添加回来以跳过本帧更新
+    ///     移除 System
+    /// </summary>
+    public new void Remove(BaseSystem system)
+    {
+        if (_systemGroups.Remove(system, out var group))
+        {
+            base.Remove(group);
+        }
+        else
+        {
+            base.Remove(system);
+        }
+
+        _systems.Remove(system);
+        _timerInfos.Remove(system);
+    }
+
+    /// <summary>
+    ///     重写 Update - 按 System 独立计时并为每个被调度的 System 传入实际累计 deltaTime
     /// </summary>
     public new void Update(UpdateTick tick)
     {
-        // 收集本帧需要跳过的 System
-        var toSkip = new List<BaseSystem>();
-
-        foreach (var kvp in _timerInfos)
+        foreach (var system in _systems)
         {
-            var system = kvp.Key;
-            var info = kvp.Value;
+            if (!_systemGroups.TryGetValue(system, out var group))
+            {
+                continue;
+            }
+
+            if (!system.Enabled)
+            {
+                continue;
+            }
+
+            if (!_timerInfos.TryGetValue(system, out var info))
+            {
+                group.Update(tick);
+                continue;
+            }
 
             info.Accumulated += tick.deltaTime;
             if (info.Accumulated < info.Interval)
-                toSkip.Add(system); // 还没到时间，跳过
-            else
-                info.Accumulated -= info.Interval; // 到时间了，执行
+            {
+                continue;
+            }
+
+            var elapsed = info.Accumulated;
+            var overrun = elapsed % info.Interval;
+            info.Accumulated = overrun;
+
+            group.Update(new UpdateTick(elapsed, tick.time));
         }
-
-        // 临时移除需要跳过的 System
-        foreach (var system in toSkip) Remove(system);
-
-        // 执行更新
-        base.Update(tick);
-
-        // 恢复被移除的 System
-        foreach (var system in toSkip) base.Add(system);
     }
 
     private class TimerInfo
