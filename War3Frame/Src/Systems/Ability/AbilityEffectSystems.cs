@@ -344,7 +344,10 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
                 return;
 
             if (target.targetUnit.IsNull)
+            {
+                EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(DamageEffectData));
                 return;
+            }
 
             var amount = damageData.damageFunc != null
                 ? damageData.damageFunc(source.caster, source.ability, target.targetUnit, damageData)
@@ -386,7 +389,10 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
                 return;
 
             if (target.targetUnit.IsNull)
+            {
+                EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(HealEffectData));
                 return;
+            }
 
             var amount = heal.healFunc != null
                 ? heal.healFunc(source.caster, source.ability, target.targetUnit, heal)
@@ -394,7 +400,13 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
                     ? heal.amount
                     : AbilityHelper.GetHealAmount(source.ability);
 
-            AttributeHelper.ModifyCurrent(target.targetUnit, AttributeHelper.Health, amount);
+            Game.Store.CreateEntity(new HealRequest
+            {
+                source = source.caster,
+                target = target.targetUnit,
+                amount = amount
+            });
+
             EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(HealEffectData));
         });
     }
@@ -417,18 +429,22 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
                 return;
 
             if (target.targetUnit.IsNull)
+            {
+                EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(ApplyBuffData));
                 return;
+            }
 
-            BuffHelper.AddTimedBuff(
-                Game.Store,
-                target.targetUnit,
-                source.caster,
-                buffData.buffId,
-                buffData.attrTypeId,
-                buffData.modifyType,
-                buffData.value,
-                buffData.duration,
-                buffData.refreshBehavior);
+            Game.Store.CreateEntity(new BuffApplyRequest
+            {
+                source = source.caster,
+                target = target.targetUnit,
+                buffId = buffData.buffId,
+                attrTypeId = buffData.attrTypeId,
+                modifyType = buffData.modifyType,
+                value = buffData.value,
+                duration = buffData.duration,
+                refreshBehavior = buffData.refreshBehavior
+            });
 
             EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(ApplyBuffData));
         });
@@ -464,6 +480,83 @@ public class DamageResolveSystem : QuerySystem<DamageRequest>
 
             if (remaining <= 0f)
                 UnitHelper.KillUnit(request.target);
+
+            resolved.Add(requestEntity);
+        });
+
+        foreach (var entity in resolved)
+            entity.DeleteEntity();
+    }
+}
+
+[SystemRegister(SystemKind.Interval, 126)]
+public class HealResolveSystem : QuerySystem<HealRequest>
+{
+    protected override void OnUpdate()
+    {
+        var resolved = new List<Entity>();
+
+        Query.ForEachEntity((ref HealRequest request, Entity requestEntity) =>
+        {
+            if (request.target.IsNull)
+            {
+                resolved.Add(requestEntity);
+                return;
+            }
+
+            var finalHeal = MathF.Max(0f, request.amount);
+            var remaining = AttributeHelper.ModifyCurrent(request.target, AttributeHelper.Health, finalHeal);
+
+            Game.Store.CreateEntity(new HealEvent
+            {
+                source = request.source,
+                target = request.target,
+                baseHeal = request.amount,
+                finalHeal = finalHeal,
+                remainingHealth = remaining
+            });
+
+            resolved.Add(requestEntity);
+        });
+
+        foreach (var entity in resolved)
+            entity.DeleteEntity();
+    }
+}
+
+[SystemRegister(SystemKind.Interval, 127)]
+public class BuffApplyResolveSystem : QuerySystem<BuffApplyRequest>
+{
+    protected override void OnUpdate()
+    {
+        var resolved = new List<Entity>();
+
+        Query.ForEachEntity((ref BuffApplyRequest request, Entity requestEntity) =>
+        {
+            if (request.target.IsNull)
+            {
+                resolved.Add(requestEntity);
+                return;
+            }
+
+            var buff = BuffHelper.AddTimedBuff(
+                Game.Store,
+                request.target,
+                request.source,
+                request.buffId,
+                request.attrTypeId,
+                request.modifyType,
+                request.value,
+                request.duration,
+                request.refreshBehavior);
+
+            Game.Store.CreateEntity(new BuffAppliedEvent
+            {
+                source = request.source,
+                target = request.target,
+                buff = buff,
+                buffId = request.buffId
+            });
 
             resolved.Add(requestEntity);
         });

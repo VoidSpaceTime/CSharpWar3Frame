@@ -120,7 +120,8 @@ public static class AuraHelper
             var buff = link.Entity;
             if (buff.TryGetComponent<ModifyTarget>(out var target))
             {
-                unitsToRefresh.Add(target.target);
+                if (!target.target.IsNull)
+                    unitsToRefresh.Add(target.target);
             }
             toDelete.Add(buff);
         }
