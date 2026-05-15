@@ -7,6 +7,39 @@ public interface IAbilityTemplate
     public void Configure(Entity entity, int level);
 }
 
+public abstract class AbilityTemplateBase : IAbilityTemplate
+{
+    public abstract void Configure(Entity entity, int level);
+
+    public virtual void OnProjectileStart(
+        Entity effectEntity,
+        ref EffectSource source,
+        ref EffectTargetInfo target,
+        ref Position position,
+        ref ProjectileRuntimeState runtimeState)
+    {
+    }
+
+    public virtual ProjectileTravelDecision OnProjectileTravel(
+        Entity effectEntity,
+        ref EffectSource source,
+        ref EffectTargetInfo target,
+        ref Position position,
+        ref ProjectileRuntimeState runtimeState)
+    {
+        return ProjectileTravelDecision.Continue;
+    }
+
+    public virtual void OnProjectileArrive(
+        Entity effectEntity,
+        ref EffectSource source,
+        ref EffectTargetInfo target,
+        ref Position position,
+        ref ProjectileRuntimeState runtimeState)
+    {
+    }
+}
+
 /// <summary>
 /// 标记一个类为技能模板
 /// Source Generator 会自动发现并注册这些类

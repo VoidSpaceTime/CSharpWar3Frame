@@ -1,4 +1,4 @@
-﻿using Friflo.Engine.ECS;
+using Friflo.Engine.ECS;
 
 namespace War3Frame.Src.Components;
 
@@ -19,15 +19,30 @@ public enum DamageSrc
 public struct DamageBase
 {
     public float damage;
-    public DamageType damageType; // 伤害类型，物理、魔法、真实等
-    public DamageSrc damageSrc; // 伤害来源，近战、远程等
+    public DamageType damageType;
+    public DamageSrc damageSrc;
     public Entity source;
     public Entity target;
 }
 
+/// <summary>
+/// Input command asking the combat pipeline to apply damage.
+/// </summary>
+public struct DamageRequest : IComponent
+{
+    public DamageBase damage;
+    public Entity source;
+    public Entity target;
+}
+
+/// <summary>
+/// Result event emitted after damage has been resolved.
+/// </summary>
 public struct DamageEvent : IComponent
 {
     public DamageBase damage;
+    public float finalDamage;
+    public float remainingHealth;
     public Entity source;
     public Entity target;
 }
