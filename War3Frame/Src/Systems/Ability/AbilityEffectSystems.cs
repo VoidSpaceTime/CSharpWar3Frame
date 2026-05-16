@@ -29,7 +29,7 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
             if (!ProjectileFlowHelper.ShouldProcess(runtimeState))
                 return;
 
-            NormalizeProjectileDefaults(ref projectile);
+                NormalizeProjectileDefaults(ref projectile, ref source, ref target, effectEntity);
 
             if (runtimeState.phase == ProjectileLifecyclePhase.PendingStart)
             {
@@ -71,8 +71,47 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
         ProjectileFlowHelper.ApplyRequests(arriveRequests, expireRequests);
     }
 
-    private static void NormalizeProjectileDefaults(ref ProjectileData projectile)
+    private static void NormalizeProjectileDefaults(ref ProjectileData projectile, ref EffectSource source,
+        ref EffectTargetInfo target, Entity effectEntity)
     {
+        var fallbackSpeed = projectile.speed > 0f
+            ? projectile.speed
+            : AbilityHelper.GetFinalValue(source.ability, AbilityHelper.ProjectileSpeed);
+        projectile.speed = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            target.targetUnit,
+            effectEntity,
+            projectile.speedValue,
+            fallbackSpeed);
+
+        var fallbackArrivalThreshold = projectile.arrivalThreshold;
+        projectile.arrivalThreshold = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            target.targetUnit,
+            effectEntity,
+            projectile.arrivalThresholdValue,
+            fallbackArrivalThreshold);
+
+        var fallbackMaxDistance = projectile.maxDistance;
+        projectile.maxDistance = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            target.targetUnit,
+            effectEntity,
+            projectile.maxDistanceValue,
+            fallbackMaxDistance);
+
+        var fallbackHitRadius = projectile.hitRadius;
+        projectile.hitRadius = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            target.targetUnit,
+            effectEntity,
+            projectile.hitRadiusValue,
+            fallbackHitRadius);
+
         if (projectile.arrivalThreshold <= 0f)
             projectile.arrivalThreshold = 30f;
 
@@ -304,7 +343,14 @@ public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, Effect
             if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
                 return;
 
-            var radius = AbilityHelper.GetRadius(source.ability);
+            var fallbackRadius = AbilityHelper.GetRadius(source.ability);
+            var radius = EffectFormulaRegistry.Resolve(
+                source.caster,
+                source.ability,
+                target.targetUnit,
+                effectEntity,
+                area.radiusValue,
+                fallbackRadius);
             var centerX = area.centerX == 0f && area.centerY == 0f ? target.targetX : area.centerX;
             var centerY = area.centerX == 0f && area.centerY == 0f ? target.targetY : area.centerY;
 
@@ -349,9 +395,16 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
                 return;
             }
 
+            var fallbackDamage = AbilityHelper.GetDamageAmount(source.ability);
             var amount = damageData.damageFunc != null
                 ? damageData.damageFunc(source.caster, source.ability, target.targetUnit, damageData)
-                : AbilityHelper.GetDamageAmount(source.ability);
+                : EffectFormulaRegistry.Resolve(
+                    source.caster,
+                    source.ability,
+                    target.targetUnit,
+                    effectEntity,
+                    damageData.value,
+                    fallbackDamage);
 
             Game.Store.CreateEntity(new DamageRequest
             {
@@ -394,11 +447,18 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
                 return;
             }
 
+            var fallbackHeal = heal.amount > 0f
+                ? heal.amount
+                : AbilityHelper.GetHealAmount(source.ability);
             var amount = heal.healFunc != null
                 ? heal.healFunc(source.caster, source.ability, target.targetUnit, heal)
-                : heal.amount > 0f
-                    ? heal.amount
-                    : AbilityHelper.GetHealAmount(source.ability);
+                : EffectFormulaRegistry.Resolve(
+                    source.caster,
+                    source.ability,
+                    target.targetUnit,
+                    effectEntity,
+                    heal.value,
+                    fallbackHeal);
 
             Game.Store.CreateEntity(new HealRequest
             {
@@ -434,6 +494,24 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
                 return;
             }
 
+            var fallbackDuration = buffData.duration;
+            var duration = EffectFormulaRegistry.Resolve(
+                source.caster,
+                source.ability,
+                target.targetUnit,
+                effectEntity,
+                buffData.durationValue,
+                fallbackDuration);
+
+            var fallbackValue = buffData.value;
+            var value = EffectFormulaRegistry.Resolve(
+                source.caster,
+                source.ability,
+                target.targetUnit,
+                effectEntity,
+                buffData.modifyValue,
+                fallbackValue);
+
             Game.Store.CreateEntity(new BuffApplyRequest
             {
                 source = source.caster,
@@ -441,8 +519,8 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
                 buffId = buffData.buffId,
                 attrTypeId = buffData.attrTypeId,
                 modifyType = buffData.modifyType,
-                value = buffData.value,
-                duration = buffData.duration,
+                value = value,
+                duration = duration,
                 refreshBehavior = buffData.refreshBehavior
             });
 

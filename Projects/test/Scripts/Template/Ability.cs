@@ -29,18 +29,12 @@ public class FireBlastTemplate : IAbilityTemplate
         AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 6f);
         AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 700f);
         AbilityHelper.SetBaseValue(ability, AbilityHelper.Radius, 180f);
-        ability.AddComponent(new AreaSearchData
-        {
-            filter = TargetFilter.EnemyAlive,
-            maxTargets = 0
-        });
-
-        ability.AddComponent(new DamageEffectData
-        {
-            damageFunc = ((caster, entity, target, damage) => { return 100f; }),
-            damageType = DamageType.Magical,
-            damageSrc = DamageSrc.Skill
-        });
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.DamageAmount, 100f);
+        AbilityHelper.SetEffectSpec(ability, EffectSpecBuilder
+            .Chain()
+            .Area(TargetFilter.EnemyAlive)
+            .Damage(EffectValueSpec.Stat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill)
+            .Build());
     }
 }
 
@@ -147,11 +141,9 @@ public class HealingWaveTemplate : IAbilityTemplate
         AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 6f);
         AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 500f);
         AbilityHelper.SetBaseValue(ability, AbilityHelper.HealAmount, 100 + 50 * level);
-
-        ability.AddComponent(new HealEffectData
-        {
-           healFunc = (caster, entity, target, heal) => 100f, 
-            valueTypeId = AbilityHelper.HealAmount
-        });
+        AbilityHelper.SetEffectSpec(ability, EffectSpecBuilder
+            .Chain()
+            .Heal(EffectValueSpec.Stat(AbilityHelper.HealAmount), AbilityHelper.HealAmount)
+            .Build());
     }
 }

@@ -67,6 +67,9 @@ public static class AbilityEffectHelper
             EnsureProjectileRuntimeState(effectEntity);
         }
 
+        if (AbilityHelper.TryGetEffectSpec(ability, out var spec))
+            ApplyEffectSpec(effectEntity, spec);
+
         return effectEntity;
     }
 
@@ -104,6 +107,72 @@ public static class AbilityEffectHelper
             childEntity.AddComponent(buff);
 
         return childEntity;
+    }
+
+    private static void ApplyEffectSpec(Entity effectEntity, EffectSpec spec)
+    {
+        foreach (var step in spec.steps)
+        {
+            switch (step.kind)
+            {
+                case EffectStepKind.Damage:
+                    effectEntity.AddComponent(new DamageEffectData
+                    {
+                        value = step.damage.value,
+                        damageType = step.damage.damageType,
+                        damageSrc = step.damage.damageSrc
+                    });
+                    break;
+                case EffectStepKind.Heal:
+                    effectEntity.AddComponent(new HealEffectData
+                    {
+                        value = step.heal.value,
+                        valueTypeId = step.heal.valueTypeId,
+                        amount = step.heal.amount
+                    });
+                    break;
+                case EffectStepKind.Buff:
+                    effectEntity.AddComponent(new ApplyBuffData
+                    {
+                        buffId = step.buff.buffId,
+                        durationValue = step.buff.duration,
+                        attrTypeId = step.buff.attrTypeId,
+                        modifyType = step.buff.modifyType,
+                        modifyValue = step.buff.value,
+                        refreshBehavior = step.buff.refreshBehavior
+                    });
+                    break;
+                case EffectStepKind.AreaSearch:
+                    effectEntity.AddComponent(new AreaSearchData
+                    {
+                        centerX = step.areaSearch.centerX,
+                        centerY = step.areaSearch.centerY,
+                        radiusValue = step.areaSearch.radius,
+                        maxTargets = step.areaSearch.maxTargets,
+                        filter = step.areaSearch.filter,
+                        customFilterId = step.areaSearch.customFilterId
+                    });
+                    break;
+                case EffectStepKind.Projectile:
+                    var projectile = new ProjectileData
+                    {
+                        trajectoryType = step.projectile.trajectoryType,
+                        model = step.projectile.model,
+                        speedValue = step.projectile.speed,
+                        effectEntity = step.projectile.effectEntity,
+                        arrivalThresholdValue = step.projectile.arrivalThreshold,
+                        maxDistanceValue = step.projectile.maxDistance,
+                        hitRadiusValue = step.projectile.hitRadius,
+                        hitFilter = step.projectile.hitFilter,
+                        canHitSameTarget = step.projectile.canHitSameTarget
+                    };
+
+                    effectEntity.AddComponent(projectile);
+                    EnsureProjectilePosition(effectEntity, effectEntity.GetComponent<EffectSource>().caster);
+                    EnsureProjectileRuntimeState(effectEntity);
+                    break;
+            }
+        }
     }
 
     private static void EnsureProjectilePosition(Entity effectEntity, Entity caster)

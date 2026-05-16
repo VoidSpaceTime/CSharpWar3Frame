@@ -40,6 +40,7 @@ public delegate float DamageFormulaFunc(Entity caster, Entity ability, Entity ta
 public struct DamageEffectData : IComponent
 {
     public DamageFormulaFunc damageFunc;
+    public EffectValueSpec value;
     public DamageType damageType;
     public DamageSrc damageSrc;
 }
@@ -49,6 +50,7 @@ public delegate float HealFormulaFunc(Entity caster, Entity ability, Entity targ
 public struct HealEffectData : IComponent
 {
     public HealFormulaFunc healFunc;
+    public EffectValueSpec value;
     public int valueTypeId;
     public float amount;
 }
@@ -56,9 +58,11 @@ public struct HealEffectData : IComponent
 public struct ApplyBuffData : IComponent
 {
     public string buffId;
+    public EffectValueSpec durationValue;
     public float duration;
     public int attrTypeId;
     public ModifyType modifyType;
+    public EffectValueSpec modifyValue;
     public float value;
     public BuffRefreshBehavior refreshBehavior;
 }
@@ -97,6 +101,7 @@ public struct AreaSearchData : IComponent
 {
     public float centerX;
     public float centerY;
+    public EffectValueSpec radiusValue;
     public int maxTargets;
     public TargetFilter filter;
     public string? customFilterId;
@@ -141,10 +146,14 @@ public struct ProjectileData : IComponent
 {
     public ProjectileTrajectoryType trajectoryType;
     public string model;
+    public EffectValueSpec speedValue;
     public float speed;
     public Entity effectEntity;
+    public EffectValueSpec arrivalThresholdValue;
     public float arrivalThreshold;
+    public EffectValueSpec maxDistanceValue;
     public float maxDistance;
+    public EffectValueSpec hitRadiusValue;
     public float hitRadius;
     public TargetFilter hitFilter;
     public bool canHitSameTarget;
