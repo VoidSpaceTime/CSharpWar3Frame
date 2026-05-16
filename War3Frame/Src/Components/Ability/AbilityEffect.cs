@@ -5,12 +5,19 @@ using War3Frame.Src.Components;
 
 namespace War3Frame;
 
+/// <summary>
+/// 记录一次效果的来源。
+/// caster 是施法者，ability 是定义效果链和数值的技能实体。
+/// </summary>
 public struct EffectSource : IComponent
 {
     public Entity caster;
     public Entity ability;
 }
 
+/// <summary>
+/// 记录效果目标。targetUnit 为空时表示点目标或纯区域效果。
+/// </summary>
 public struct EffectTargetInfo : IComponent
 {
     public Entity targetUnit;
@@ -18,6 +25,10 @@ public struct EffectTargetInfo : IComponent
     public float targetY;
 }
 
+/// <summary>
+/// 单次效果执行上下文。
+/// sourceEffect 用于标记区域搜索产生的子效果，effectId 用于调试和追踪链路。
+/// </summary>
 public struct AbilityEffectContext : IComponent
 {
     public Entity caster;
@@ -29,14 +40,21 @@ public struct AbilityEffectContext : IComponent
     public int effectId;
 }
 
+/// <summary>效果仍在等待 projectile / area / settlement 系统处理。</summary>
 public struct EffectPending : ITag;
 
+/// <summary>效果已经完成所有结算，可由生命周期系统清理。</summary>
 public struct EffectCompleted : ITag;
 
+/// <summary>效果被请求过期，通常由弹道或生命周期提前结束触发。</summary>
 public struct EffectExpired : ITag;
 
 public delegate float DamageFormulaFunc(Entity caster, Entity ability, Entity target, DamageEffectData damage);
 
+/// <summary>
+/// 伤害效果 payload。
+/// damageFunc 是高级覆盖；普通技能优先使用 value 中的 formulaId/statId。
+/// </summary>
 public struct DamageEffectData : IComponent
 {
     public DamageFormulaFunc damageFunc;
@@ -47,6 +65,10 @@ public struct DamageEffectData : IComponent
 
 public delegate float HealFormulaFunc(Entity caster, Entity ability, Entity target, HealEffectData heal);
 
+/// <summary>
+/// 治疗效果 payload。
+/// healFunc 是高级覆盖；普通技能优先使用 value，旧 amount/valueTypeId 作为兼容回退。
+/// </summary>
 public struct HealEffectData : IComponent
 {
     public HealFormulaFunc healFunc;
@@ -55,6 +77,10 @@ public struct HealEffectData : IComponent
     public float amount;
 }
 
+/// <summary>
+/// Buff 应用 payload。
+/// durationValue 和 modifyValue 允许配置表用公式表达持续时间和属性值。
+/// </summary>
 public struct ApplyBuffData : IComponent
 {
     public string buffId;
@@ -68,6 +94,10 @@ public struct ApplyBuffData : IComponent
 }
 
 [Flags]
+/// <summary>
+/// 区域搜索目标过滤条件。
+/// 这些标记描述语义意图，具体阵营/类型判断由 TargetFilterRegistry 和 GroupHelper 实现。
+/// </summary>
 public enum TargetFilter
 {
     None = 0,
@@ -97,6 +127,9 @@ public enum TargetFilter
     EnemyNonBuilding = Enemy | Hero | Normal | Summon | Alive,
 }
 
+/// <summary>
+/// 区域搜索 payload。搜索结果会生成子 effect，让伤害/治疗/Buff 对每个目标单独结算。
+/// </summary>
 public struct AreaSearchData : IComponent
 {
     public float centerX;
@@ -107,6 +140,10 @@ public struct AreaSearchData : IComponent
     public string? customFilterId;
 }
 
+/// <summary>
+/// 弹道生命周期阶段。
+/// Request 阶段用于跨系统交接，避免在移动系统里直接执行到达/过期副作用。
+/// </summary>
 public enum ProjectileLifecyclePhase
 {
     PendingStart,
@@ -117,6 +154,7 @@ public enum ProjectileLifecyclePhase
     Expired
 }
 
+/// <summary>弹道轨迹类型。Custom 保留给模板 hook 或后续扩展。</summary>
 public enum ProjectileTrajectoryType
 {
     Tracking,
@@ -128,6 +166,9 @@ public enum ProjectileTrajectoryType
     Custom
 }
 
+/// <summary>
+/// 弹道运行时状态，只属于运行时 effect 实体，不应写回 ability 模板。
+/// </summary>
 public struct ProjectileRuntimeState : IComponent
 {
     public ProjectileLifecyclePhase phase;
@@ -142,6 +183,10 @@ public struct ProjectileRuntimeState : IComponent
     public Entity visualEntity;
 }
 
+/// <summary>
+/// 弹道效果 payload。
+/// 数值字段优先支持 EffectValueSpec，旧 float 字段保留为兼容回退。
+/// </summary>
 public struct ProjectileData : IComponent
 {
     public ProjectileTrajectoryType trajectoryType;

@@ -26,6 +26,7 @@ public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
 
             if (timer.owner.IsNull)
             {
+                // owner 已不存在时，计时任务没有继续推进的语义，直接回收。
                 entity.DeleteEntity();
                 return;
             }
@@ -43,6 +44,7 @@ public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
             switch (timer.kind)
             {
                 case TimerTaskKind.CorpseCleanup:
+                    // 计时器只把尸体标记为可清理，具体生命周期推进由 UnitLifecycleTransitionSystem 完成。
                     if (!timer.owner.IsNull && timer.owner.TryGetComponent<UnitLifeState>(out UnitLifeState state)
                         && state.lifePhase == UnitLifecyclePhase.Corpse)
                     {
@@ -51,6 +53,7 @@ public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
                     }
                     break;
                 case TimerTaskKind.BuffExpire:
+                    // Buff 到期用标签表达结果，实际移除逻辑由 Buff 系统消费。
                     entity.AddTag<BuffExpired>();
                     break;
             }
@@ -63,6 +66,7 @@ public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
             }
 
             timer.remaining += timer.interval;
+            // 周期任务保留同一个实体并刷新剩余时间，便于外部通过 source/owner 继续追踪。
             entity.AddComponent(timer);
         });
     }

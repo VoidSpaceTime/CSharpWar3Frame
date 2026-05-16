@@ -10,6 +10,8 @@ namespace War3Frame.Src.Systems;
 [SystemRegister(SystemKind.Immediate)]
 public class UnitCreateNativeSystem : QuerySystem<NativeUnitCreateRequest>
 {
+    // 原生单位创建集中在 Native 层，创建出的句柄回写为 UnitNative。
+
     protected override void OnUpdate()
     {
         Query.ForEachEntity((ref NativeUnitCreateRequest request, Entity entity) =>

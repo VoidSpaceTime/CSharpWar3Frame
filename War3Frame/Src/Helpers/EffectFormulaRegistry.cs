@@ -4,6 +4,10 @@ namespace War3Frame.Helpers;
 
 public delegate float EffectFormulaFunc(EffectFormulaContext context);
 
+/// <summary>
+/// 公式解析上下文。
+/// 公式只读取 ECS 真相并返回数值，不应在这里执行 native 副作用。
+/// </summary>
 public struct EffectFormulaContext
 {
     public Entity caster;
@@ -13,6 +17,9 @@ public struct EffectFormulaContext
     public AbilityEffectContext effectContext;
     public EffectValueSpec value;
 
+    /// <summary>
+    /// 从参数表读取浮点参数；缺省值用于让简单公式保持配置友好。
+    /// </summary>
     public float GetParameter(string key, float defaultValue = 0f)
     {
         return value.parameters != null && value.parameters.TryGetValue(key, out var parameter)
@@ -21,6 +28,10 @@ public struct EffectFormulaContext
     }
 }
 
+/// <summary>
+/// 技能效果公式注册表。
+/// 普通技能通过 formulaId 使用这里的公式，复杂技能仍可用 delegate 覆盖。
+/// </summary>
 public static class EffectFormulaRegistry
 {
     private static readonly Dictionary<string, EffectFormulaFunc> _formulas = new(StringComparer.OrdinalIgnoreCase);
@@ -45,6 +56,9 @@ public static class EffectFormulaRegistry
         return _formulas.TryGetValue(formulaId, out formula!);
     }
 
+    /// <summary>
+    /// 解析 EffectValueSpec。未配置 value 时使用 fallback；未知 formulaId 会显式报错，避免静默结算为 0。
+    /// </summary>
     public static float Resolve(Entity caster, Entity ability, Entity target, Entity effectEntity,
         AbilityEffectContext effectContext, EffectValueSpec value, Func<float> fallback)
     {

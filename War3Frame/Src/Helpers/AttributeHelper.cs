@@ -11,15 +11,18 @@ public static partial class AttributeHelper
     /// <summary>
     /// 已注册的属性类型名称表。
     /// </summary>
+    // 属性 ID -> 名称 的注册表只用于调试、UI 和序列化可读性，不参与运行时计算。
     private static SortedDictionary<int, string> _types = new();
 
     /// <summary>
     /// 下一个属性类型 ID。
     /// </summary>
+    // 递增 ID 便于稳定比较，避免把字符串当作运行时主键。
     private static int _nextId = 0;
 
 
     // 框架内置 - 基础属性
+    // 核心资源/战斗属性按固定 ID 注册，后续系统直接通过数值访问。
     public static readonly int Health = Register("Health");
     public static readonly int HealthRegen = Register("HealthRegen");
     public static readonly int HealthRegenPercent = Register("HealthRegenPercent");
@@ -40,6 +43,7 @@ public static partial class AttributeHelper
     // ============================================================================
     // 免疫属性（值 > 0 可以免疫对应控制）
     // ============================================================================
+    // 免疫类属性按同样的 ID 体系登记，便于效果系统统一判断。
     public static readonly int StunImmunity = Register("StunImmunity");
     public static readonly int SilenceImmunity = Register("SilenceImmunity");
     public static readonly int DisarmImmunity = Register("DisarmImmunity");
@@ -47,6 +51,7 @@ public static partial class AttributeHelper
     public static readonly int KnockbackImmunity = Register("KnockbackImmunity");
 
     /// <summary>项目层注册新属性类型</summary>
+    // 运行时注册入口：只负责建立可读名称，不做去重，调用方需保证注册顺序稳定。
     public static int Register(string name)
     {
         var id = _nextId++;
@@ -55,6 +60,7 @@ public static partial class AttributeHelper
     }
 
     /// <summary>获取属性名称</summary>
+    // 返回名称用于调试和面板展示；找不到时返回 null，调用方自行兜底。
     public static string? GetName(int attrId)
     {
         return _types.TryGetValue(attrId, out var name) ? name : null;
@@ -63,6 +69,7 @@ public static partial class AttributeHelper
     #endregion
 
     /// <summary>为 Entity 创建属性 Entity 并建立关系</summary>
+    // 创建属性实体并反向挂回单位关系，保证属性真相始终在 ECS 中可追踪。
     public static Entity CreateAttr(Entity entity, int typeId, float baseValue)
     {
         // 创建属性 Entity
@@ -79,6 +86,7 @@ public static partial class AttributeHelper
     }
 
     /// <summary>获取 Entity 的某个属性 Entity</summary>
+    // 从关系表里找具体属性实体，避免每次都扫描整个 Store。
     public static Entity? GetAttr(Entity unit, int typeId)
     {
         var relations = unit.GetRelations<HasAttr>();
@@ -94,6 +102,7 @@ public static partial class AttributeHelper
     /// <summary>
     /// 尝试获取实体的指定属性实体。
     /// </summary>
+    // Try 版本用于避免临时分配，适合热路径查询。
     public static bool TryGetAttr(Entity entity, int typeId, out Entity attr)
     {
         var relations = GetAttr(entity, typeId);
@@ -108,6 +117,7 @@ public static partial class AttributeHelper
     }
 
     /// <summary>获取 entity 某属性的最终值</summary>
+    // 直接读取最终值；用于再计算、同步和恢复等热路径。
     public static float GetFinalValue(Entity entity, int typeId)
     {
         var attr = GetAttr(entity, typeId);
@@ -115,6 +125,7 @@ public static partial class AttributeHelper
     }
 
     /// <summary>获取 entity 某属性的当前值 (HP/Mana)</summary>
+    // current 只针对资源类属性有意义，其他属性按 0 处理。
     public static float GetCurrent(Entity entity, int typeId)
     {
         if (TryGetAttr(entity, typeId, out var attr))
@@ -129,6 +140,7 @@ public static partial class AttributeHelper
     }
 
     /// <summary>设置 entity 某属性的当前值（自动 Clamp 到 [0, finalValue]）</summary>
+    // 写回 current 时强制夹紧，避免恢复/扣减把资源写出合法区间。
     public static void SetCurrent(Entity entity, int typeId, float value)
     {
         if (TryGetAttr(entity, typeId, out var attr))
@@ -142,6 +154,7 @@ public static partial class AttributeHelper
     }
 
     /// <summary>修改 entity 某属性的当前值 (返回修改后的值)</summary>
+    // 在现值基础上做增量修改，常用于治疗、消耗和周期恢复。
     public static float ModifyCurrent(Entity unit, int typeId, float delta)
     {
         if (TryGetAttr(unit, typeId, out var attr))
@@ -159,6 +172,7 @@ public static partial class AttributeHelper
     }
 
     /// <summary>获取 entity 的所有属性</summary>
+    // 枚举所有属性关系，供清理和调试使用。
     public static IEnumerable<(int typeId, Entity attrEntity)> GetAllAttrs(Entity unit)
     {
         var relations = unit.GetRelations<HasAttr>();
@@ -169,6 +183,7 @@ public static partial class AttributeHelper
     }
 
     /// <summary>删除 entity 的所有属性及其 Modifier（清理用）</summary>
+    // 清理前先删除依赖于属性的 modifier，再移除属性本体，避免悬挂关系。
     public static void RemoveAllAttrs(Entity entity)
     {
         var relations = entity.GetRelations<HasAttr>();

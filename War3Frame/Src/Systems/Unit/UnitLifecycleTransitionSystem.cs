@@ -16,6 +16,7 @@ public class UnitLifecycleTransitionSystem : QuerySystem<UnitLifeState>
         {
             if (state.lifePhase == UnitLifecyclePhase.Death)
             {
+                // 这里只推进 ECS 生命周期状态；尸体创建/原生隐藏等副作用交给 Native/Execution 层。
                 state.lifePhase = UnitLifecyclePhase.Corpse;
                 entity.AddComponent(state);
                 return;
@@ -23,6 +24,7 @@ public class UnitLifecycleTransitionSystem : QuerySystem<UnitLifeState>
 
             if (state.lifePhase == UnitLifecyclePhase.ClearCorpse)
             {
+                // 计时器到期后先进入 Remove 阶段，由后续系统完成原生移除和 ECS dispose。
                 state.lifePhase = UnitLifecyclePhase.Remove;
                 entity.AddComponent(state);
             }

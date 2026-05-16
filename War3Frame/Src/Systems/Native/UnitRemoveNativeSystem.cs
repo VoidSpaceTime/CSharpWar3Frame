@@ -10,6 +10,8 @@ namespace War3Frame.Systems.Native;
 [SystemRegister(SystemKind.Immediate)]
 public class UnitRemoveNativeSystem : QuerySystem<UnitLifeState>
 {
+    // 生命周期系统只推进 phase；这里根据 phase 执行 KillUnit/RemoveUnit 这类 native 副作用。
+
     protected override void OnUpdate()
     {
         Query.ForEachEntity((ref UnitLifeState state, Entity entity) =>

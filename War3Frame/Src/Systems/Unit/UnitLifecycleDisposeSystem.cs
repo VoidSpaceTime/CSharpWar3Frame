@@ -19,6 +19,7 @@ public class UnitLifecycleDisposeSystem : QuerySystem<UnitLifeState>
                 return;
             }
 
+            // 终态清理由 helper 统一收口，避免属性、技能、计时器留下悬挂实体。
             UnitHelper.CleanupFinalizeEntityDispose(entity);
         });
     }

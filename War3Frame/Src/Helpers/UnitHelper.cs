@@ -20,6 +20,7 @@ public static class UnitHelper
         float x, float y,
         float facing = 270)
     {
+        // 模板创建负责填充单位基础组件，这里只补充生命周期入口状态。
         var entity = UnitTemplate.Create(templateName, player, x, y, facing);
         entity.AddComponent(new UnitLifeState()
         {
@@ -62,6 +63,7 @@ public static class UnitHelper
                 return;
             }
 
+            // 直接移除跳过尸体停留，但仍只修改 ECS 生命周期，不在 helper 中调用 native remove。
             state.isAlive = false;
             state.lifePhase = UnitLifecyclePhase.Remove;
             unit.AddComponent(state);
@@ -83,6 +85,7 @@ public static class UnitHelper
                 return;
             }
 
+            // 死亡入口只写生命周期和尸体清理计时器；原生表现由对应系统消费状态后执行。
             state.isAlive = false;
             state.lifePhase = UnitLifecyclePhase.Death;
             unit.AddComponent(state);
@@ -115,6 +118,7 @@ public static class UnitHelper
             return;
         }
 
+        // 兼容旧调用入口；新流程优先由 UnitLifecycleTransitionSystem 推进。
         if (state.lifePhase == UnitLifecyclePhase.Death)
         {
             // Death → Corpse
@@ -179,6 +183,7 @@ public static class UnitHelper
 
         var commandToken = War3Frame.Src.Systems.Unit.MoveSystem.NextCommandToken();
 
+        // 移动任务写入规则层命令；Native 层负责真正下发 IssuePointOrder。
         unit.AddComponent(new MoveCommand
         {
             targetX = targetX,
@@ -210,6 +215,7 @@ public static class UnitHelper
             return;
         }
 
+        // 这是薄入口：只产生一次性 native 请求，不持有长期移动语义。
         unit.AddComponent(new MoveNativeCommandRequest
         {
             commandToken = commandToken,
@@ -227,6 +233,7 @@ public static class UnitHelper
     /// </summary>
     public static void CleanupFinalizeEntityDispose(Entity entity)
     {
+        // ECS 终态清理顺序：先移除外围状态，再删除属性/技能等子实体，最后删除单位本体。
         entity.RemoveTag<TimerExpired>();
         AttributeHelper.RemoveAllAttrs(entity);
         AbilitySlotHelper.RemoveAllAbilities(entity);

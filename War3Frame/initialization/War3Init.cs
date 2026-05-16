@@ -10,8 +10,9 @@ public static partial class Game
     public static void War3Init()
     {
         var players = War3NativeBootstrap.CreatePlayers(Store, 16);
+        // 初始化玩家
         PlayerHelper.InitializePlayers(ref players);
-
+        //启动中心计时器
         War3NativeBootstrap.StartMainTimer(TICK_RATE, tick =>
         {
             Root.Update(tick);

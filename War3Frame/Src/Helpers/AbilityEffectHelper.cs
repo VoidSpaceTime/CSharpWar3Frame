@@ -7,6 +7,10 @@ public static class AbilityEffectHelper
 {
     private static int _nextEffectId = 1;
 
+    /// <summary>
+    /// 创建一次技能效果实例。
+    /// 该方法只把 ability 上的效果定义复制/展开到运行时 effect 实体，真正结算由各 EffectSystem 完成。
+    /// </summary>
     public static Entity CreateEffectEntity(Entity caster, Entity ability,
         Entity targetUnit, float targetX, float targetY)
     {
@@ -67,12 +71,17 @@ public static class AbilityEffectHelper
             EnsureProjectileRuntimeState(effectEntity);
         }
 
+        // 新的配置友好路径：把 EffectSpec 展开成与旧系统兼容的 ECS payload。
         if (AbilityHelper.TryGetEffectSpec(ability, out var spec))
             ApplyEffectSpec(effectEntity, spec);
 
         return effectEntity;
     }
 
+    /// <summary>
+    /// 为区域搜索结果创建子效果。
+    /// 子效果继承父效果的结算 payload，但目标换成具体单位。
+    /// </summary>
     public static Entity CreateChildEffect(Entity parentEffect, Entity target)
     {
         var source = parentEffect.GetComponent<EffectSource>();
@@ -109,6 +118,10 @@ public static class AbilityEffectHelper
         return childEntity;
     }
 
+    /// <summary>
+    /// 将数据化效果链转换为现有 ECS 组件。
+    /// 这里不直接执行伤害、治疗、Buff 或 native 调用。
+    /// </summary>
     private static void ApplyEffectSpec(Entity effectEntity, EffectSpec spec)
     {
         foreach (var step in spec.steps)

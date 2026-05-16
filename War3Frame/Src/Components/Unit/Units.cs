@@ -23,6 +23,10 @@ public struct UnitBase : IComponent
     public string name;
 }
 
+/// <summary>
+/// War3 原生单位句柄缓存。
+/// 仅供 Native/Execution 层执行副作用使用，长期语义仍以 ECS 组件为准。
+/// </summary>
 public struct UnitNative : IComponent
 {
     public JUnit unit;

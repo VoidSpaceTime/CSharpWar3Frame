@@ -22,6 +22,7 @@ public class HealthSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
             float percentRegen = AttributeHelper.GetFinalValue(unit, AttributeHelper.HealthRegenPercent);
             float regen = flatRegen + val.finalValue * percentRegen;
 
+            // 资源恢复只改 ECS current；原生生命同步由 UnitNativeSystem 统一执行。
             val.current += regen * Tick.deltaTime;
             val.current = Math.Min(val.current, val.finalValue);
         });

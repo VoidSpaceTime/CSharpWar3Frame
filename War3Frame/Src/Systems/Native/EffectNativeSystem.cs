@@ -5,6 +5,10 @@ using War3Frame.Library.Api;
 
 namespace War3Frame;
 
+/// <summary>
+/// 特效原生执行系统。
+/// 这是 EffectBase 到 War3 原生特效句柄的边界层；业务系统只写 ECS 意图和脏标记。
+/// </summary>
 [SystemRegister(SystemKind.Interval, 0)]
 public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
 {
@@ -16,6 +20,7 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
         {
             if (!entity.TryGetComponent<EffectNative>(out var native))
             {
+                // 首次遇到 EffectBase 时创建原生句柄，并标记所有可同步字段需要下刷。
                 native = new EffectNative
                 {
                     effect = CreateNativeEffect(entity, effect)
@@ -36,6 +41,7 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
 
             if (entity.TryGetComponent<EffectDirty>(out var dirty))
             {
+                // 只同步被标记为 dirty 的字段，避免每帧重复写所有原生属性。
                 if (dirty.flags.HasFlag(EffectDirtyFlags.Alpha))
                 {
                     KKApi.DzSetEffectVertexAlpha(native.effect, effect.alpha);
@@ -99,6 +105,7 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
 
             if (entity.TryGetComponent<EffectDestroyRequest>(out var destroy))
             {
+                // 销毁请求是一次性 native 副作用，执行后直接删除 ECS 特效实体。
                 if (destroy.hideFirst)
                 {
                     KKApi.DzSetEffectVisible(native.effect, false);

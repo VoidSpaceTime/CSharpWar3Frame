@@ -11,6 +11,8 @@ namespace War3Frame.Src.Systems;
 /// </summary>
 public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSystem
 {
+    // 施法入口只负责校验状态、资源和距离；真正的效果结算由后续 AbilityEffectSystems 处理。
+
     /// <summary>
     /// 施法请求检查与启动的执行间隔。
     /// </summary>
@@ -153,6 +155,8 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
 /// </summary>
 public class MoveToCastSystem : QuerySystem<CastState, MoveOutcome, MoveContinuation>
 {
+    // 施法工作流和移动子系统之间的桥：消费 MoveOutcome，而不是直接查询 native 命令结果。
+
     protected override void OnUpdate()
     {
         Query.ForEachEntity((ref CastState cast, ref MoveOutcome outcome, ref MoveContinuation continuation, Entity unit) =>
@@ -273,6 +277,8 @@ public class MoveToCastSystem : QuerySystem<CastState, MoveOutcome, MoveContinua
 /// </summary>
 public class CastingSystem : QuerySystem<CastState>, ITimedSystem
 {
+    // 读条系统只在计时结束时创建 effect entity；伤害、治疗、Buff、弹道都由独立系统结算。
+
     /// <summary>
     /// 吟唱推进间隔。
     /// </summary>
@@ -374,6 +380,8 @@ public class CastingSystem : QuerySystem<CastState>, ITimedSystem
 /// </summary>
 public class ChannelingSystem : QuerySystem<ChannelState, CastState>, ITimedSystem
 {
+    // 持续施法当前只推进生命周期；周期性效果应在 OnChannelTick 中以 ECS 意图表达。
+
     public float Interval => 0.05f;
 
     protected override void OnUpdate()

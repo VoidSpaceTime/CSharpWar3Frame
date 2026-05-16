@@ -53,17 +53,28 @@ public struct EffectAnimationRequest : IComponent
     public string link;
 }
 
+/// <summary>
+/// 一次性特效销毁请求。
+/// Native 系统消费后会销毁原生句柄并删除 ECS 特效实体。
+/// </summary>
 public struct EffectDestroyRequest : IComponent
 {
     public bool hideFirst;
 }
 
+/// <summary>
+/// 一次性特效变换请求。
+/// 用于表达旋转/重置等 native 矩阵操作意图。
+/// </summary>
 public struct EffectTransformRequest : IComponent
 {
     public EffectTransformOperation operation;
     public float value;
 }
 
+/// <summary>
+/// 特效变换操作类型。
+/// </summary>
 public enum EffectTransformOperation
 {
     Reset,

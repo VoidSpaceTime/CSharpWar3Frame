@@ -8,6 +8,7 @@ namespace War3Frame;
 /// </summary>
 public interface ITimedSystem
 {
+    // 返回 0 表示跟随 Root 默认调度频率，正数表示该系统拥有独立间隔。
     /// <summary>
     ///     更新间隔（秒），0 表示使用 Root 默认频率
     /// </summary>
@@ -20,6 +21,7 @@ public interface ITimedSystem
 /// </summary>
 public class TimedSystemRoot : SystemRoot
 {
+    // 每个业务 System 被包进单独 SystemGroup，确保 Friflo 的执行顺序仍由 Root 管理。
     private readonly Dictionary<BaseSystem, TimerInfo> _timerInfos = new();
     private readonly Dictionary<BaseSystem, SystemGroup> _systemGroups = new();
     private readonly List<BaseSystem> _systems = [];
@@ -41,6 +43,7 @@ public class TimedSystemRoot : SystemRoot
         var interval = DefaultInterval;
         if (system is ITimedSystem timedSystem && timedSystem.Interval > 0)
         {
+            // 系统声明自己的节奏时优先使用系统值，便于低频逻辑降低开销。
             interval = timedSystem.Interval;
         }
 
@@ -129,6 +132,7 @@ public class TimedSystemRoot : SystemRoot
 
             if (!_timerInfos.TryGetValue(system, out var info))
             {
+                // 没有 timer 信息的系统按每次 Root Update 立即执行。
                 group.Update(tick);
                 continue;
             }
@@ -143,6 +147,7 @@ public class TimedSystemRoot : SystemRoot
             var overrun = elapsed % info.Interval;
             info.Accumulated = overrun;
 
+            // 传入累计 elapsed，避免低频系统在卡顿帧丢失应推进的时间。
             group.Update(new UpdateTick(elapsed, tick.time));
         }
     }

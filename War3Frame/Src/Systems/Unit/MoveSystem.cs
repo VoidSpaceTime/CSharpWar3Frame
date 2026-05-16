@@ -6,7 +6,8 @@ using War3Frame.Systems;
 namespace War3Frame.Src.Systems.Unit;
 
 /// <summary>
-/// 移动系统 - 处理单位的移动命令
+/// 移动系统。
+/// 负责推进 ECS 移动语义并产生 MoveOutcome；原生命令只通过 MoveNativeCommandRequest 交给 Native 层。
 /// </summary>
 [SystemRegister(SystemKind.Interval)]
 public class MoveSystem : QuerySystem<MoveCommand, Position>, ITimedSystem
@@ -60,7 +61,9 @@ public class MoveSystem : QuerySystem<MoveCommand, Position>, ITimedSystem
         });
     }
 
-    // 继续移动
+    /// <summary>
+    /// 继续移动。若单位有 native 句柄，只发出一次原生命令请求，后续由位置同步反馈到 ECS。
+    /// </summary>
     private void ExecuteMove(Entity unit, MoveCommand move, Position pos)
     {
         // 更新移动标记
@@ -83,7 +86,9 @@ public class MoveSystem : QuerySystem<MoveCommand, Position>, ITimedSystem
         }
     }
 
-    // 到达目标
+    /// <summary>
+    /// 到达目标后发出 stop 请求，并用 MoveOutcome 通知上层工作流。
+    /// </summary>
     private void HandleArrival(Entity unit, MoveCommand move)
     {
         // 到达后发布 stop 命令
@@ -98,7 +103,9 @@ public class MoveSystem : QuerySystem<MoveCommand, Position>, ITimedSystem
         unit.RemoveComponent<MoveExecutionState>();
     }
 
-    // 替换
+    /// <summary>
+    /// 统一写入移动结果，让施法、任务等上层系统自行消费。
+    /// </summary>
     private static void EmitOutcome(Entity unit, int commandToken, MoveOutcomeType outcome)
     {
         unit.AddComponent(new MoveOutcome

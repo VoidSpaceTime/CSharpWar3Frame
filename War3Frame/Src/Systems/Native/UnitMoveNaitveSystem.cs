@@ -11,10 +11,13 @@ namespace War3Frame.Systems.Native;
 [SystemRegister(SystemKind.Immediate)]
 public class MoveNativeExecutionSystem : QuerySystem<MoveNativeCommandRequest, UnitNative>
 {
+    // Native 执行层只翻译并下发移动命令，不推进施法、任务等业务流程。
+
     protected override void OnUpdate()
     {
         Query.ForEachEntity((ref MoveNativeCommandRequest request, ref UnitNative native, Entity unit) =>
         {
+            // commandToken 由上层 move 系统用于匹配结果；native 层只执行当前请求。
             switch (request.orderType)
             {
                 case MoveOrderType.Move:

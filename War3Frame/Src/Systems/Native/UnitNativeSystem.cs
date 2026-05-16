@@ -4,6 +4,10 @@ using War3Frame.Systems;
 
 namespace War3Frame.Src.Systems;
 
+/// <summary>
+/// 单位原生同步系统。
+/// 将 ECS 属性真相投影到 War3 native，并从 native 读取位置回写到 ECS。
+/// </summary>
 [SystemRegister(SystemKind.Interval)]
 public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
 {
@@ -25,6 +29,7 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
 
             foreach (var spec in UnitNativeSyncRegistry.Specs)
             {
+                // 只同步注册表声明的属性，避免业务系统直接散落 native setter。
                 if (!AttributeHelper.TryGetAttr(entity, spec.AttrTypeId, out var attr)
                     || !attr.TryGetComponent<AttrValue>(out var attrVal))
                 {
@@ -50,6 +55,7 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
             }
 
             // 同步单位位置
+            // 位置以 native 世界为准回写到 ECS，供距离、弹道、区域搜索等系统读取。
             if (entity.TryGetComponent<Position>(out var position))
             {
                 position.x = JassApi.GetUnitX(native.unit);

@@ -9,6 +9,10 @@ using War3Frame.TemplateInit;
 
 namespace War3Frame;
 
+/// <summary>
+/// 弹道推进系统。
+/// 只推进运行时位置与弹道阶段，到达/过期通过请求标记交给后续系统处理。
+/// </summary>
 [SystemRegister(SystemKind.Interval, 100)]
 public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, EffectTargetInfo, Position, ProjectileRuntimeState>
 {
@@ -29,7 +33,7 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
             if (!ProjectileFlowHelper.ShouldProcess(runtimeState))
                 return;
 
-                NormalizeProjectileDefaults(ref projectile, ref source, ref target, effectEntity);
+            NormalizeProjectileDefaults(ref projectile, ref source, ref target, effectEntity);
 
             if (runtimeState.phase == ProjectileLifecyclePhase.PendingStart)
             {
@@ -74,6 +78,7 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
     private static void NormalizeProjectileDefaults(ref ProjectileData projectile, ref EffectSource source,
         ref EffectTargetInfo target, Entity effectEntity)
     {
+        // spec 数值优先，旧 float 字段和 AbilityHelper stat 作为兼容回退。
         var fallbackSpeed = projectile.speed > 0f
             ? projectile.speed
             : AbilityHelper.GetFinalValue(source.ability, AbilityHelper.ProjectileSpeed);
@@ -122,6 +127,7 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
     private static void InitializeProjectileRuntime(ref ProjectileData projectile, ref EffectTargetInfo target,
         ref Position position, ref ProjectileRuntimeState runtimeState)
     {
+        // Linear 轨迹只在启动时确定方向，后续按该方向飞行直到最大距离。
         if (projectile.trajectoryType == ProjectileTrajectoryType.Linear)
         {
             var dx = target.targetX - position.x;
@@ -215,6 +221,7 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
     private static bool UpdateCurve(float speed, float targetX, float targetY,
         ref Position position, ref ProjectileRuntimeState runtimeState, CurveKind kind, float deltaTime)
     {
+        // 曲线类轨迹使用统一进度推进，避免每种曲线重复生命周期逻辑。
         var start = runtimeState.normalizedProgress <= float.Epsilon
             ? new Vector3(position.x, position.y, position.z)
             : new Vector3(position.x, position.y, position.z);
@@ -268,6 +275,10 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
     }
 }
 
+/// <summary>
+/// 弹道生命周期应用系统。
+/// 将 ProjectileSystem 产生的请求标记转换为 Arrived / Expired 状态，并调用模板 hook。
+/// </summary>
 [SystemRegister(SystemKind.Interval, 102)]
 public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState, EffectSource, EffectTargetInfo, Position>
 {
@@ -327,6 +338,10 @@ public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState
     }
 }
 
+/// <summary>
+/// 区域搜索系统。
+/// 只负责选出目标并生成子 effect；具体伤害、治疗和 Buff 仍由结算系统处理。
+/// </summary>
 [SystemRegister(SystemKind.Interval, 110)]
 public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, EffectTargetInfo>
 {
@@ -373,6 +388,10 @@ public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, Effect
     }
 }
 
+/// <summary>
+/// 伤害效果转请求系统。
+/// 这里只产生 DamageRequest，不直接扣血；实际属性修改在 DamageResolveSystem。
+/// </summary>
 [SystemRegister(SystemKind.Interval, 120)]
 public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, EffectTargetInfo>
 {
@@ -396,6 +415,7 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
             }
 
             var fallbackDamage = AbilityHelper.GetDamageAmount(source.ability);
+            // delegate 是高级自定义覆盖；普通技能走 EffectValueSpec 的 formulaId/statId。
             var amount = damageData.damageFunc != null
                 ? damageData.damageFunc(source.caster, source.ability, target.targetUnit, damageData)
                 : EffectFormulaRegistry.Resolve(
@@ -425,6 +445,10 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
     }
 }
 
+/// <summary>
+/// 治疗效果转请求系统。
+/// 这里只产生 HealRequest，实际生命值修改在 HealResolveSystem。
+/// </summary>
 [SystemRegister(SystemKind.Interval, 121)]
 public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, EffectTargetInfo>
 {
@@ -472,6 +496,10 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
     }
 }
 
+/// <summary>
+/// Buff 效果转请求系统。
+/// 这里只表达“要施加 Buff”的意图，实际 Buff 实体和属性修改由 resolver/helper 完成。
+/// </summary>
 [SystemRegister(SystemKind.Interval, 122)]
 public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectTargetInfo>
 {
@@ -529,6 +557,10 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
     }
 }
 
+/// <summary>
+/// 伤害结算系统。
+/// 这里是扣减生命值、发出 DamageEvent、触发死亡语义的统一结算点。
+/// </summary>
 [SystemRegister(SystemKind.Interval, 125)]
 public class DamageResolveSystem : QuerySystem<DamageRequest>
 {
@@ -567,6 +599,10 @@ public class DamageResolveSystem : QuerySystem<DamageRequest>
     }
 }
 
+/// <summary>
+/// 治疗结算系统。
+/// 统一修改 Health，并发出 HealEvent 供 UI、日志或后续系统监听。
+/// </summary>
 [SystemRegister(SystemKind.Interval, 126)]
 public class HealResolveSystem : QuerySystem<HealRequest>
 {
@@ -602,6 +638,10 @@ public class HealResolveSystem : QuerySystem<HealRequest>
     }
 }
 
+/// <summary>
+/// Buff 应用结算系统。
+/// 消费 BuffApplyRequest，并通过 BuffHelper 创建或刷新 Buff。
+/// </summary>
 [SystemRegister(SystemKind.Interval, 127)]
 public class BuffApplyResolveSystem : QuerySystem<BuffApplyRequest>
 {
@@ -644,6 +684,10 @@ public class BuffApplyResolveSystem : QuerySystem<BuffApplyRequest>
     }
 }
 
+/// <summary>
+/// 技能效果实体清理系统。
+/// 只清理完成或过期的运行时 effect entity，不处理业务结算。
+/// </summary>
 [SystemRegister(SystemKind.Interval, 130)]
 public class EffectLifecycleSystem : QuerySystem<EffectSource>
 {
@@ -669,6 +713,10 @@ public class EffectLifecycleSystem : QuerySystem<EffectSource>
 
 internal static class EffectSettlementHelper
 {
+    /// <summary>
+    /// 判断当前 effect 是否可以结算。
+    /// 弹道未到达、区域搜索未展开时，伤害/治疗/Buff 必须等待。
+    /// </summary>
     public static bool CanSettle(Entity effectEntity)
     {
         if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
@@ -677,6 +725,9 @@ internal static class EffectSettlementHelper
         return !effectEntity.HasComponent<AreaSearchData>();
     }
 
+    /// <summary>
+    /// 移除已完成的结算 payload；当所有 payload 都完成后标记 effect 完成。
+    /// </summary>
     public static void MarkSettlementDone(Entity effectEntity, Type settlementType)
     {
         if (settlementType == typeof(DamageEffectData))
@@ -707,6 +758,9 @@ internal static class ProjectileFlowHelper
         return effectEntity.HasComponent<ProjectileData>() && !effectEntity.Tags.Has<ProjectileArrived>();
     }
 
+    /// <summary>
+    /// 将弹道系统收集的到达/过期实体批量打标，避免查询遍历中直接执行复杂副作用。
+    /// </summary>
     public static void ApplyRequests(List<Entity> arriveRequests, List<Entity> expireRequests)
     {
         foreach (var effectEntity in arriveRequests)
@@ -722,6 +776,9 @@ internal static class ProjectileFlowHelper
         }
     }
 
+    /// <summary>
+    /// 销毁弹道视觉实体；视觉效果仍走 EffectHelper / Native 系统分层。
+    /// </summary>
     public static void DestroyProjectileVisual(Entity effectEntity)
     {
         if (effectEntity.TryGetComponent<ProjectileData>(out var projectile) && !projectile.effectEntity.IsNull)
@@ -731,6 +788,9 @@ internal static class ProjectileFlowHelper
 
 internal static class ProjectileHookBridge
 {
+    /// <summary>
+    /// 兼容新旧 projectile hook：模板基类、旧接口和 V2 hook 会按顺序被调用。
+    /// </summary>
     public static void DispatchStartHooks(Entity effectEntity, ref ProjectileData projectile,
         ref EffectSource source, ref EffectTargetInfo target, ref Position position,
         ref ProjectileRuntimeState runtimeState)

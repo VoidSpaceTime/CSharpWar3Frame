@@ -11,6 +11,8 @@ namespace War3Frame.Src.Systems;
 [SystemRegister(SystemKind.Immediate)]
 public class ItemAttachWorkflowSystem : QuerySystem<ItemAttachRequest>
 {
+    // 物品挂载只更新归属、槽位和属性应用请求；实际属性修改由 ItemAttributeApplySystem 完成。
+
     protected override void OnUpdate()
     {
         Query.ForEachEntity((ref ItemAttachRequest request, Entity requestEntity) =>
@@ -79,6 +81,8 @@ public class ItemAttachWorkflowSystem : QuerySystem<ItemAttachRequest>
 [SystemRegister(SystemKind.Immediate)]
 public class ItemRemoveWorkflowSystem : QuerySystem<ItemRemoveRequest>
 {
+    // 物品移除只撤销归属/槽位并发出属性移除请求；属性层由后续系统统一清理。
+
     protected override void OnUpdate()
     {
         Query.ForEachEntity((ref ItemRemoveRequest request, Entity requestEntity) =>
@@ -135,6 +139,8 @@ public class ItemRemoveWorkflowSystem : QuerySystem<ItemRemoveRequest>
 [SystemRegister(SystemKind.Interval, 0)]
 public class ItemAttributeApplySystem : QuerySystem<ItemOwner, AttributeContributionEntry>
 {
+    // 将装备物品的 AttributeContributionEntry 映射为单位属性 modifier。
+
     public ItemAttributeApplySystem()
     {
         Filter.AnyTags(Tags.Get<ItemAttrApplyRequest>());
@@ -170,6 +176,8 @@ public class ItemAttributeApplySystem : QuerySystem<ItemOwner, AttributeContribu
 [SystemRegister(SystemKind.Interval, 0)]
 public class ItemAttributeRemoveSystem : QuerySystem<ItemOwner>
 {
+    // 按物品实体作为 source 移除 modifier，避免误删其他来源的属性贡献。
+
     public ItemAttributeRemoveSystem()
     {
         Filter.AnyTags(Tags.Get<ItemAttrRemoveRequest>());
@@ -192,6 +200,8 @@ public class ItemAttributeRemoveSystem : QuerySystem<ItemOwner>
 [SystemRegister(SystemKind.Interval, 0)]
 public class AbilityAttributeApplySystem : QuerySystem<AbilityOwner, AttributeContributionEntry>
 {
+    // 挂载型技能的属性贡献与物品走同一 modifier 层，保持数值来源可追踪。
+
     public AbilityAttributeApplySystem()
     {
         Filter.AnyTags(Tags.Get<AbilityAttrApplyRequest>());
@@ -221,6 +231,8 @@ public class AbilityAttributeApplySystem : QuerySystem<AbilityOwner, AttributeCo
 [SystemRegister(SystemKind.Interval, 0)]
 public class AbilityAttributeRemoveSystem : QuerySystem<AbilityOwner>
 {
+    // 技能卸下或移除时，以 ability 实体作为 source 撤销其属性贡献。
+
     public AbilityAttributeRemoveSystem()
     {
         Filter.AnyTags(Tags.Get<AbilityAttrRemoveRequest>());
