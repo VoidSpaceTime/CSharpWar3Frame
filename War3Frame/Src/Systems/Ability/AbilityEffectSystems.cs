@@ -1,6 +1,7 @@
 using System.Numerics;
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
+using War3Frame.Components;
 using War3Frame.Components.AbilityEffectExtend;
 using War3Frame.Helpers;
 using War3Frame.Src.Components;
@@ -389,6 +390,137 @@ public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, Effect
 }
 
 /// <summary>
+/// 线形搜索系统。
+/// 复用 GroupHelper.FindInLine 生成子 effect，并把火焰等接触语义转为显式区域反应请求。
+/// </summary>
+[SystemRegister(SystemKind.Interval, 111)]
+public class LineSearchSystem : QuerySystem<LineSearchData, EffectSource, EffectTargetInfo>
+{
+    public LineSearchSystem()
+    {
+        Filter.AnyTags(Tags.Get<EffectPending>());
+    }
+
+    protected override void OnUpdate()
+    {
+        Query.ForEachEntity((ref LineSearchData line, ref EffectSource source,
+            ref EffectTargetInfo target, Entity effectEntity) =>
+        {
+            if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
+                return;
+
+            if (!source.caster.TryGetComponent<Position>(out var casterPos))
+            {
+                effectEntity.AddTag<EffectCompleted>();
+                return;
+            }
+
+            var fallbackRange = line.range > 0f ? line.range : AbilityHelper.GetCastRange(source.ability);
+            var range = EffectFormulaRegistry.Resolve(
+                source.caster,
+                source.ability,
+                target.targetUnit,
+                effectEntity,
+                line.rangeValue,
+                fallbackRange);
+            var width = EffectFormulaRegistry.Resolve(
+                source.caster,
+                source.ability,
+                target.targetUnit,
+                effectEntity,
+                line.widthValue,
+                line.width);
+
+            var end = ResolveLineEnd(casterPos.x, casterPos.y, target.targetX, target.targetY, range);
+            var targets = GroupHelper.FindInLine(
+                source.caster,
+                casterPos.x,
+                casterPos.y,
+                end.x,
+                end.y,
+                width,
+                line.filter,
+                line.customFilterId,
+                line.maxTargets);
+
+            foreach (var targetUnit in targets)
+            {
+                AbilityEffectHelper.CreateChildEffect(effectEntity, targetUnit);
+            }
+
+            if (line.reactionTag != GroundAreaTag.None)
+                GroundAreaQueryHelper.EmitLineContactRequests(source.caster, effectEntity, casterPos.x, casterPos.y, end.x, end.y, width, line.reactionTag);
+
+            effectEntity.AddTag<EffectCompleted>();
+        });
+    }
+
+    private static (float x, float y) ResolveLineEnd(float startX, float startY, float targetX, float targetY, float range)
+    {
+        var dx = targetX - startX;
+        var dy = targetY - startY;
+        var dist = MathF.Sqrt(dx * dx + dy * dy);
+        if (dist <= float.Epsilon)
+            return (startX + range, startY);
+
+        return (startX + dx / dist * range, startY + dy / dist * range);
+    }
+}
+
+/// <summary>
+/// 地面区域创建系统。
+/// 把一次性效果 payload 转换成独立 ECS 区域实体，区域位置来自目标点。
+/// </summary>
+[SystemRegister(SystemKind.Interval, 112)]
+public class GroundAreaCreateSystem : QuerySystem<GroundAreaCreateData, EffectSource, EffectTargetInfo>
+{
+    public GroundAreaCreateSystem()
+    {
+        Filter.AnyTags(Tags.Get<EffectPending>());
+    }
+
+    protected override void OnUpdate()
+    {
+        Query.ForEachEntity((ref GroundAreaCreateData create, ref EffectSource source,
+            ref EffectTargetInfo target, Entity effectEntity) =>
+        {
+            if (!EffectSettlementHelper.CanSettle(effectEntity))
+                return;
+
+            var radius = EffectFormulaRegistry.Resolve(
+                source.caster,
+                source.ability,
+                target.targetUnit,
+                effectEntity,
+                create.radiusValue,
+                create.radius > 0f ? create.radius : AbilityHelper.GetRadius(source.ability));
+            var duration = EffectFormulaRegistry.Resolve(
+                source.caster,
+                source.ability,
+                target.targetUnit,
+                effectEntity,
+                create.durationValue,
+                create.duration);
+
+            var area = Game.Store.CreateEntity(
+                new GroundAreaData { tags = create.tags, radius = radius, radiusValue = create.radiusValue },
+                new GroundAreaSource { caster = source.caster, ability = source.ability, sourceEffect = effectEntity },
+                new GroundAreaLifetime { duration = duration, remaining = duration },
+                new Position { x = target.targetX, y = target.targetY, z = 0f });
+
+            if (create.buff.enabled)
+                area.AddComponent(create.buff);
+            if (create.periodicDamage.enabled)
+                area.AddComponent(create.periodicDamage);
+            if (create.reaction.enabled)
+                area.AddComponent(create.reaction);
+
+            EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(GroundAreaCreateData));
+        });
+    }
+}
+
+/// <summary>
 /// 伤害效果转请求系统。
 /// 这里只产生 DamageRequest，不直接扣血；实际属性修改在 DamageResolveSystem。
 /// </summary>
@@ -685,6 +817,188 @@ public class BuffApplyResolveSystem : QuerySystem<BuffApplyRequest>
 }
 
 /// <summary>
+/// 地面区域生命周期系统。
+/// 到期时删除区域实体，并清理由该区域创建的 Buff。
+/// </summary>
+[SystemRegister(SystemKind.Interval, 128)]
+public class GroundAreaLifetimeSystem : QuerySystem<GroundAreaLifetime>
+{
+    protected override void OnUpdate()
+    {
+        var expired = new List<Entity>();
+
+        Query.ForEachEntity((ref GroundAreaLifetime lifetime, Entity areaEntity) =>
+        {
+            lifetime.remaining -= Tick.deltaTime;
+            if (lifetime.remaining <= 0f)
+                expired.Add(areaEntity);
+        });
+
+        foreach (var areaEntity in expired)
+        {
+            GroundAreaQueryHelper.DeleteAreaBuffs(areaEntity);
+            areaEntity.DeleteEntity();
+        }
+    }
+}
+
+/// <summary>
+/// 地面区域 Buff 系统。
+/// 根据区域范围应用永久 Buff，单位离开或区域消失时移除区域拥有的 Buff。
+/// </summary>
+[SystemRegister(SystemKind.Interval, 128)]
+public class GroundAreaBuffSystem : QuerySystem<GroundAreaData, GroundAreaSource, GroundAreaBuffData, Position>
+{
+    protected override void OnUpdate()
+    {
+        Query.ForEachEntity((ref GroundAreaData area, ref GroundAreaSource source,
+            ref GroundAreaBuffData buffData, ref Position position, Entity areaEntity) =>
+        {
+            if (!buffData.enabled)
+                return;
+
+            var affected = GroundAreaQueryHelper.GetLinkedUnits(areaEntity);
+            var inRange = new HashSet<int>();
+            var targets = GroupHelper.FindInCircle(source.caster, position.x, position.y, area.radius, TargetFilter.EnemyAlive);
+            foreach (var target in targets)
+            {
+                inRange.Add(target.Id);
+                if (affected.Contains(target.Id))
+                    continue;
+
+                var value = EffectFormulaRegistry.Resolve(
+                    source.caster,
+                    source.ability,
+                    target,
+                    areaEntity,
+                    buffData.value,
+                    buffData.fallbackValue);
+                var buff = BuffHelper.AddPermanentBuff(
+                    Game.Store,
+                    target,
+                    areaEntity,
+                    buffData.buffId,
+                    buffData.attrTypeId,
+                    buffData.modifyType,
+                    value);
+                if (!buff.IsNull)
+                    buff.AddComponent(new GroundAreaBuffLink(areaEntity));
+            }
+
+            GroundAreaQueryHelper.DeleteAreaBuffsNotIn(areaEntity, inRange);
+        });
+    }
+}
+
+/// <summary>
+/// 地面区域周期伤害系统。
+/// 按 tick 对范围内目标发 DamageRequest，保持真实扣血在 DamageResolveSystem。
+/// </summary>
+[SystemRegister(SystemKind.Interval, 129)]
+public class GroundAreaPeriodicDamageSystem : QuerySystem<GroundAreaData, GroundAreaSource, GroundAreaPeriodicDamageData, Position>
+{
+    protected override void OnUpdate()
+    {
+        Query.ForEachEntity((ref GroundAreaData area, ref GroundAreaSource source,
+            ref GroundAreaPeriodicDamageData damage, ref Position position, Entity areaEntity) =>
+        {
+            if (!damage.enabled)
+                return;
+
+            damage.timeSinceTick += Tick.deltaTime;
+            var interval = damage.tickInterval > 0f ? damage.tickInterval : 1f;
+            if (damage.timeSinceTick < interval)
+                return;
+
+            damage.timeSinceTick = 0f;
+            var targets = GroupHelper.FindInCircle(
+                source.caster,
+                position.x,
+                position.y,
+                area.radius,
+                damage.filter,
+                damage.customFilterId);
+
+            foreach (var target in targets)
+            {
+                var amount = EffectFormulaRegistry.Resolve(
+                    source.caster,
+                    source.ability,
+                    target,
+                    areaEntity,
+                    damage.damageValue,
+                    damage.fallbackDamage);
+                Game.Store.CreateEntity(new DamageRequest
+                {
+                    source = source.caster,
+                    target = target,
+                    damage = new DamageBase
+                    {
+                        damage = amount,
+                        damageType = damage.damageType,
+                        damageSrc = damage.damageSrc,
+                        source = source.caster,
+                        target = target
+                    }
+                });
+            }
+        });
+    }
+}
+
+/// <summary>
+/// 地面区域反应系统。
+/// 消费显式反应请求，将油污等区域替换成燃烧地面。
+/// </summary>
+[SystemRegister(SystemKind.Interval, 129)]
+public class GroundAreaReactionSystem : QuerySystem<GroundAreaReactionRequest>
+{
+    protected override void OnUpdate()
+    {
+        var resolved = new List<Entity>();
+
+        Query.ForEachEntity((ref GroundAreaReactionRequest request, Entity requestEntity) =>
+        {
+            resolved.Add(requestEntity);
+            var areaEntity = request.groundArea;
+            if (areaEntity.IsNull ||
+                !areaEntity.TryGetComponent<GroundAreaReactionData>(out var reaction) ||
+                !areaEntity.TryGetComponent<GroundAreaData>(out var area) ||
+                !areaEntity.TryGetComponent<GroundAreaSource>(out var source) ||
+                !areaEntity.TryGetComponent<Position>(out var position))
+            {
+                return;
+            }
+
+            if (!reaction.enabled || (reaction.triggerTag & request.incomingTag) == GroundAreaTag.None)
+                return;
+
+            var duration = EffectFormulaRegistry.Resolve(
+                source.caster,
+                source.ability,
+                default,
+                areaEntity,
+                reaction.resultDuration,
+                reaction.fallbackDuration);
+
+            GroundAreaQueryHelper.DeleteAreaBuffs(areaEntity);
+            areaEntity.DeleteEntity();
+
+            var burning = Game.Store.CreateEntity(
+                new GroundAreaData { tags = reaction.resultTags, radius = area.radius, radiusValue = area.radiusValue },
+                source,
+                new GroundAreaLifetime { duration = duration, remaining = duration },
+                position);
+            if (reaction.resultPeriodicDamage.enabled)
+                burning.AddComponent(reaction.resultPeriodicDamage);
+        });
+
+        foreach (var entity in resolved)
+            entity.DeleteEntity();
+    }
+}
+
+/// <summary>
 /// 技能效果实体清理系统。
 /// 只清理完成或过期的运行时 effect entity，不处理业务结算。
 /// </summary>
@@ -736,13 +1050,122 @@ internal static class EffectSettlementHelper
             effectEntity.RemoveComponent<HealEffectData>();
         else if (settlementType == typeof(ApplyBuffData))
             effectEntity.RemoveComponent<ApplyBuffData>();
+        else if (settlementType == typeof(GroundAreaCreateData))
+            effectEntity.RemoveComponent<GroundAreaCreateData>();
 
         if (!effectEntity.HasComponent<DamageEffectData>() &&
             !effectEntity.HasComponent<HealEffectData>() &&
-            !effectEntity.HasComponent<ApplyBuffData>())
+            !effectEntity.HasComponent<ApplyBuffData>() &&
+            !effectEntity.HasComponent<GroundAreaCreateData>())
         {
             effectEntity.AddTag<EffectCompleted>();
         }
+    }
+}
+
+internal static class GroundAreaQueryHelper
+{
+    /// <summary>按线段接触检测地面区域，并为命中的区域发反应请求。</summary>
+    public static void EmitLineContactRequests(Entity source, Entity effectEntity, float startX, float startY,
+        float endX, float endY, float width, GroundAreaTag incomingTag)
+    {
+        var query = Game.Store.Query<GroundAreaData, Position>();
+        query.ForEachEntity((ref GroundAreaData area, ref Position position, Entity areaEntity) =>
+        {
+            if (!LineIntersectsCircle(startX, startY, endX, endY, position.x, position.y, area.radius + width * 0.5f))
+                return;
+
+            Game.Store.CreateEntity(new GroundAreaReactionRequest
+            {
+                source = source,
+                groundArea = areaEntity,
+                incomingTag = incomingTag
+            });
+        });
+    }
+
+    public static HashSet<int> GetLinkedUnits(Entity areaEntity)
+    {
+        var units = new HashSet<int>();
+        foreach (var link in areaEntity.GetIncomingLinks<GroundAreaBuffLink>())
+        {
+            var buff = link.Entity;
+            if (!buff.TryGetComponent<ModifyTarget>(out var target) || target.target.IsNull)
+                continue;
+
+            if (!target.target.TryGetComponent<AttrOwner>(out var owner) || owner.owner.IsNull)
+                continue;
+
+            units.Add(owner.owner.Id);
+        }
+
+        return units;
+    }
+
+    public static void DeleteAreaBuffsNotIn(Entity areaEntity, HashSet<int> activeUnitIds)
+    {
+        foreach (var buff in CollectAreaBuffs(areaEntity))
+        {
+            if (!TryGetBuffOwner(buff, out var owner) || !activeUnitIds.Contains(owner.Id))
+                DeleteBuff(buff);
+        }
+    }
+
+    public static void DeleteAreaBuffs(Entity areaEntity)
+    {
+        foreach (var buff in CollectAreaBuffs(areaEntity))
+            DeleteBuff(buff);
+    }
+
+    private static List<Entity> CollectAreaBuffs(Entity areaEntity)
+    {
+        var buffs = new List<Entity>();
+        foreach (var link in areaEntity.GetIncomingLinks<GroundAreaBuffLink>())
+            buffs.Add(link.Entity);
+        return buffs;
+    }
+
+    private static bool TryGetBuffOwner(Entity buff, out Entity owner)
+    {
+        owner = default;
+        if (!buff.TryGetComponent<ModifyTarget>(out var target) || target.target.IsNull)
+            return false;
+
+        if (!target.target.TryGetComponent<AttrOwner>(out var attrOwner))
+            return false;
+
+        owner = attrOwner.owner;
+        return !owner.IsNull;
+    }
+
+    private static void DeleteBuff(Entity buff)
+    {
+        if (buff.TryGetComponent<ModifyTarget>(out var target) && !target.target.IsNull)
+            target.target.AddTag<AttrDirty>();
+        buff.DeleteEntity();
+    }
+
+    private static bool LineIntersectsCircle(float startX, float startY, float endX, float endY,
+        float centerX, float centerY, float radius)
+    {
+        var dx = endX - startX;
+        var dy = endY - startY;
+        var lenSq = dx * dx + dy * dy;
+        if (lenSq <= float.Epsilon)
+            return DistanceSq(startX, startY, centerX, centerY) <= radius * radius;
+
+        var t = ((centerX - startX) * dx + (centerY - startY) * dy) / lenSq;
+        t = Math.Clamp(t, 0f, 1f);
+        var nearestX = startX + dx * t;
+        var nearestY = startY + dy * t;
+        return DistanceSq(nearestX, nearestY, centerX, centerY) <= radius * radius;
+    }
+
+    private static float DistanceSq(float ax, float ay, float bx, float by)
+    {
+        var dx = ax - bx;
+        var dy = ay - by;
+        return dx * dx + dy * dy;
     }
 }
 

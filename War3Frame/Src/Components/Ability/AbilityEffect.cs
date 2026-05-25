@@ -140,6 +140,122 @@ public struct AreaSearchData : IComponent
     public string? customFilterId;
 }
 
+/// <summary>线形搜索 payload，用于喷火、穿刺等沿线命中的效果。</summary>
+public struct LineSearchData : IComponent
+{
+    public EffectValueSpec rangeValue;
+    public float range;
+    public EffectValueSpec widthValue;
+    public float width;
+    public int maxTargets;
+    public TargetFilter filter;
+    public string? customFilterId;
+    public GroundAreaTag reactionTag;
+}
+
+/// <summary>地面区域语义标签，用于区分油污、火焰和燃烧区域等反应类型。</summary>
+[Flags]
+public enum GroundAreaTag
+{
+    None = 0,
+    Oil = 1 << 0,
+    Fire = 1 << 1,
+    Burning = 1 << 2
+}
+
+/// <summary>地面区域基础数据；位置由同实体的 Position 组件提供。</summary>
+public struct GroundAreaData : IComponent
+{
+    public GroundAreaTag tags;
+    public EffectValueSpec radiusValue;
+    public float radius;
+}
+
+/// <summary>地面区域来源，用于伤害、Buff 和反应追踪。</summary>
+public struct GroundAreaSource : IComponent
+{
+    public Entity caster;
+    public Entity ability;
+    public Entity sourceEffect;
+}
+
+/// <summary>地面区域生命周期；到期后由系统清理相关 Buff 和区域实体。</summary>
+public struct GroundAreaLifetime : IComponent
+{
+    public float duration;
+    public float remaining;
+}
+
+/// <summary>地面区域创建 payload；效果结算时会生成独立的 ground area entity。</summary>
+public struct GroundAreaCreateData : IComponent
+{
+    public GroundAreaTag tags;
+    public EffectValueSpec radiusValue;
+    public float radius;
+    public EffectValueSpec durationValue;
+    public float duration;
+    public GroundAreaBuffData buff;
+    public GroundAreaPeriodicDamageData periodicDamage;
+    public GroundAreaReactionData reaction;
+}
+
+/// <summary>地面区域 Buff 配置，由区域系统按范围应用和移除。</summary>
+public struct GroundAreaBuffData : IComponent
+{
+    public bool enabled;
+    public string buffId;
+    public int attrTypeId;
+    public ModifyType modifyType;
+    public EffectValueSpec value;
+    public float fallbackValue;
+}
+
+/// <summary>地面区域周期伤害配置；系统只发 DamageRequest，不直接扣血。</summary>
+public struct GroundAreaPeriodicDamageData : IComponent
+{
+    public bool enabled;
+    public EffectValueSpec damageValue;
+    public float fallbackDamage;
+    public float tickInterval;
+    public float timeSinceTick;
+    public DamageType damageType;
+    public DamageSrc damageSrc;
+    public TargetFilter filter;
+    public string? customFilterId;
+}
+
+/// <summary>地面区域反应配置，例如油污遇火后生成燃烧地面。</summary>
+public struct GroundAreaReactionData : IComponent
+{
+    public bool enabled;
+    public GroundAreaTag triggerTag;
+    public GroundAreaTag resultTags;
+    public EffectValueSpec resultDuration;
+    public float fallbackDuration;
+    public GroundAreaPeriodicDamageData resultPeriodicDamage;
+}
+
+/// <summary>地面区域反应请求，表示某类效果接触到了指定区域。</summary>
+public struct GroundAreaReactionRequest : IComponent
+{
+    public Entity source;
+    public Entity groundArea;
+    public GroundAreaTag incomingTag;
+}
+
+/// <summary>标记某个 Buff 由指定地面区域产生，便于离开范围或区域消失时清理。</summary>
+public struct GroundAreaBuffLink : ILinkComponent
+{
+    public Entity area;
+
+    public GroundAreaBuffLink(Entity area)
+    {
+        this.area = area;
+    }
+
+    public Entity GetIndexedValue() => area;
+}
+
 /// <summary>
 /// 弹道生命周期阶段。
 /// Request 阶段用于跨系统交接，避免在移动系统里直接执行到达/过期副作用。

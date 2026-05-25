@@ -3,13 +3,18 @@ using War3Frame.Helpers;
 
 namespace War3Frame;
 
+/// <summary>
+/// 技能效果实例化助手。
+/// 负责把 ability 上的效果配置展开为运行时 effect entity，不直接结算效果。
+/// </summary>
 public static class AbilityEffectHelper
 {
+    // 仅用于跨系统追踪本次效果实例，不承载业务语义。
     private static int _nextEffectId = 1;
 
     /// <summary>
     /// 创建一次技能效果实例。
-    /// 该方法只把 ability 上的效果定义复制/展开到运行时 effect 实体，真正结算由各 EffectSystem 完成。
+    /// ability 持有长期配置；这里只生成带 EffectPending 的临时 effect entity。
     /// </summary>
     public static Entity CreateEffectEntity(Entity caster, Entity ability,
         Entity targetUnit, float targetX, float targetY)
@@ -34,6 +39,7 @@ public static class AbilityEffectHelper
             });
         effectEntity.AddTag<EffectPending>();
 
+        // 兼容旧路径：直接挂在 ability 上的效果 payload 会被复制到运行时 effect。
         if (ability.TryGetComponent<HealEffectData>(out var heal))
         {
             if (heal.valueTypeId == 0)
@@ -55,6 +61,12 @@ public static class AbilityEffectHelper
             effectEntity.AddComponent(area);
         }
 
+        if (ability.TryGetComponent<LineSearchData>(out var line))
+            effectEntity.AddComponent(line);
+
+        if (ability.TryGetComponent<GroundAreaCreateData>(out var groundAreaCreate))
+            effectEntity.AddComponent(groundAreaCreate);
+
         if (ability.TryGetComponent<DamageEffectData>(out var damage))
             effectEntity.AddComponent(damage);
 
@@ -71,7 +83,7 @@ public static class AbilityEffectHelper
             EnsureProjectileRuntimeState(effectEntity);
         }
 
-        // 新的配置友好路径：把 EffectSpec 展开成与旧系统兼容的 ECS payload。
+        // 新路径：把配置友好的 EffectSpec 展开成现有 EffectSystem 可消费的组件。
         if (AbilityHelper.TryGetEffectSpec(ability, out var spec))
             ApplyEffectSpec(effectEntity, spec);
 
@@ -79,8 +91,8 @@ public static class AbilityEffectHelper
     }
 
     /// <summary>
-    /// 为区域搜索结果创建子效果。
-    /// 子效果继承父效果的结算 payload，但目标换成具体单位。
+    /// 为区域搜索命中的单个目标创建子效果。
+    /// 子效果复用父效果来源与 payload，只替换目标。
     /// </summary>
     public static Entity CreateChildEffect(Entity parentEffect, Entity target)
     {
@@ -115,12 +127,15 @@ public static class AbilityEffectHelper
         if (parentEffect.TryGetComponent<ApplyBuffData>(out var buff))
             childEntity.AddComponent(buff);
 
+        if (parentEffect.TryGetComponent<GroundAreaCreateData>(out var groundAreaCreate))
+            childEntity.AddComponent(groundAreaCreate);
+
         return childEntity;
     }
 
     /// <summary>
     /// 将数据化效果链转换为现有 ECS 组件。
-    /// 这里不直接执行伤害、治疗、Buff 或 native 调用。
+    /// 这里只做数据转换，不执行伤害、治疗、Buff 或 native 调用。
     /// </summary>
     private static void ApplyEffectSpec(Entity effectEntity, EffectSpec spec)
     {
@@ -166,6 +181,32 @@ public static class AbilityEffectHelper
                         customFilterId = step.areaSearch.customFilterId
                     });
                     break;
+                case EffectStepKind.LineSearch:
+                    effectEntity.AddComponent(new LineSearchData
+                    {
+                        rangeValue = step.lineSearch.range,
+                        range = step.lineSearch.fallbackRange,
+                        widthValue = step.lineSearch.width,
+                        width = step.lineSearch.fallbackWidth,
+                        maxTargets = step.lineSearch.maxTargets,
+                        filter = step.lineSearch.filter,
+                        customFilterId = step.lineSearch.customFilterId,
+                        reactionTag = step.lineSearch.reactionTag
+                    });
+                    break;
+                case EffectStepKind.GroundAreaCreate:
+                    effectEntity.AddComponent(new GroundAreaCreateData
+                    {
+                        tags = step.groundAreaCreate.tags,
+                        radiusValue = step.groundAreaCreate.radius,
+                        radius = step.groundAreaCreate.fallbackRadius,
+                        durationValue = step.groundAreaCreate.duration,
+                        duration = step.groundAreaCreate.fallbackDuration,
+                        buff = step.groundAreaCreate.buff,
+                        periodicDamage = step.groundAreaCreate.periodicDamage,
+                        reaction = step.groundAreaCreate.reaction
+                    });
+                    break;
                 case EffectStepKind.Projectile:
                     var projectile = new ProjectileData
                     {
@@ -188,6 +229,9 @@ public static class AbilityEffectHelper
         }
     }
 
+    /// <summary>
+    /// 为弹道 effect 补充初始位置，供 ProjectileSystem 推进。
+    /// </summary>
     private static void EnsureProjectilePosition(Entity effectEntity, Entity caster)
     {
         if (effectEntity.TryGetComponent<Position>(out _))
@@ -204,6 +248,9 @@ public static class AbilityEffectHelper
         }
     }
 
+    /// <summary>
+    /// 为弹道 effect 补充运行时阶段状态。
+    /// </summary>
     private static void EnsureProjectileRuntimeState(Entity effectEntity)
     {
         if (!effectEntity.TryGetComponent<ProjectileRuntimeState>(out _))

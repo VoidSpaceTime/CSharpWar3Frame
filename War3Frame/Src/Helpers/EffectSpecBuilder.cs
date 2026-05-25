@@ -95,6 +95,45 @@ public sealed class EffectSpecBuilder
         return this;
     }
 
+    public EffectSpecBuilder Line(TargetFilter filter, EffectValueSpec range = default, float fallbackRange = 0f,
+        EffectValueSpec width = default, float fallbackWidth = 0f, int maxTargets = 0,
+        string? customFilterId = null, GroundAreaTag reactionTag = GroundAreaTag.None)
+    {
+        // line step 负责改变后续目标集，也可标记火焰等接触型地面反应。
+        _spec.steps.Add(EffectStepSpec.LineSearch(new LineSearchEffectStepSpec
+        {
+            range = range,
+            fallbackRange = fallbackRange,
+            width = width,
+            fallbackWidth = fallbackWidth,
+            maxTargets = maxTargets,
+            filter = filter,
+            customFilterId = customFilterId,
+            reactionTag = reactionTag
+        }));
+        return this;
+    }
+
+    public EffectSpecBuilder GroundArea(GroundAreaTag tags, EffectValueSpec radius = default,
+        float fallbackRadius = 0f, EffectValueSpec duration = default, float fallbackDuration = 0f,
+        GroundAreaBuffData buff = default, GroundAreaPeriodicDamageData periodicDamage = default,
+        GroundAreaReactionData reaction = default)
+    {
+        // ground area step 只创建 ECS 区域语义，视觉和原生副作用不在这里处理。
+        _spec.steps.Add(EffectStepSpec.GroundAreaCreate(new GroundAreaCreateEffectStepSpec
+        {
+            tags = tags,
+            radius = radius,
+            fallbackRadius = fallbackRadius,
+            duration = duration,
+            fallbackDuration = fallbackDuration,
+            buff = buff,
+            periodicDamage = periodicDamage,
+            reaction = reaction
+        }));
+        return this;
+    }
+
     public EffectSpecBuilder Projectile(string model, EffectValueSpec speed,
         ProjectileTrajectoryType trajectoryType = ProjectileTrajectoryType.Tracking,
         EffectValueSpec arrivalThreshold = default, EffectValueSpec maxDistance = default,

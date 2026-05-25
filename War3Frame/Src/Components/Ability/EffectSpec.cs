@@ -14,6 +14,15 @@ public static class EffectFormulaIds
 
     /// <summary>按 base + stat * scale + bonus 计算，适合普通线性成长公式。</summary>
     public const string Linear = "linear";
+
+    /// <summary>读取技能拥有者单位的属性最终值。</summary>
+    public const string OwnerAttrFinal = "owner.attr.final";
+
+    /// <summary>读取施法者单位的属性最终值。</summary>
+    public const string CasterAttrFinal = "caster.attr.final";
+
+    /// <summary>读取目标单位的属性最终值。</summary>
+    public const string TargetAttrFinal = "target.attr.final";
 }
 
 /// <summary>
@@ -78,7 +87,9 @@ public enum EffectStepKind
     Heal,
     Buff,
     AreaSearch,
-    Projectile
+    Projectile,
+    LineSearch,
+    GroundAreaCreate
 }
 
 /// <summary>
@@ -111,6 +122,8 @@ public struct EffectStepSpec
     public BuffEffectStepSpec buff;
     public AreaSearchEffectStepSpec areaSearch;
     public ProjectileEffectStepSpec projectile;
+    public LineSearchEffectStepSpec lineSearch;
+    public GroundAreaCreateEffectStepSpec groundAreaCreate;
 
     public static EffectStepSpec Damage(DamageEffectStepSpec damage)
     {
@@ -156,6 +169,24 @@ public struct EffectStepSpec
             projectile = projectile
         };
     }
+
+    public static EffectStepSpec LineSearch(LineSearchEffectStepSpec lineSearch)
+    {
+        return new EffectStepSpec
+        {
+            kind = EffectStepKind.LineSearch,
+            lineSearch = lineSearch
+        };
+    }
+
+    public static EffectStepSpec GroundAreaCreate(GroundAreaCreateEffectStepSpec groundAreaCreate)
+    {
+        return new EffectStepSpec
+        {
+            kind = EffectStepKind.GroundAreaCreate,
+            groundAreaCreate = groundAreaCreate
+        };
+    }
 }
 
 public struct DamageEffectStepSpec
@@ -199,6 +230,34 @@ public struct AreaSearchEffectStepSpec
     public int maxTargets;
     public TargetFilter filter;
     public string? customFilterId;
+}
+
+public struct LineSearchEffectStepSpec
+{
+    /// <summary>线形搜索长度；未配置时回退到技能 Range stat。</summary>
+    public EffectValueSpec range;
+    public float fallbackRange;
+    /// <summary>线形搜索宽度。</summary>
+    public EffectValueSpec width;
+    public float fallbackWidth;
+    public int maxTargets;
+    public TargetFilter filter;
+    public string? customFilterId;
+    public GroundAreaTag reactionTag;
+}
+
+public struct GroundAreaCreateEffectStepSpec
+{
+    public GroundAreaTag tags;
+    /// <summary>区域半径；未配置时回退到技能 Radius stat。</summary>
+    public EffectValueSpec radius;
+    public float fallbackRadius;
+    /// <summary>区域持续时间。</summary>
+    public EffectValueSpec duration;
+    public float fallbackDuration;
+    public GroundAreaBuffData buff;
+    public GroundAreaPeriodicDamageData periodicDamage;
+    public GroundAreaReactionData reaction;
 }
 
 public struct ProjectileEffectStepSpec
