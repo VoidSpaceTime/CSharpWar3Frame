@@ -41,6 +41,9 @@ public static class EffectFormulaRegistry
         Register(EffectFormulaIds.StatFinal, ResolveStatFinal);
         Register(EffectFormulaIds.Constant, ResolveConstant);
         Register(EffectFormulaIds.Linear, ResolveLinear);
+        Register(EffectFormulaIds.OwnerAttrFinal, ResolveOwnerAttrFinal);
+        Register(EffectFormulaIds.CasterAttrFinal, ResolveCasterAttrFinal);
+        Register(EffectFormulaIds.TargetAttrFinal, ResolveTargetAttrFinal);
     }
 
     public static void Register(string formulaId, EffectFormulaFunc formula)
@@ -143,5 +146,40 @@ public static class EffectFormulaRegistry
             : 0f;
 
         return baseValue + statValue * scale + bonus;
+    }
+
+    private static float ResolveOwnerAttrFinal(EffectFormulaContext context)
+    {
+        return ResolveUnitAttr(context, ResolveAbilityOwner(context.ability));
+    }
+
+    private static float ResolveCasterAttrFinal(EffectFormulaContext context)
+    {
+        return ResolveUnitAttr(context, context.caster);
+    }
+
+    private static float ResolveTargetAttrFinal(EffectFormulaContext context)
+    {
+        return ResolveUnitAttr(context, context.target);
+    }
+
+    private static float ResolveUnitAttr(EffectFormulaContext context, Entity unit)
+    {
+        if (!context.value.hasStatId)
+            throw new InvalidOperationException("Unit attribute formula requires an attrId.");
+        if (unit.IsNull)
+            return context.GetParameter("bonus");
+
+        var scale = context.GetParameter("scale", 1f);
+        var bonus = context.GetParameter("bonus");
+        return AttributeHelper.GetFinalValue(unit, context.value.statId) * scale + bonus;
+    }
+
+    private static Entity ResolveAbilityOwner(Entity ability)
+    {
+        if (ability.TryGetComponent<AbilityOwner>(out var owner))
+            return owner.owner;
+
+        return default;
     }
 }

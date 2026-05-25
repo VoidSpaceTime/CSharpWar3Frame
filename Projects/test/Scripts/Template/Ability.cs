@@ -15,26 +15,25 @@ public class FireBlastTemplate : IAbilityTemplate
 {
     public void Configure(Entity ability, int level)
     {
-        ability.AddComponent(new AbilityBase
-        {
-            templateName = "fire_blast",
-            level = level,
-            Name = "火焰冲击",
-            Description = "对目标区域造成伤害。",
-            state = AbilityState.Ready,
-            targetType = AbilityTargetType.Point
-        });
-
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 80);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 6f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 700f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.Radius, 180f);
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.DamageAmount, 100f);
-        AbilityHelper.SetEffectSpec(ability, EffectSpecBuilder
-            .Chain()
-            .Area(TargetFilter.EnemyAlive)
-            .Damage(EffectValueSpec.Stat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill)
-            .Build());
+        AbilitySpecBuilder
+            .Create("fire_blast")
+            .Name("火焰冲击")
+            .Description("对目标区域造成伤害。")
+            .TargetType(AbilityTargetType.Point)
+            .BaseValue(AbilityHelper.ManaCost, 80)
+            .BaseValue(AbilityHelper.CooldownDuration, 6f)
+            .BaseValue(AbilityHelper.Range, 700f)
+            .BaseValue(AbilityHelper.Radius, 180f)
+            .BaseValue(AbilityHelper.DamageAmount, 100f)
+            .Behavior(AbilityBehaviorBuilder
+                .OnCast()
+                .Do(AbilityEffectSpecBuilder
+                    .Chain()
+                    .Area(TargetFilter.EnemyAlive)
+                    .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill)
+                    .Build())
+                .Build())
+            .BuildTo(ability, level);
     }
 }
 
@@ -144,6 +143,293 @@ public class HealingWaveTemplate : IAbilityTemplate
         AbilityHelper.SetEffectSpec(ability, EffectSpecBuilder
             .Chain()
             .Heal(EffectValueSpec.Stat(AbilityHelper.HealAmount), AbilityHelper.HealAmount)
+            .Build());
+    }
+}
+
+/// <summary>
+/// 示例技能模板：冰霜新星。
+/// 展示一个范围技能同时产生伤害与控制类 Buff 请求。
+/// </summary>
+[AbilityTemplate("frost_nova")]
+public class FrostNovaTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        ability.AddComponent(new AbilityBase
+        {
+            templateName = "frost_nova",
+            level = level,
+            Name = "冰霜新星",
+            Description = "冻结目标区域，对敌人造成伤害并施加定身效果。",
+            state = AbilityState.Ready,
+            targetType = AbilityTargetType.Point
+        });
+
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 90);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 8f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 650f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Radius, 200f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.DamageAmount, 70 + 25 * level);
+
+        AbilityHelper.SetEffectSpec(ability, EffectSpecBuilder
+            .Chain()
+            .Area(TargetFilter.EnemyAlive, radius: EffectValueSpec.Stat(AbilityHelper.Radius))
+            .Damage(EffectValueSpec.Stat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill)
+            .Buff(
+                "frost_nova_root",
+                EffectValueSpec.Constant(1.2f + 0.2f * level),
+                AttributeHelper.Root,
+                ModifyType.Flat,
+                EffectValueSpec.Constant(1f),
+                BuffRefreshBehavior.RefreshDuration)
+            .Build());
+    }
+}
+
+/// <summary>
+/// 示例技能模板：奥术飞弹。
+/// 展示单体追踪弹道命中后结算伤害。
+/// </summary>
+[AbilityTemplate("arcane_missile")]
+public class ArcaneMissileTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        ability.AddComponent(new AbilityBase
+        {
+            templateName = "arcane_missile",
+            level = level,
+            Name = "奥术飞弹",
+            Description = "发射追踪飞弹，命中目标后造成魔法伤害。",
+            state = AbilityState.Ready,
+            targetType = AbilityTargetType.Unit
+        });
+
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 45);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 3.5f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 750f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.DamageAmount, 55 + 35 * level);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ProjectileSpeed, 900f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ArrivalThreshold, 30f);
+
+        AbilityHelper.SetEffectSpec(ability, EffectSpecBuilder
+            .Chain()
+            .Projectile(
+                "Abilities\\Weapons\\AvengerMissile\\AvengerMissile.mdl",
+                EffectValueSpec.Stat(AbilityHelper.ProjectileSpeed),
+                arrivalThreshold: EffectValueSpec.Stat(AbilityHelper.ArrivalThreshold),
+                hitFilter: TargetFilter.EnemyAlive)
+            .Damage(EffectValueSpec.Stat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill)
+            .Build());
+    }
+}
+
+/// <summary>
+/// 示例技能模板：战吼。
+/// 展示以目标点为中心的范围增益 Buff，当前目标筛选依赖 TargetFilterRegistry 的阵营实现。
+/// </summary>
+[AbilityTemplate("battle_shout")]
+public class BattleShoutTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        ability.AddComponent(new AbilityBase
+        {
+            templateName = "battle_shout",
+            level = level,
+            Name = "战吼",
+            Description = "鼓舞目标区域内单位，临时提高攻击力。",
+            state = AbilityState.Ready,
+            targetType = AbilityTargetType.Point
+        });
+
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 50);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 12f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 450f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Radius, 350f);
+
+        AbilityHelper.SetEffectSpec(ability, EffectSpecBuilder
+            .Chain()
+            .Area(TargetFilter.AllAliveIncludeSelf, radius: EffectValueSpec.Stat(AbilityHelper.Radius))
+            .Buff(
+                "battle_shout_damage",
+                EffectValueSpec.Constant(8f),
+                AttributeHelper.Damage,
+                ModifyType.Flat,
+                EffectValueSpec.Constant(15f + 5f * level),
+                BuffRefreshBehavior.RefreshDuration)
+            .Build());
+    }
+}
+
+/// <summary>
+/// 示例技能模板：战术专注。
+/// 展示非槽位/被动技能通过属性贡献层提高法力恢复。
+/// </summary>
+[AbilityTemplate("talent_mana_focus")]
+public class TalentManaFocusTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        ability.AddComponent(new AbilityBase
+        {
+            templateName = "talent_mana_focus",
+            level = level,
+            Name = "战术专注",
+            Description = "挂载后提高单位法力恢复。",
+            state = AbilityState.Ready,
+            targetType = AbilityTargetType.None
+        });
+
+        ability.AddComponent(new AttributeContributionEntry
+        {
+            attrTypeId = AttributeHelper.ManaRegen,
+            modifyType = ModifyType.Flat,
+            value = 0.5f + 0.25f * level,
+            priority = 0
+        });
+    }
+}
+
+/// <summary>
+/// 示例技能模板：流星术。
+/// 展示延迟弹道到达后再展开区域伤害。
+/// </summary>
+[AbilityTemplate("meteor_strike")]
+public class MeteorStrikeTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        ability.AddComponent(new AbilityBase
+        {
+            templateName = "meteor_strike",
+            level = level,
+            Name = "流星术",
+            Description = "召唤流星轰击目标区域，命中后造成大范围伤害。",
+            state = AbilityState.Ready,
+            targetType = AbilityTargetType.Point
+        });
+
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 130);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 15f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 900f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Radius, 260f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.DamageAmount, 160 + 55 * level);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ProjectileSpeed, 500f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ArrivalThreshold, 45f);
+
+        AbilityHelper.SetEffectSpec(ability, EffectSpecBuilder
+            .Chain()
+            .Projectile(
+                "Abilities\\Weapons\\InfernalMeteor\\InfernalMeteor.mdl",
+                EffectValueSpec.Stat(AbilityHelper.ProjectileSpeed),
+                ProjectileTrajectoryType.Parabolic,
+                EffectValueSpec.Stat(AbilityHelper.ArrivalThreshold),
+                hitFilter: TargetFilter.EnemyAlive)
+            .Area(TargetFilter.EnemyAlive, radius: EffectValueSpec.Stat(AbilityHelper.Radius))
+            .Damage(EffectValueSpec.Stat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill)
+            .Build());
+    }
+}
+
+/// <summary>
+/// 示例技能模板：凝固汽油。
+/// 展示技能只配置地面油污区域，减速和点燃反应由 ECS 系统执行。
+/// </summary>
+[AbilityTemplate("napalm_oil")]
+public class NapalmOilTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        ability.AddComponent(new AbilityBase
+        {
+            templateName = "napalm_oil",
+            level = level,
+            Name = "凝固汽油",
+            Description = "在目标地点生成油污区域，范围内敌人被减速，遇火后转为燃烧地面。",
+            state = AbilityState.Ready,
+            targetType = AbilityTargetType.Point
+        });
+
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 70);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 9f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 650f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Radius, 220f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.DamageAmount, 10f);
+
+        var burningDamage = new GroundAreaPeriodicDamageData
+        {
+            enabled = true,
+            damageValue = EffectValueSpec.Stat(AbilityHelper.DamageAmount),
+            fallbackDamage = 10f,
+            tickInterval = 1f,
+            damageType = DamageType.Magical,
+            damageSrc = DamageSrc.Skill,
+            filter = TargetFilter.EnemyAlive
+        };
+
+        AbilityHelper.SetEffectSpec(ability, EffectSpecBuilder
+            .Chain()
+            .GroundArea(
+                GroundAreaTag.Oil,
+                EffectValueSpec.Stat(AbilityHelper.Radius),
+                duration: EffectValueSpec.Constant(10f),
+                buff: new GroundAreaBuffData
+                {
+                    enabled = true,
+                    buffId = "napalm_oil_slow",
+                    attrTypeId = AttributeHelper.MoveSpeed,
+                    modifyType = ModifyType.Flat,
+                    value = EffectValueSpec.Constant(-20f),
+                    fallbackValue = -20f
+                },
+                reaction: new GroundAreaReactionData
+                {
+                    enabled = true,
+                    triggerTag = GroundAreaTag.Fire,
+                    resultTags = GroundAreaTag.Burning,
+                    resultDuration = EffectValueSpec.Constant(5f),
+                    fallbackDuration = 5f,
+                    resultPeriodicDamage = burningDamage
+                })
+            .Build());
+    }
+}
+
+/// <summary>
+/// 示例技能模板：喷火。
+/// 展示线形搜索造成伤害，并用 Fire 标签显式触发油污反应。
+/// </summary>
+[AbilityTemplate("flamethrower")]
+public class FlamethrowerTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        ability.AddComponent(new AbilityBase
+        {
+            templateName = "flamethrower",
+            level = level,
+            Name = "喷火",
+            Description = "向目标方向喷出火焰，对线形范围内敌人造成伤害，并点燃油污。",
+            state = AbilityState.Ready,
+            targetType = AbilityTargetType.Point
+        });
+
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ManaCost, 85);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.CooldownDuration, 7f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.Range, 600f);
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.DamageAmount, 60f + 25f * level);
+
+        AbilityHelper.SetEffectSpec(ability, EffectSpecBuilder
+            .Chain()
+            .Line(
+                TargetFilter.EnemyAlive,
+                EffectValueSpec.Stat(AbilityHelper.Range),
+                width: EffectValueSpec.Constant(140f),
+                fallbackWidth: 140f,
+                reactionTag: GroundAreaTag.Fire)
+            .Damage(EffectValueSpec.Stat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill)
             .Build());
     }
 }
