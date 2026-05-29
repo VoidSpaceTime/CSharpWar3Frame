@@ -42,7 +42,7 @@ public static class War3NativeBootstrap
     {
         var createTimer = War3.GetNativeFunction("CreateTimer");
         var timer = War3.CallNative<int>(createTimer);
-        // Console.WriteLine($"timer = {timer}");
+        Console.WriteLine($"timer = {timer}");
 
         var timerStart = War3.GetNativeFunction("TimerStart");
         War3.CallNative<int>(timerStart, timer, tickRate, true,
