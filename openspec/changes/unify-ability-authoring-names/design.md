@@ -152,6 +152,21 @@ AbilitySpecBuilder
     .Build();
 ```
 
+
+### 主动技能便捷写法
+
+第一阶段保留 `Behavior(AbilityBehaviorBuilder.OnCast().Do(...).Build())` 作为底层显式写法，同时在 `AbilitySpecBuilder` 上增加常用触发语法糖：
+
+```csharp
+AbilitySpecBuilder
+    .Create("fire_blast")
+    .OnCast(e => e
+        .Area(TargetFilter.EnemyAlive)
+        .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount)))
+    .BuildTo(ability, level);
+```
+
+该写法内部等价于 `OnCast + Chain + Build + Behavior`，只隐藏样板代码，不改变 `AbilityBehavior` 与 `AbilityEffect` 的职责边界。后续 `OnGranted(...)`、`OnRemoved(...)` 可使用同一模式，但空触发行为不应写入规格。
 ## Runtime Ownership
 
 - `AbilityBehaviorSystem` 只负责推进行为状态、产生命中上下文或 effect request。

@@ -31,7 +31,8 @@
 - [x] 5.1 Migrate one existing active example to new naming
 - [ ] 5.2 Add or migrate `治疗之鸟` as a passive/periodic behavior example
 - [x] 5.3 Keep existing examples building during migration
-- [ ] 5.4 Document any old API compatibility names left in place
+- [x] 5.4 Document any old API compatibility names left in place
+- [x] 5.5 Add AbilitySpecBuilder.OnCast(...) convenience authoring path for common active skills
 
 ## 6. Verification
 
@@ -39,4 +40,4 @@
 - [x] 6.2 Build `Projects/test/test.csproj`
 - [x] 6.3 Verify no direct War3 native calls are introduced outside Native/Execution layer
 - [x] 6.4 Verify behavior layer does not directly mutate health/buff truth outside request systems
-- [ ] 6.5 Summarize migration status, compatibility risks, and follow-up proposals
+- [x] 6.5 Summarize migration status, compatibility risks, and follow-up proposals

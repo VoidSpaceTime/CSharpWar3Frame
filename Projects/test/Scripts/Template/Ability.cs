@@ -25,14 +25,9 @@ public class FireBlastTemplate : IAbilityTemplate
             .BaseValue(AbilityHelper.Range, 700f)
             .BaseValue(AbilityHelper.Radius, 180f)
             .BaseValue(AbilityHelper.DamageAmount, 100f)
-            .Behavior(AbilityBehaviorBuilder
-                .OnCast()
-                .Do(AbilityEffectSpecBuilder
-                    .Chain()
-                    .Area(TargetFilter.EnemyAlive)
-                    .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill)
-                    .Build())
-                .Build())
+            .OnCast(e => e
+                .Area(TargetFilter.EnemyAlive)
+                .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill))
             .BuildTo(ability, level);
     }
 }
