@@ -16,16 +16,25 @@ public sealed class AbilityEffectSpecBuilder
         _inner = inner;
     }
 
+    /// <summary>
+    /// 创建一个按顺序执行的技能效果链。
+    /// </summary>
     public static AbilityEffectSpecBuilder Chain()
     {
         return new AbilityEffectSpecBuilder(EffectSpecBuilder.Chain());
     }
 
+    /// <summary>
+    /// 构建可挂到技能行为或物品使用上的效果规格。
+    /// </summary>
     public AbilityEffectSpec Build()
     {
         return new AbilityEffectSpec(_inner.Build());
     }
 
+    /// <summary>
+    /// 添加伤害结算步骤，实际扣血仍由伤害系统处理。
+    /// </summary>
     public AbilityEffectSpecBuilder Damage(AbilityValue value, DamageType damageType = DamageType.Magical,
         DamageSrc damageSrc = DamageSrc.Skill)
     {
@@ -33,12 +42,18 @@ public sealed class AbilityEffectSpecBuilder
         return this;
     }
 
+    /// <summary>
+    /// 添加治疗结算步骤，实际回血仍由治疗系统处理。
+    /// </summary>
     public AbilityEffectSpecBuilder Heal(AbilityValue value, int valueTypeId = 0, float amount = 0f)
     {
         _inner.Heal(value.EffectValue, valueTypeId, amount);
         return this;
     }
 
+    /// <summary>
+    /// 添加 Buff 应用步骤，属性修改通过 Buff/属性系统落地。
+    /// </summary>
     public AbilityEffectSpecBuilder Buff(string buffId, AbilityValue duration, int attrTypeId, ModifyType modifyType,
         AbilityValue value, BuffRefreshBehavior refreshBehavior = BuffRefreshBehavior.RefreshDuration)
     {
@@ -46,6 +61,9 @@ public sealed class AbilityEffectSpecBuilder
         return this;
     }
 
+    /// <summary>
+    /// 添加圆形区域搜索步骤，用搜索结果改变后续效果目标集。
+    /// </summary>
     public AbilityEffectSpecBuilder Area(TargetFilter filter, int maxTargets = 0, AbilityValue radius = default,
         string? customFilterId = null, float centerX = 0f, float centerY = 0f)
     {
@@ -53,6 +71,9 @@ public sealed class AbilityEffectSpecBuilder
         return this;
     }
 
+    /// <summary>
+    /// 添加线形搜索步骤，可用于穿刺、喷火等沿线命中效果。
+    /// </summary>
     public AbilityEffectSpecBuilder Line(TargetFilter filter, AbilityValue range = default, float fallbackRange = 0f,
         AbilityValue width = default, float fallbackWidth = 0f, int maxTargets = 0,
         string? customFilterId = null, GroundAreaTag reactionTag = GroundAreaTag.None)
@@ -62,6 +83,9 @@ public sealed class AbilityEffectSpecBuilder
         return this;
     }
 
+    /// <summary>
+    /// 添加地面区域创建步骤，只写 ECS 区域语义，不直接创建 War3 原生表现。
+    /// </summary>
     public AbilityEffectSpecBuilder GroundArea(GroundAreaTag tags, AbilityValue radius = default,
         float fallbackRadius = 0f, AbilityValue duration = default, float fallbackDuration = 0f,
         GroundAreaBuffData buff = default, GroundAreaPeriodicDamageData periodicDamage = default,
@@ -72,6 +96,9 @@ public sealed class AbilityEffectSpecBuilder
         return this;
     }
 
+    /// <summary>
+    /// 添加弹道步骤，移动、命中与特效表现由后续系统推进。
+    /// </summary>
     public AbilityEffectSpecBuilder Projectile(string model, AbilityValue speed,
         ProjectileTrajectoryType trajectoryType = ProjectileTrajectoryType.Tracking,
         AbilityValue arrivalThreshold = default, AbilityValue maxDistance = default,
