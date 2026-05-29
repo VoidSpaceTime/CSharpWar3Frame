@@ -1,5 +1,4 @@
 using Friflo.Engine.ECS;
-using War3Frame.Components;
 using War3Frame.Helpers;
 using War3Frame.TemplateInit;
 
@@ -13,16 +12,12 @@ public partial class FootmanTemplate : IUnitTemplate
 {
     public void Configure(Entity e)
     {
-        e.AddComponent(new UnitBase
-        {
-            templateName = "footman",
-            name = "步兵"
-        });
-
-        AttributeHelper.CreateAttr(e, AttributeHelper.Health, 420);
-        AttributeHelper.CreateAttr(e, AttributeHelper.Mana, 0);
-        AttributeHelper.CreateAttr(e, AttributeHelper.Damage, 24);
+        UnitSpecBuilder
+            .Create("footman")
+            .Name("步兵")
+            .Attr(AttributeHelper.Health, 420)
+            .Attr(AttributeHelper.Mana, 0)
+            .Attr(AttributeHelper.Damage, 24)
+            .BuildTo(e);
     }
 }
-
-
