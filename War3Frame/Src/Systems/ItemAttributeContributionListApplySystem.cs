@@ -38,7 +38,7 @@ public class ItemAttributeContributionListApplySystem : QuerySystem<ItemOwner, I
             foreach (var contribution in contributions.attributes)
             {
                 ModifyHelper.AddModifierToUnit(owner.unit, contribution.attrTypeId, item, contribution.modifyType,
-                    contribution.value);
+                    contribution.value.Resolve(1));
             }
 
             item.RemoveTag<ItemAttrApplyRequest>();
