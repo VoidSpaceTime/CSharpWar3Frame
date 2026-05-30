@@ -9,9 +9,9 @@ namespace War3Frame;
 public readonly struct UnitAttributeSpec
 {
     public readonly int attrTypeId;
-    public readonly float baseValue;
+    public readonly LevelValue baseValue;
 
-    public UnitAttributeSpec(int attrTypeId, float baseValue)
+    public UnitAttributeSpec(int attrTypeId, LevelValue baseValue)
     {
         this.attrTypeId = attrTypeId;
         this.baseValue = baseValue;
@@ -29,6 +29,7 @@ public sealed class UnitSpec
     public readonly List<string> abilityTemplateNames = new();
     public int? itemSlotCount;
     public int? abilitySlotCount;
+    public ExperienceData? experience;
 }
 
 /// <summary>
@@ -54,10 +55,10 @@ public readonly struct ItemAttributeContributionSpec
 {
     public readonly int attrTypeId;
     public readonly ModifyType modifyType;
-    public readonly float value;
+    public readonly LevelValue value;
     public readonly int priority;
 
-    public ItemAttributeContributionSpec(int attrTypeId, ModifyType modifyType, float value, int priority)
+    public ItemAttributeContributionSpec(int attrTypeId, ModifyType modifyType, LevelValue value, int priority)
     {
         this.attrTypeId = attrTypeId;
         this.modifyType = modifyType;
@@ -73,6 +74,7 @@ public struct ItemAttributeContributionListData : IComponent
 {
     public List<ItemAttributeContributionSpec> attributes;
 }
+
 /// <summary>
 /// 物品模板规格，只描述物品是什么，不负责装备、卸下或丢弃。
 /// </summary>
@@ -88,6 +90,7 @@ public sealed class ItemSpec
     public readonly List<ItemAttributeContributionSpec> attributes = new();
     public string? useAbilityTemplateName;
     public AbilityEffectSpec? useEffectSpec;
+    public ExperienceData? experience;
 }
 
 /// <summary>

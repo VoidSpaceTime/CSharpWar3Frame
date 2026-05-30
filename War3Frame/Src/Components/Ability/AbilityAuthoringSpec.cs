@@ -121,8 +121,9 @@ public sealed class AbilitySpec
     public string name = string.Empty;
     public string description = string.Empty;
     public AbilityTargetType targetType;
-    public readonly Dictionary<int, float> baseValues = new();
+    public readonly Dictionary<int, LevelValue> baseValues = new();
     public readonly List<AbilityBehaviorSpec> behaviors = new();
+    public ExperienceData? experience;
 }
 
 /// <summary>
