@@ -15,6 +15,7 @@ public enum CastPhase
     MovingToCast,   // 移动到施法范围
     Casting,        // 吟唱中
     Channeling,     // 持续施法中
+    Backswing,      // 后摇中
 }
 
 /// <summary>
@@ -58,6 +59,9 @@ public struct CastState : IComponent
 
     /// <summary>阶段计时器（吟唱/持续时间倒计时）</summary>
     public float timer;
+
+    /// <summary>生效点是否已经提交。</summary>
+    public bool effectCommitted;
 }
 
 /// <summary>
@@ -73,6 +77,12 @@ public struct ChannelState : IComponent
 
     /// <summary>持续施法的技能 Entity</summary>
     public Entity ability;
+
+    /// <summary>持续施法 tick 间隔。</summary>
+    public float tickInterval;
+
+    /// <summary>下一次 tick 的剩余时间。</summary>
+    public float tickTimer;
 }
 
 /// <summary>

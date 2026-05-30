@@ -7,6 +7,7 @@ public enum AbilityState
     Ready, // 就绪
     Casting, // 吟唱中
     Channeling, // 持续施法中
+    Backswing, // 后摇中
     Cooldown, // 冷却中
     Ban, // 被禁用
 }

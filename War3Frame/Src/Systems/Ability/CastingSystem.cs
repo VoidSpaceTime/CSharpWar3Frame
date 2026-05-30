@@ -3,16 +3,13 @@ using Friflo.Engine.ECS.Systems;
 using War3Frame.Components;
 using War3Frame.Helpers;
 
-
 namespace War3Frame.Src.Systems;
 
 /// <summary>
-/// 施法请求处理系统 - 处理玩家/AI 的施法请求
+/// 施法请求处理系统，负责处理玩家或 AI 的施法意图。
 /// </summary>
 public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSystem
 {
-    // 施法入口只负责校验状态、资源和距离；真正的效果结算由后续 AbilityEffectSystems 处理。
-
     /// <summary>
     /// 施法请求检查与启动的执行间隔。
     /// </summary>
@@ -29,37 +26,32 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
                 return;
             }
 
-            // 检查技能是否可用
             if (abilityBase.state != AbilityState.Ready)
             {
                 unit.RemoveComponent<CastRequest>();
                 return;
             }
 
-            // 检查资源消耗（通用）
-            if (!AbilityCostHelper.CheckCost(unit, request.ability))
+            // 请求阶段只做预检查，不扣资源；真正扣除发生在 OnEffect 条件通过后。
+            if (!AbilityCostHelper.CheckCost(unit, ability))
             {
                 unit.RemoveComponent<CastRequest>();
-                return; // 资源不足
+                return;
             }
 
-            // 计算到目标的距离
-            float targetX = request.targetX;
-            float targetY = request.targetY;
-
-            // 如果是对单位施法，使用单位坐标
+            var targetX = request.targetX;
+            var targetY = request.targetY;
             if (!request.targetUnit.IsNull && request.targetUnit.TryGetComponent<Position>(out var targetPos))
             {
                 targetX = targetPos.x;
                 targetY = targetPos.y;
             }
 
-            float dist = CalcDistance(pos.x, pos.y, targetX, targetY);
-            float castRange = AbilityHelper.GetCastRange(ability);
+            var dist = CalcDistance(pos.x, pos.y, targetX, targetY);
+            var castRange = AbilityHelper.GetCastRange(ability);
 
             if (dist <= castRange)
             {
-                // 在范围内，直接开始施法
                 ability.AddComponent(new AbilityTriggerInfo
                 {
                     triggerType = AbilityTriggerType.ActiveCast
@@ -70,7 +62,6 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
             {
                 var commandToken = War3Frame.Src.Systems.Unit.MoveSystem.NextCommandToken();
 
-                // 不在范围内，发出移动命令
                 unit.AddComponent(new CastState
                 {
                     phase = CastPhase.MovingToCast,
@@ -78,14 +69,15 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
                     targetUnit = request.targetUnit,
                     targetX = targetX,
                     targetY = targetY,
-                    timer = 0
+                    timer = 0f,
+                    effectCommitted = false
                 });
 
                 unit.AddComponent(new MoveCommand
                 {
                     targetX = targetX,
                     targetY = targetY,
-                    arrivalDistance = castRange * 0.9f, // 留一点余量
+                    arrivalDistance = castRange * 0.9f,
                     reason = MoveReason.CastingAbility,
                     orderType = MoveOrderType.Move,
                     commandToken = commandToken,
@@ -97,20 +89,19 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
                     kind = MoveContinuationKind.CastAbility,
                     ability = ability,
                     targetUnit = request.targetUnit,
-                    targetX = targetX,
-                    targetY = targetY
+                    targetX = request.targetX,
+                    targetY = request.targetY
                 });
             }
 
-            // 移除请求
             unit.RemoveComponent<CastRequest>();
         });
     }
 
     /// <summary>
-    /// 开始施法流程。
+    /// 开始施法流程，只进入前摇状态，不扣除资源。
     /// </summary>
-    private void StartCasting(Entity unit, CastRequest request, AbilityBase abilityBase)
+    private static void StartCasting(Entity unit, CastRequest request, AbilityBase abilityBase)
     {
         var castTime = AbilityHelper.GetCastTime(request.ability);
 
@@ -121,7 +112,8 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
             targetUnit = request.targetUnit,
             targetX = request.targetX,
             targetY = request.targetY,
-            timer = castTime
+            timer = castTime,
+            effectCommitted = false
         });
 
         request.ability.AddComponent(new AbilityFlowNodeInfo
@@ -129,10 +121,6 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
             nodeType = AbilityFlowNodeType.Cast
         });
 
-        // 扣除资源消耗
-        AbilityCostHelper.ApplyCost(unit, request.ability);
-
-        // 更新技能状态
         abilityBase.state = AbilityState.Casting;
         request.ability.AddComponent(abilityBase);
     }
@@ -140,23 +128,19 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
     /// <summary>
     /// 计算两点之间的平面距离。
     /// </summary>
-    private float CalcDistance(float x1, float y1, float x2, float y2)
+    private static float CalcDistance(float x1, float y1, float x2, float y2)
     {
-        float dx = x2 - x1;
-        float dy = y2 - y1;
+        var dx = x2 - x1;
+        var dy = y2 - y1;
         return (float)Math.Sqrt(dx * dx + dy * dy);
     }
-
 }
 
 /// <summary>
 /// 移动后施法桥接系统。
-/// 施法系统只作为 move 的调用方，通过 move outcome 决定后续动作。
 /// </summary>
 public class MoveToCastSystem : QuerySystem<CastState, MoveOutcome, MoveContinuation>
 {
-    // 施法工作流和移动子系统之间的桥：消费 MoveOutcome，而不是直接查询 native 命令结果。
-
     protected override void OnUpdate()
     {
         Query.ForEachEntity((ref CastState cast, ref MoveOutcome outcome, ref MoveContinuation continuation, Entity unit) =>
@@ -167,18 +151,12 @@ public class MoveToCastSystem : QuerySystem<CastState, MoveOutcome, MoveContinua
             var ability = cast.ability;
             if (ability.IsNull || !ability.TryGetComponent<AbilityBase>(out var abilityBase)) return;
 
-            // ========================================
-            // 检查是否被打断
-            // ========================================
-
-            // 1. 检查控制效果打断（眩晕/击飞/囚禁）
             if (IsControlled(unit))
             {
                 CancelCastMovement(unit, cast);
                 return;
             }
 
-            // 2. 检查是否被打断标记
             if (unit.Tags.Has<CastInterruptedTag>())
             {
                 CancelCastMovement(unit, cast);
@@ -186,20 +164,13 @@ public class MoveToCastSystem : QuerySystem<CastState, MoveOutcome, MoveContinua
                 return;
             }
 
-            // ========================================
-            // 正常流程
-            // ========================================
-
             if (outcome.outcome == MoveOutcomeType.Arrived)
             {
                 cast.phase = CastPhase.Casting;
                 cast.timer = AbilityHelper.GetCastTime(ability);
+                cast.effectCommitted = false;
                 unit.AddComponent(cast);
 
-                // 扣除资源消耗
-                AbilityCostHelper.ApplyCost(unit, cast.ability);
-
-                // 更新技能状态
                 abilityBase.state = AbilityState.Casting;
                 ability.AddComponent(abilityBase);
 
@@ -216,11 +187,10 @@ public class MoveToCastSystem : QuerySystem<CastState, MoveOutcome, MoveContinua
             {
                 if (unit.TryGetComponent<MoveCommand>(out var cmd) && cmd.reason == MoveReason.CastingAbility)
                 {
-                    float newX = targetPos.x;
-                    float newY = targetPos.y;
-
-                    float dx = newX - cmd.targetX;
-                    float dy = newY - cmd.targetY;
+                    var newX = targetPos.x;
+                    var newY = targetPos.y;
+                    var dx = newX - cmd.targetX;
+                    var dy = newY - cmd.targetY;
                     if (dx * dx + dy * dy > 100 * 100)
                     {
                         cmd.targetX = newX;
@@ -242,28 +212,23 @@ public class MoveToCastSystem : QuerySystem<CastState, MoveOutcome, MoveContinua
     }
 
     /// <summary>
-    /// 检查单位是否处于控制效果中（使用属性系统）
+    /// 检查单位是否处于控制效果中。
     /// </summary>
-    private bool IsControlled(Entity unit)
+    private static bool IsControlled(Entity unit)
     {
         return ControlHelper.IsIncapacitated(unit);
     }
 
     /// <summary>
-    /// 取消施法移动
+    /// 取消施法移动。
     /// </summary>
-    private void CancelCastMovement(Entity unit, CastState cast)
+    private static void CancelCastMovement(Entity unit, CastState cast)
     {
-        // 清理施法状态
         unit.RemoveComponent<CastState>();
 
-        // 移除施法移动命令
         if (unit.TryGetComponent<MoveCommand>(out var moveCmd) && moveCmd.reason == MoveReason.CastingAbility)
-        {
             unit.RemoveComponent<MoveCommand>();
-        }
 
-        // 重置技能状态
         if (cast.ability.TryGetComponent<AbilityBase>(out var abilityBase))
         {
             abilityBase.state = AbilityState.Ready;
@@ -273,24 +238,21 @@ public class MoveToCastSystem : QuerySystem<CastState, MoveOutcome, MoveContinua
 }
 
 /// <summary>
-/// 施法吟唱系统
+/// 施法前摇推进系统。
 /// </summary>
 public class CastingSystem : QuerySystem<CastState>, ITimedSystem
 {
-    // 读条系统只在计时结束时创建 effect entity；伤害、治疗、Buff、弹道都由独立系统结算。
-
     /// <summary>
-    /// 吟唱推进间隔。
+    /// 前摇推进间隔。
     /// </summary>
-    public float Interval => 0.05f; // 每 50ms 更新一次
+    public float Interval => 0.05f;
 
     protected override void OnUpdate()
     {
         Query.ForEachEntity((ref CastState cast, Entity unit) =>
         {
-            if (cast.phase != CastPhase.Casting) return;
+            if (cast.phase is not (CastPhase.Casting or CastPhase.Backswing)) return;
 
-            // 检查是否被打断
             if (unit.Tags.Has<CastInterruptedTag>())
             {
                 InterruptCast(unit, cast);
@@ -298,90 +260,167 @@ public class CastingSystem : QuerySystem<CastState>, ITimedSystem
             }
 
             cast.timer -= Tick.deltaTime;
-
-            if (cast.timer <= 0)
-            {
-                // 吟唱完成，执行技能效果
-                ExecuteAbility(unit, cast);
-
-                // 检查是否有持续施法
-                var channelDuration = AbilityHelper.GetChannelDuration(cast.ability);
-                if (channelDuration > 0)
-                {
-                    // 进入持续施法阶段
-                    cast.phase = CastPhase.Channeling;
-                    cast.timer = channelDuration;
-                    unit.AddComponent(cast);
-
-                    unit.AddComponent(new ChannelState
-                    {
-                        remaining = channelDuration,
-                        duration = channelDuration,
-                        ability = cast.ability
-                    });
-                }
-                else
-                {
-                    // 施法完成，进入冷却
-                    FinishCast(unit, cast);
-                }
-            }
-            else
+            if (cast.timer > 0)
             {
                 unit.AddComponent(cast);
+                return;
             }
+
+            if (cast.phase == CastPhase.Casting)
+                CompleteCastPoint(unit, cast);
+            else
+                FinishCast(unit, cast);
         });
     }
 
-    private void ExecuteAbility(Entity unit, CastState cast)
+    private static void CompleteCastPoint(Entity unit, CastState cast)
     {
-        // 通过 AbilityEffectHelper 创建效果 Entity
-        // 各个 Effect System 会自动处理伤害/治疗/Buff/弹道/AOE
-        AbilityEffectHelper.CreateEffectEntity(
-            unit,
-            cast.ability,
-            cast.targetUnit,
-            cast.targetX,
-            cast.targetY
-        );
-    }
-
-    private void FinishCast(Entity unit, CastState cast)
-    {
-        if (cast.ability.TryGetComponent<AbilityBase>(out var abilityBase))
+        if (!TryCommitEffect(unit, cast))
         {
-            abilityBase.state = AbilityState.Cooldown;
-            cast.ability.AddComponent(abilityBase);
+            ResetAbility(unit, cast);
+            return;
         }
 
+        var channelDuration = AbilityHelper.GetChannelDuration(cast.ability);
+        if (channelDuration > 0f)
+        {
+            var tickInterval = AbilityHelper.GetChannelTickInterval(cast.ability);
+            cast.phase = CastPhase.Channeling;
+            cast.timer = channelDuration;
+            cast.effectCommitted = true;
+            unit.AddComponent(cast);
+
+            unit.AddComponent(new ChannelState
+            {
+                remaining = channelDuration,
+                duration = channelDuration,
+                ability = cast.ability,
+                tickInterval = tickInterval,
+                tickTimer = tickInterval
+            });
+
+            SetAbilityState(cast.ability, AbilityState.Channeling);
+            return;
+        }
+
+        StartBackswingOrFinish(unit, cast);
+    }
+
+    private static bool TryCommitEffect(Entity unit, CastState cast)
+    {
+        if (!AbilityCostHelper.CheckCost(unit, cast.ability))
+            return false;
+
+        AbilityCostHelper.ApplyCost(unit, cast.ability);
+        TriggerBehaviorEffect(unit, cast, AbilityBehaviorTrigger.OnEffect);
+        return true;
+    }
+
+    internal static void TriggerBehaviorEffect(Entity unit, CastState cast, AbilityBehaviorTrigger trigger)
+    {
+        if (!TryGetBehaviorEffect(cast.ability, trigger, out var effect))
+            return;
+
+        var previous = GetCurrentEffectSpec(cast.ability, out var hadPrevious);
+        AbilityHelper.SetEffectSpec(cast.ability, effect.Inner);
+        AbilityEffectHelper.CreateEffectEntity(unit, cast.ability, cast.targetUnit, cast.targetX, cast.targetY);
+        RestoreEffectSpec(cast.ability, previous, hadPrevious);
+    }
+
+    private static bool TryGetBehaviorEffect(Entity ability, AbilityBehaviorTrigger trigger, out AbilityEffectSpec effect)
+    {
+        if (ability.TryGetComponent<AbilityBehaviorData>(out var data) && data.behaviors != null)
+        {
+            foreach (var behavior in data.behaviors)
+            {
+                if (behavior.trigger == trigger && behavior.effect != null)
+                {
+                    effect = behavior.effect;
+                    return true;
+                }
+            }
+        }
+
+        effect = null!;
+        return false;
+    }
+
+    private static EffectSpec? GetCurrentEffectSpec(Entity ability, out bool exists)
+    {
+        if (AbilityHelper.TryGetEffectSpec(ability, out var spec))
+        {
+            exists = true;
+            return spec;
+        }
+
+        exists = false;
+        return null;
+    }
+
+    private static void RestoreEffectSpec(Entity ability, EffectSpec? previous, bool hadPrevious)
+    {
+        if (hadPrevious && previous != null)
+            AbilityHelper.SetEffectSpec(ability, previous);
+    }
+
+    internal static void StartBackswingOrFinish(Entity unit, CastState cast)
+    {
+        var backswing = AbilityHelper.GetBackswingDuration(cast.ability);
+        if (backswing > 0f)
+        {
+            cast.phase = CastPhase.Backswing;
+            cast.timer = backswing;
+            cast.effectCommitted = true;
+            unit.AddComponent(cast);
+            SetAbilityState(cast.ability, AbilityState.Backswing);
+            return;
+        }
+
+        FinishCast(unit, cast);
+    }
+
+    internal static void FinishCast(Entity unit, CastState cast)
+    {
+        TriggerBehaviorEffect(unit, cast, AbilityBehaviorTrigger.OnFinished);
+        SetAbilityState(cast.ability, AbilityState.Cooldown);
         cast.ability.AddComponent(new AbilityCooldownState
         {
             remaining = AbilityHelper.GetCooldown(cast.ability)
         });
-
         unit.RemoveComponent<CastState>();
     }
 
-    private void InterruptCast(Entity unit, CastState cast)
+    private static void InterruptCast(Entity unit, CastState cast)
     {
-        if (cast.ability.TryGetComponent<AbilityBase>(out var abilityBase))
-        {
-            abilityBase.state = AbilityState.Ready;
-            cast.ability.AddComponent(abilityBase);
-        }
-
-        unit.RemoveComponent<CastState>();
+        TriggerBehaviorEffect(unit, cast, AbilityBehaviorTrigger.OnInterrupted);
+        ResetAbility(unit, cast);
         unit.RemoveTag<CastInterruptedTag>();
+    }
+
+    private static void ResetAbility(Entity unit, CastState cast)
+    {
+        SetAbilityState(cast.ability, AbilityState.Ready);
+        unit.RemoveComponent<CastState>();
+    }
+
+    private static void SetAbilityState(Entity ability, AbilityState state)
+    {
+        if (ability.TryGetComponent<AbilityBase>(out var abilityBase))
+        {
+            abilityBase.state = state;
+            ability.AddComponent(abilityBase);
+        }
     }
 }
 
 /// <summary>
-/// 持续施法系统
+/// 持续施法系统。
 /// </summary>
 public class ChannelingSystem : QuerySystem<ChannelState, CastState>, ITimedSystem
 {
-    // 持续施法当前只推进生命周期；周期性效果应在 OnChannelTick 中以 ECS 意图表达。
-
+    /// <summary>
+    /// 持续施法推进间隔。
+    /// </summary>
     public float Interval => 0.05f;
 
     protected override void OnUpdate()
@@ -390,65 +429,61 @@ public class ChannelingSystem : QuerySystem<ChannelState, CastState>, ITimedSyst
         {
             if (cast.phase != CastPhase.Channeling) return;
 
-            // 检查是否被打断
             if (unit.Tags.Has<CastInterruptedTag>())
             {
-                InterruptChannel(unit, cast, channel);
+                InterruptChannel(unit, cast);
                 return;
             }
 
             channel.remaining -= Tick.deltaTime;
             cast.timer -= Tick.deltaTime;
-
-            // 持续施法期间的效果（例如持续治疗）
-            OnChannelTick(unit, channel);
+            AdvanceChannelTick(unit, cast, ref channel, Tick.deltaTime);
 
             if (channel.remaining <= 0)
             {
-                // 持续施法结束
-                FinishChannel(unit, cast, channel);
+                FinishChannel(unit, cast);
+                return;
             }
-            else
-            {
-                unit.AddComponent(channel);
-                unit.AddComponent(cast);
-            }
+
+            unit.AddComponent(channel);
+            unit.AddComponent(cast);
         });
     }
 
-    private void OnChannelTick(Entity unit, ChannelState channel)
+    private static void AdvanceChannelTick(Entity unit, CastState cast, ref ChannelState channel, float deltaTime)
     {
-        // TODO: 实现持续施法每帧的效果
-        // 例如：每 0.5 秒治疗一次
-    }
+        if (channel.tickInterval <= 0f)
+            return;
 
-    private void FinishChannel(Entity unit, CastState cast, ChannelState channel)
-    {
-        if (cast.ability.TryGetComponent<AbilityBase>(out var abilityBase))
+        channel.tickTimer -= deltaTime;
+        while (channel.tickTimer <= 0f && channel.remaining > 0f)
         {
-            abilityBase.state = AbilityState.Cooldown;
-            cast.ability.AddComponent(abilityBase);
+            CastingSystem.TriggerBehaviorEffect(unit, cast, AbilityBehaviorTrigger.OnChannelTick);
+            channel.tickTimer += channel.tickInterval;
         }
+    }
 
-        cast.ability.AddComponent(new AbilityCooldownState
-        {
-            remaining = AbilityHelper.GetCooldown(cast.ability)
-        });
-
+    private static void FinishChannel(Entity unit, CastState cast)
+    {
         unit.RemoveComponent<ChannelState>();
-        unit.RemoveComponent<CastState>();
+        CastingSystem.StartBackswingOrFinish(unit, cast);
     }
 
-    private void InterruptChannel(Entity unit, CastState cast, ChannelState channel)
+    private static void InterruptChannel(Entity unit, CastState cast)
     {
-        if (cast.ability.TryGetComponent<AbilityBase>(out var abilityBase))
-        {
-            abilityBase.state = AbilityState.Ready;
-            cast.ability.AddComponent(abilityBase);
-        }
-
+        CastingSystem.TriggerBehaviorEffect(unit, cast, AbilityBehaviorTrigger.OnInterrupted);
+        SetAbilityState(cast.ability, AbilityState.Ready);
         unit.RemoveComponent<ChannelState>();
         unit.RemoveComponent<CastState>();
         unit.RemoveTag<CastInterruptedTag>();
+    }
+
+    private static void SetAbilityState(Entity ability, AbilityState state)
+    {
+        if (ability.TryGetComponent<AbilityBase>(out var abilityBase))
+        {
+            abilityBase.state = state;
+            ability.AddComponent(abilityBase);
+        }
     }
 }
