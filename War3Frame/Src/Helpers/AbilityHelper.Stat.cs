@@ -37,6 +37,10 @@ public static partial class AbilityHelper
     public static readonly int Height = Register("Height");
     /// <summary>技能引导时长</summary>
     public static readonly int ChannelDuration = Register("ChannelDuration");
+    /// <summary>技能引导 tick 间隔</summary>
+    public static readonly int ChannelTickInterval = Register("ChannelTickInterval");
+    /// <summary>技能释放后摇时长</summary>
+    public static readonly int BackswingDuration = Register("BackswingDuration");
     /// <summary>技能伤害数值</summary>
     public static readonly int DamageAmount = Register("DamageAmount");
     /// <summary>技能治疗数值</summary>

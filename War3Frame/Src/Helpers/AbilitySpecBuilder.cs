@@ -1,4 +1,4 @@
-using Friflo.Engine.ECS;
+﻿using Friflo.Engine.ECS;
 
 namespace War3Frame.Helpers;
 
@@ -67,6 +67,60 @@ public sealed class AbilitySpecBuilder
     }
 
     /// <summary>
+    /// 设置释放前摇时长，完成后进入技能生效点。
+    /// </summary>
+    public AbilitySpecBuilder CastPoint(float seconds)
+    {
+        return CastPoint(LevelValue.Fixed(seconds));
+    }
+
+    /// <summary>
+    /// 设置按等级解析的释放前摇时长。
+    /// </summary>
+    public AbilitySpecBuilder CastPoint(LevelValue seconds)
+    {
+        _spec.castPoint = seconds;
+        return this;
+    }
+
+    /// <summary>
+    /// 设置释放后摇时长，技能生效后进入该阶段。
+    /// </summary>
+    public AbilitySpecBuilder Backswing(float seconds)
+    {
+        return Backswing(LevelValue.Fixed(seconds));
+    }
+
+    /// <summary>
+    /// 设置按等级解析的释放后摇时长。
+    /// </summary>
+    public AbilitySpecBuilder Backswing(LevelValue seconds)
+    {
+        _spec.backswing = seconds;
+        return this;
+    }
+
+    /// <summary>
+    /// 设置持续吟唱时长和 tick 间隔。
+    /// </summary>
+    public AbilitySpecBuilder Channel(float duration, float tickInterval = 0f)
+    {
+        return Channel(LevelValue.Fixed(duration), LevelValue.Fixed(tickInterval));
+    }
+
+    /// <summary>
+    /// 设置按等级解析的持续吟唱时长和 tick 间隔。
+    /// </summary>
+    public AbilitySpecBuilder Channel(LevelValue duration, LevelValue tickInterval = default)
+    {
+        _spec.channelDuration = duration;
+        _spec.channelTickInterval = tickInterval.kind == default && tickInterval.Resolve(1) == 0f
+            ? LevelValue.Fixed(0f)
+            : tickInterval;
+        return this;
+    }
+
+    /// <summary>
     /// 设置技能经验曲线和最高等级。
     /// </summary>
     public AbilitySpecBuilder Experience(ExperienceCurve curve, int maxLevel = 0, float currentExp = 0f)
@@ -91,11 +145,35 @@ public sealed class AbilitySpecBuilder
     }
 
     /// <summary>
-    /// 添加主动施法触发的效果链，隐藏 OnCast、Chain 和 Build 的样板代码。
+    /// 添加技能真正生效点触发的效果链。
     /// </summary>
-    public AbilitySpecBuilder OnCast(Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder> configure)
+    public AbilitySpecBuilder OnEffect(Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder> configure)
     {
-        return AddEffectBehavior(AbilityBehaviorTrigger.OnCast, configure);
+        return AddEffectBehavior(AbilityBehaviorTrigger.OnEffect, configure);
+    }
+
+    /// <summary>
+    /// 添加持续吟唱每跳触发的效果链。
+    /// </summary>
+    public AbilitySpecBuilder OnChannelTick(Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder> configure)
+    {
+        return AddEffectBehavior(AbilityBehaviorTrigger.OnChannelTick, configure);
+    }
+
+    /// <summary>
+    /// 添加施法被打断时触发的效果链。
+    /// </summary>
+    public AbilitySpecBuilder OnInterrupted(Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder> configure)
+    {
+        return AddEffectBehavior(AbilityBehaviorTrigger.OnInterrupted, configure);
+    }
+
+    /// <summary>
+    /// 添加技能完整结束时触发的效果链。
+    /// </summary>
+    public AbilitySpecBuilder OnFinished(Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder> configure)
+    {
+        return AddEffectBehavior(AbilityBehaviorTrigger.OnFinished, configure);
     }
 
     /// <summary>
@@ -158,6 +236,11 @@ public sealed class AbilitySpecBuilder
         foreach (var (statId, value) in spec.baseValues)
             AbilityHelper.SetBaseValue(ability, statId, value.Resolve(level));
 
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.CastTime, spec.castPoint.Resolve(level));
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.BackswingDuration, spec.backswing.Resolve(level));
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ChannelDuration, spec.channelDuration.Resolve(level));
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ChannelTickInterval, spec.channelTickInterval.Resolve(level));
+
         if (spec.experience.HasValue)
             ability.AddComponent(spec.experience.Value);
 
@@ -169,17 +252,17 @@ public sealed class AbilitySpecBuilder
                 behaviors = spec.behaviors
             });
 
-            var castEffect = FindCastEffect(spec.behaviors);
-            if (castEffect != null)
-                AbilityHelper.SetEffectSpec(ability, castEffect.Inner);
+            var effect = FindEffect(spec.behaviors, AbilityBehaviorTrigger.OnEffect);
+            if (effect != null)
+                AbilityHelper.SetEffectSpec(ability, effect.Inner);
         }
     }
 
-    private static AbilityEffectSpec? FindCastEffect(List<AbilityBehaviorSpec> behaviors)
+    private static AbilityEffectSpec? FindEffect(List<AbilityBehaviorSpec> behaviors, AbilityBehaviorTrigger trigger)
     {
         foreach (var behavior in behaviors)
         {
-            if (behavior.trigger == AbilityBehaviorTrigger.OnCast && behavior.effect != null)
+            if (behavior.trigger == trigger && behavior.effect != null)
                 return behavior.effect;
         }
 

@@ -1,4 +1,4 @@
-namespace War3Frame.Helpers;
+﻿namespace War3Frame.Helpers;
 
 /// <summary>
 /// 技能行为 Builder，表达触发入口和调用的效果规格。
@@ -13,11 +13,35 @@ public sealed class AbilityBehaviorBuilder
     }
 
     /// <summary>
-    /// 创建主动施法触发的行为配置。
+    /// 创建技能真正生效点触发的行为配置。
     /// </summary>
-    public static AbilityBehaviorBuilder OnCast()
+    public static AbilityBehaviorBuilder OnEffect()
     {
-        return new AbilityBehaviorBuilder(AbilityBehaviorTrigger.OnCast);
+        return new AbilityBehaviorBuilder(AbilityBehaviorTrigger.OnEffect);
+    }
+
+    /// <summary>
+    /// 创建持续吟唱每跳触发的行为配置。
+    /// </summary>
+    public static AbilityBehaviorBuilder OnChannelTick()
+    {
+        return new AbilityBehaviorBuilder(AbilityBehaviorTrigger.OnChannelTick);
+    }
+
+    /// <summary>
+    /// 创建技能被打断时触发的行为配置。
+    /// </summary>
+    public static AbilityBehaviorBuilder OnInterrupted()
+    {
+        return new AbilityBehaviorBuilder(AbilityBehaviorTrigger.OnInterrupted);
+    }
+
+    /// <summary>
+    /// 创建技能完整结束时触发的行为配置。
+    /// </summary>
+    public static AbilityBehaviorBuilder OnFinished()
+    {
+        return new AbilityBehaviorBuilder(AbilityBehaviorTrigger.OnFinished);
     }
 
     /// <summary>

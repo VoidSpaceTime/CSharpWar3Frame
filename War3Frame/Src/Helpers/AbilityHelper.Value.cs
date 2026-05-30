@@ -72,4 +72,19 @@ public static partial class AbilityHelper
         return GetFinalValue(ability, Radius);
     }
 
+    /// <summary>
+    /// 获取技能引导 tick 间隔。
+    /// </summary>
+    public static float GetChannelTickInterval(Entity ability)
+    {
+        return GetFinalValue(ability, ChannelTickInterval);
+    }
+
+    /// <summary>
+    /// 获取技能释放后摇时长。
+    /// </summary>
+    public static float GetBackswingDuration(Entity ability)
+    {
+        return GetFinalValue(ability, BackswingDuration);
+    }
 }

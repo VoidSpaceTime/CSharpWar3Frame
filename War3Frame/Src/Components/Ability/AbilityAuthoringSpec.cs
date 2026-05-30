@@ -1,4 +1,4 @@
-using Friflo.Engine.ECS;
+﻿using Friflo.Engine.ECS;
 
 namespace War3Frame;
 
@@ -88,7 +88,10 @@ public sealed class AbilityEffectSpec
 /// </summary>
 public enum AbilityBehaviorTrigger
 {
-    OnCast,
+    OnEffect,
+    OnChannelTick,
+    OnInterrupted,
+    OnFinished,
     OnGranted,
     OnRemoved,
     OnOwnerDamaged,
@@ -124,6 +127,18 @@ public sealed class AbilitySpec
     public readonly Dictionary<int, LevelValue> baseValues = new();
     public readonly List<AbilityBehaviorSpec> behaviors = new();
     public ExperienceData? experience;
+
+    /// <summary>释放前摇时长，完成后进入真正生效点。</summary>
+    public LevelValue castPoint = LevelValue.Fixed(0f);
+
+    /// <summary>释放后摇时长，技能已生效后才进入该阶段。</summary>
+    public LevelValue backswing = LevelValue.Fixed(0f);
+
+    /// <summary>持续吟唱总时长。</summary>
+    public LevelValue channelDuration = LevelValue.Fixed(0f);
+
+    /// <summary>持续吟唱 tick 间隔，0 表示不触发 tick。</summary>
+    public LevelValue channelTickInterval = LevelValue.Fixed(0f);
 }
 
 /// <summary>
