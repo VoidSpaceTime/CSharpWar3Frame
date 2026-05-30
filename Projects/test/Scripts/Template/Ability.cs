@@ -24,7 +24,8 @@ public class FireBlastTemplate : IAbilityTemplate
             .BaseValue(AbilityHelper.CooldownDuration, 6f)
             .BaseValue(AbilityHelper.Range, 700f)
             .BaseValue(AbilityHelper.Radius, 180f)
-            .BaseValue(AbilityHelper.DamageAmount, 100f)
+            .BaseValue(AbilityHelper.DamageAmount, LevelValue.PerLevel(100f, 25f))
+            .Experience(ExperienceCurve.LevelTable(100f, 250f, 500f), maxLevel: 4)
             .OnCast(e => e
                 .Area(TargetFilter.EnemyAlive)
                 .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill))
