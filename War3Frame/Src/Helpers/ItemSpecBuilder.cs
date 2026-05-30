@@ -16,11 +16,17 @@ public sealed class ItemSpecBuilder
         _spec.name = templateName;
     }
 
+    /// <summary>
+    /// 创建指定模板名的物品模板 Builder。
+    /// </summary>
     public static ItemSpecBuilder Create(string templateName)
     {
         return new ItemSpecBuilder(templateName);
     }
 
+    /// <summary>
+    /// 设置物品显示名称。
+    /// </summary>
     public ItemSpecBuilder Name(string name)
     {
         _spec.name = name;
@@ -47,9 +53,35 @@ public sealed class ItemSpecBuilder
         return this;
     }
 
+    /// <summary>
+    /// 设置物品固定属性贡献。
+    /// </summary>
     public ItemSpecBuilder Attr(int attrTypeId, ModifyType modifyType, float value, int priority = 0)
     {
+        return Attr(attrTypeId, modifyType, LevelValue.Fixed(value), priority);
+    }
+
+    /// <summary>
+    /// 设置物品按等级解析的属性贡献。
+    /// </summary>
+    public ItemSpecBuilder Attr(int attrTypeId, ModifyType modifyType, LevelValue value, int priority = 0)
+    {
         _spec.attributes.Add(new ItemAttributeContributionSpec(attrTypeId, modifyType, value, priority));
+        return this;
+    }
+
+    /// <summary>
+    /// 设置物品经验曲线和最高等级。
+    /// </summary>
+    public ItemSpecBuilder Experience(ExperienceCurve curve, int maxLevel = 0, float currentExp = 0f)
+    {
+        _spec.experience = new ExperienceData
+        {
+            currentExp = currentExp,
+            totalExp = currentExp,
+            maxLevel = maxLevel,
+            curve = curve
+        };
         return this;
     }
 
@@ -91,24 +123,16 @@ public sealed class ItemSpecBuilder
             isInstantiate = spec.isInstantiate
         });
 
-        if (spec.attributes.Count == 1)
+        if (!item.TryGetComponent<ItemLevel>(out var level))
         {
-            var contribution = spec.attributes[0];
-            item.AddComponent(new AttributeContributionEntry
-            {
-                attrTypeId = contribution.attrTypeId,
-                modifyType = contribution.modifyType,
-                value = contribution.value,
-                priority = contribution.priority
-            });
+            level = new ItemLevel { level = 1 };
+            item.AddComponent(level);
         }
-        else if (spec.attributes.Count > 1)
-        {
-            item.AddComponent(new ItemAttributeContributionListData
-            {
-                attributes = new List<ItemAttributeContributionSpec>(spec.attributes)
-            });
-        }
+
+        ApplyAttributes(item, spec, level.level);
+
+        if (spec.experience.HasValue)
+            item.AddComponent(spec.experience.Value);
 
         if (!string.IsNullOrWhiteSpace(spec.useAbilityTemplateName))
         {
@@ -122,5 +146,40 @@ public sealed class ItemSpecBuilder
             item.AddComponent(new ItemUseEffectData { effectSpec = spec.useEffectSpec });
 
         item.AddComponent(new ItemSpecData { spec = spec });
+    }
+
+    private static void ApplyAttributes(Entity item, ItemSpec spec, int level)
+    {
+        if (spec.attributes.Count == 1)
+        {
+            var contribution = spec.attributes[0];
+            item.AddComponent(new AttributeContributionEntry
+            {
+                attrTypeId = contribution.attrTypeId,
+                modifyType = contribution.modifyType,
+                value = contribution.value.Resolve(level),
+                priority = contribution.priority
+            });
+        }
+        else if (spec.attributes.Count > 1)
+        {
+            item.AddComponent(new ItemAttributeContributionListData
+            {
+                attributes = ResolveAttributes(spec.attributes, level)
+            });
+        }
+    }
+
+    private static List<ItemAttributeContributionSpec> ResolveAttributes(List<ItemAttributeContributionSpec> attributes,
+        int level)
+    {
+        var resolved = new List<ItemAttributeContributionSpec>(attributes.Count);
+        foreach (var attribute in attributes)
+        {
+            resolved.Add(new ItemAttributeContributionSpec(attribute.attrTypeId, attribute.modifyType,
+                LevelValue.Fixed(attribute.value.Resolve(level)), attribute.priority));
+        }
+
+        return resolved;
     }
 }

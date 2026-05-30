@@ -16,20 +16,52 @@ public sealed class UnitSpecBuilder
         _spec.name = templateName;
     }
 
+    /// <summary>
+    /// 创建指定模板名的单位模板 Builder。
+    /// </summary>
     public static UnitSpecBuilder Create(string templateName)
     {
         return new UnitSpecBuilder(templateName);
     }
 
+    /// <summary>
+    /// 设置单位显示名称。
+    /// </summary>
     public UnitSpecBuilder Name(string name)
     {
         _spec.name = name;
         return this;
     }
 
+    /// <summary>
+    /// 设置单位固定基础属性。
+    /// </summary>
     public UnitSpecBuilder Attr(int attrTypeId, float baseValue)
     {
+        return Attr(attrTypeId, LevelValue.Fixed(baseValue));
+    }
+
+    /// <summary>
+    /// 设置单位按等级解析的基础属性。
+    /// </summary>
+    public UnitSpecBuilder Attr(int attrTypeId, LevelValue baseValue)
+    {
         _spec.attributes.Add(new UnitAttributeSpec(attrTypeId, baseValue));
+        return this;
+    }
+
+    /// <summary>
+    /// 设置单位经验曲线和最高等级。
+    /// </summary>
+    public UnitSpecBuilder Experience(ExperienceCurve curve, int maxLevel = 0, float currentExp = 0f)
+    {
+        _spec.experience = new ExperienceData
+        {
+            currentExp = currentExp,
+            totalExp = currentExp,
+            maxLevel = maxLevel,
+            curve = curve
+        };
         return this;
     }
 
@@ -70,8 +102,17 @@ public sealed class UnitSpecBuilder
             name = spec.name
         });
 
+        if (!unit.TryGetComponent<UnitLevel>(out var level))
+        {
+            level = new UnitLevel { level = 1 };
+            unit.AddComponent(level);
+        }
+
         foreach (var attribute in spec.attributes)
-            AttributeHelper.CreateAttr(unit, attribute.attrTypeId, attribute.baseValue);
+            AttributeHelper.CreateAttr(unit, attribute.attrTypeId, attribute.baseValue.Resolve(level.level));
+
+        if (spec.experience.HasValue)
+            unit.AddComponent(spec.experience.Value);
 
         if (spec.itemSlotCount.HasValue)
         {

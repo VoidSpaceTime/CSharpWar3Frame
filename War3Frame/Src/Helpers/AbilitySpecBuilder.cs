@@ -50,11 +50,34 @@ public sealed class AbilitySpecBuilder
     }
 
     /// <summary>
-    /// 设置技能基础数值。
+    /// 设置技能固定基础数值。
     /// </summary>
     public AbilitySpecBuilder BaseValue(int statId, float value)
     {
+        return BaseValue(statId, LevelValue.Fixed(value));
+    }
+
+    /// <summary>
+    /// 设置技能按等级解析的基础数值。
+    /// </summary>
+    public AbilitySpecBuilder BaseValue(int statId, LevelValue value)
+    {
         _spec.baseValues[statId] = value;
+        return this;
+    }
+
+    /// <summary>
+    /// 设置技能经验曲线和最高等级。
+    /// </summary>
+    public AbilitySpecBuilder Experience(ExperienceCurve curve, int maxLevel = 0, float currentExp = 0f)
+    {
+        _spec.experience = new ExperienceData
+        {
+            currentExp = currentExp,
+            totalExp = currentExp,
+            maxLevel = maxLevel,
+            curve = curve
+        };
         return this;
     }
 
@@ -133,7 +156,10 @@ public sealed class AbilitySpecBuilder
         });
 
         foreach (var (statId, value) in spec.baseValues)
-            AbilityHelper.SetBaseValue(ability, statId, value);
+            AbilityHelper.SetBaseValue(ability, statId, value.Resolve(level));
+
+        if (spec.experience.HasValue)
+            ability.AddComponent(spec.experience.Value);
 
         ability.AddComponent(new AbilitySpecData { spec = spec });
         if (spec.behaviors.Count > 0)
