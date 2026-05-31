@@ -27,7 +27,19 @@ public class FireBlastTemplate : IAbilityTemplate
             .BaseValue(AbilityHelper.DamageAmount, LevelValue.PerLevel(100f, 25f))
             .Experience(ExperienceCurve.LevelTable(100f, 250f, 500f), maxLevel: 4)
             .OnEffect(e => e
+                .Effect(
+                    EffectVisualKind.Point,
+                    "Abilities\\Spells\\Other\\BreathOfFire\\BreathOfFireDamage.mdl",
+                    duration: AbilityValue.Constant(0.8f),
+                    hasPoint: true,
+                    x: 0f,
+                    y: 0f,
+                    z: 0f)
                 .Area(TargetFilter.EnemyAlive, radius: AbilityValue.AbilityStat(AbilityHelper.Radius))
+                .Effect(
+                    EffectVisualKind.AttachEachTarget,
+                    "Abilities\\Spells\\Other\\Incinerate\\FireLordDeathExplode.mdl",
+                    duration: AbilityValue.Constant(0.5f))
                 .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill))
             .BuildTo(ability, level);
     }
@@ -60,8 +72,13 @@ public class LavaBallTemplate : IAbilityTemplate
                     AbilityValue.AbilityStat(AbilityHelper.ProjectileSpeed),
                     arrivalThreshold: AbilityValue.AbilityStat(AbilityHelper.ArrivalThreshold),
                     hitFilter: TargetFilter.EnemyAlive)
-                .Area(TargetFilter.EnemyAlive, radius: AbilityValue.AbilityStat(AbilityHelper.Radius))
-                .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill))
+                .OnProjectileArrive(arrive => arrive
+                    .Effect(
+                        EffectVisualKind.TargetPoint,
+                        "Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl",
+                        duration: AbilityValue.Constant(1.2f))
+                    .Area(TargetFilter.EnemyAlive, radius: AbilityValue.AbilityStat(AbilityHelper.Radius))
+                    .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill)))
             .BuildTo(ability, level);
     }
 }
@@ -270,8 +287,38 @@ public class MeteorStrikeTemplate : IAbilityTemplate
                     ProjectileTrajectoryType.Parabolic,
                     AbilityValue.AbilityStat(AbilityHelper.ArrivalThreshold),
                     hitFilter: TargetFilter.EnemyAlive)
-                .Area(TargetFilter.EnemyAlive, radius: AbilityValue.AbilityStat(AbilityHelper.Radius))
-                .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill))
+                .OnProjectileArrive(arrive => arrive
+                    .Effect(
+                        EffectVisualKind.TargetPoint,
+                        "Abilities\\Spells\\Other\\Volcano\\VolcanoDeath.mdl",
+                        duration: AbilityValue.Constant(1.5f))
+                    .Area(TargetFilter.EnemyAlive, radius: AbilityValue.AbilityStat(AbilityHelper.Radius))
+                    .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill)))
+            .BuildTo(ability, level);
+    }
+}
+
+/// <summary>
+/// 示例技能模板：天使之翼。
+/// 展示天赋授予/移除时通过 key 维护长期绑定特效。
+/// </summary>
+[AbilityTemplate("talent_wings")]
+public class TalentWingsTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        AbilitySpecBuilder
+            .Create("talent_wings")
+            .Name("天使之翼")
+            .Description("获得天赋后在胸部绑定长期翅膀特效，移除天赋时按 key 清理。")
+            .TargetType(AbilityTargetType.None)
+            .OnGranted(e => e.Effect(
+                EffectVisualKind.AttachOwner,
+                "Abilities\\Spells\\Items\\AIam\\AIamTarget.mdl",
+                key: "talent_wings",
+                attachPoint: EffectAttachType.Chest,
+                fallbackDuration: -1f))
+            .OnRemoved(e => e.RemoveEffectByKey("talent_wings"))
             .BuildTo(ability, level);
     }
 }
