@@ -103,10 +103,56 @@ public sealed class AbilityEffectSpecBuilder
         ProjectileTrajectoryType trajectoryType = ProjectileTrajectoryType.Tracking,
         AbilityValue arrivalThreshold = default, AbilityValue maxDistance = default,
         AbilityValue hitRadius = default, TargetFilter hitFilter = TargetFilter.None,
-        bool canHitSameTarget = false, Entity effectEntity = default)
+        bool canHitSameTarget = false, Entity effectEntity = default,
+        Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder>? onArrive = null)
     {
+        Func<EffectSpecBuilder, EffectSpecBuilder>? innerArrive = null;
+        if (onArrive != null)
+        {
+            innerArrive = builder =>
+            {
+                var wrapped = new AbilityEffectSpecBuilder(builder);
+                onArrive(wrapped);
+                return builder;
+            };
+        }
+
         _inner.Projectile(model, speed.EffectValue, trajectoryType, arrivalThreshold.EffectValue,
-            maxDistance.EffectValue, hitRadius.EffectValue, hitFilter, canHitSameTarget, effectEntity);
+            maxDistance.EffectValue, hitRadius.EffectValue, hitFilter, canHitSameTarget, effectEntity, innerArrive);
+        return this;
+    }
+
+    /// <summary>
+    /// 添加视觉特效步骤，只写 ECS 视觉意图，由 Native 特效系统执行原生表现。
+    /// </summary>
+    public AbilityEffectSpecBuilder Effect(EffectVisualKind kind, string model, string? key = null,
+        EffectAttachType attachPoint = EffectAttachType.Origin, AbilityValue duration = default,
+        float fallbackDuration = -1f, bool hasPoint = false, float x = 0f, float y = 0f, float z = 0f)
+    {
+        _inner.Effect(kind, model, key, attachPoint, duration.EffectValue, fallbackDuration, hasPoint, x, y, z);
+        return this;
+    }
+
+    /// <summary>
+    /// 按 key 请求移除该来源此前创建的长期视觉特效。
+    /// </summary>
+    public AbilityEffectSpecBuilder RemoveEffectByKey(string key)
+    {
+        _inner.RemoveEffectByKey(key);
+        return this;
+    }
+
+    /// <summary>
+    /// 为最近一个 Projectile 步骤追加到达后执行的效果链。
+    /// </summary>
+    public AbilityEffectSpecBuilder OnProjectileArrive(Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder> configure)
+    {
+        _inner.OnProjectileArrive(builder =>
+        {
+            var wrapped = new AbilityEffectSpecBuilder(builder);
+            configure(wrapped);
+            return builder;
+        });
         return this;
     }
 }

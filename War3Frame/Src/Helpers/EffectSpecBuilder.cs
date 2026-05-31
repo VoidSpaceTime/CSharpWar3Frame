@@ -134,12 +134,17 @@ public sealed class EffectSpecBuilder
         return this;
     }
 
+    /// <summary>
+    /// 添加弹道步骤；可选到达链会在弹道到达后作为独立 effect 执行。
+    /// </summary>
     public EffectSpecBuilder Projectile(string model, EffectValueSpec speed,
         ProjectileTrajectoryType trajectoryType = ProjectileTrajectoryType.Tracking,
         EffectValueSpec arrivalThreshold = default, EffectValueSpec maxDistance = default,
         EffectValueSpec hitRadius = default, TargetFilter hitFilter = TargetFilter.None,
-        bool canHitSameTarget = false, Entity effectEntity = default)
+        bool canHitSameTarget = false, Entity effectEntity = default,
+        Func<EffectSpecBuilder, EffectSpecBuilder>? onArrive = null)
     {
+        var arriveEffect = onArrive?.Invoke(Chain()).Build();
         // projectile step 只描述投射物规格；运动、命中和特效同步由后续系统推进。
         _spec.steps.Add(EffectStepSpec.Projectile(new ProjectileEffectStepSpec
         {
@@ -151,8 +156,59 @@ public sealed class EffectSpecBuilder
             maxDistance = maxDistance,
             hitRadius = hitRadius,
             hitFilter = hitFilter,
-            canHitSameTarget = canHitSameTarget
+            canHitSameTarget = canHitSameTarget,
+            arriveEffect = arriveEffect
         }));
+        return this;
+    }
+
+    /// <summary>
+    /// 添加视觉特效步骤，只描述创建或附着意图，具体原生表现由 Native 系统同步。
+    /// </summary>
+    public EffectSpecBuilder Effect(EffectVisualKind kind, string model, string? key = null,
+        EffectAttachType attachPoint = EffectAttachType.Origin, EffectValueSpec duration = default,
+        float fallbackDuration = -1f, bool hasPoint = false, float x = 0f, float y = 0f, float z = 0f)
+    {
+        _spec.steps.Add(EffectStepSpec.EffectVisual(new EffectVisualStepSpec
+        {
+            kind = kind,
+            model = model,
+            key = key,
+            attachPoint = attachPoint,
+            duration = duration,
+            fallbackDuration = fallbackDuration,
+            hasPoint = hasPoint,
+            x = x,
+            y = y,
+            z = z
+        }));
+        return this;
+    }
+
+    /// <summary>
+    /// 添加按 key 清理长期视觉特效的步骤，作用域由运行时 owner 限定。
+    /// </summary>
+    public EffectSpecBuilder RemoveEffectByKey(string key)
+    {
+        _spec.steps.Add(EffectStepSpec.EffectVisual(new EffectVisualStepSpec
+        {
+            kind = EffectVisualKind.RemoveByKey,
+            key = key
+        }));
+        return this;
+    }
+
+    /// <summary>
+    /// 为最近追加的弹道步骤配置到达后的嵌套效果链。
+    /// </summary>
+    public EffectSpecBuilder OnProjectileArrive(Func<EffectSpecBuilder, EffectSpecBuilder> configure)
+    {
+        if (_spec.steps.Count == 0 || _spec.steps[^1].kind != EffectStepKind.Projectile)
+            throw new InvalidOperationException("OnProjectileArrive must follow Projectile.");
+
+        var last = _spec.steps[^1];
+        last.projectile.arriveEffect = configure(Chain()).Build();
+        _spec.steps[^1] = last;
         return this;
     }
 }
