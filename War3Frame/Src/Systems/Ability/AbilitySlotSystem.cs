@@ -1,6 +1,7 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using War3Frame.Components;
+using War3Frame.Helpers;
 
 namespace War3Frame.Systems;
 
@@ -65,6 +66,8 @@ public class AbilityAttachWorkflowSystem : QuerySystem<AbilityAttachRequest>
             ability.RemoveTag<AbilityAttrRemoveRequest>();
         }
 
+        AbilityEffectHelper.TriggerBehaviorEffect(unit, ability, AbilityBehaviorTrigger.OnGranted, unit);
+
         container.currentCount++;
         unit.AddComponent(container);
     }
@@ -95,6 +98,8 @@ public class AbilityRemoveWorkflowSystem : QuerySystem<AbilityRemoveRequest>
             container.currentCount = Math.Max(0, container.currentCount - 1);
             unit.AddComponent(container);
         }
+
+        AbilityEffectHelper.TriggerBehaviorEffect(unit, ability.Value, AbilityBehaviorTrigger.OnRemoved, unit);
 
         ability.Value.AddTag<AbilityAttrRemoveRequest>();
         ability.Value.RemoveComponent<AbilityOwner>();

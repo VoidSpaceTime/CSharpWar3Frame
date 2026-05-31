@@ -321,6 +321,10 @@ public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState
 
             ProjectileFlowHelper.DestroyProjectileVisual(effectEntity);
             ProjectileHookBridge.DispatchArriveHooks(effectEntity, ref source, ref target, ref pos, ref runtimeState);
+            if (effectEntity.TryGetComponent<ProjectileData>(out var projectile) && projectile.arriveEffect != null)
+                AbilityEffectHelper.CreateArriveEffect(effectEntity, projectile.arriveEffect, pos);
+            if (!EffectSettlementHelper.HasSettlementPayload(effectEntity))
+                effectEntity.AddTag<EffectCompleted>();
             effectEntity.AddComponent(runtimeState);
         }
 
@@ -336,6 +340,154 @@ public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState
             ProjectileFlowHelper.DestroyProjectileVisual(effectEntity);
             effectEntity.AddTag<EffectExpired>();
         }
+    }
+}
+
+/// <summary>
+/// 视觉特效步骤系统。
+/// 只把技能效果链中的视觉描述转换为 ECS 特效实体或销毁请求，原生调用仍由 EffectNativeSystem 执行。
+/// </summary>
+[SystemRegister(SystemKind.Interval, 109)]
+public class EffectVisualSystem : QuerySystem<EffectVisualData, EffectSource, EffectTargetInfo>
+{
+    public EffectVisualSystem()
+    {
+        Filter.AnyTags(Tags.Get<EffectPending>());
+    }
+
+    protected override void OnUpdate()
+    {
+        Query.ForEachEntity((ref EffectVisualData visual, ref EffectSource source,
+            ref EffectTargetInfo target, Entity effectEntity) =>
+        {
+            if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
+                return;
+
+            var current = GetCurrentVisualStep(visual);
+            if (effectEntity.HasComponent<AreaSearchData>() && NeedsResolvedTarget(current.kind) && target.targetUnit.IsNull)
+                return;
+
+            if (current.kind == EffectVisualKind.RemoveByKey)
+            {
+                RemoveLinkedEffects(source.caster, current.key);
+                CompleteCurrentVisual(effectEntity, visual);
+                return;
+            }
+
+            var duration = EffectFormulaRegistry.Resolve(
+                source.caster,
+                source.ability,
+                target.targetUnit,
+                effectEntity,
+                current.duration,
+                current.fallbackDuration);
+            var visualEntity = CreateVisualEntity(current, source, target, duration);
+            if (visualEntity.HasValue && !string.IsNullOrEmpty(current.key))
+            {
+                visualEntity.Value.AddComponent(new EffectVisualLink
+                {
+                    owner = source.caster,
+                    key = current.key
+                });
+            }
+
+            CompleteCurrentVisual(effectEntity, visual);
+        });
+    }
+
+    /// <summary>
+    /// 取得当前应执行的视觉步骤；兼容单步 payload 与多步队列两种形态。
+    /// </summary>
+    private static EffectVisualStepSpec GetCurrentVisualStep(EffectVisualData visual)
+    {
+        if (visual.steps != null && visual.nextIndex >= 0 && visual.nextIndex < visual.steps.Count)
+            return visual.steps[visual.nextIndex];
+
+        return new EffectVisualStepSpec
+        {
+            kind = visual.kind,
+            model = visual.model,
+            key = visual.key,
+            attachPoint = visual.attachPoint,
+            duration = visual.durationValue,
+            fallbackDuration = visual.duration,
+            hasPoint = visual.hasPoint,
+            x = visual.x,
+            y = visual.y,
+            z = visual.z
+        };
+    }
+
+    /// <summary>
+    /// 标记当前视觉步骤完成；队列未结束时推进索引，结束时完成视觉 payload。
+    /// </summary>
+    private static void CompleteCurrentVisual(Entity effectEntity, EffectVisualData visual)
+    {
+        if (visual.steps == null)
+        {
+            EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(EffectVisualData));
+            return;
+        }
+
+        visual.nextIndex++;
+        if (visual.nextIndex >= visual.steps.Count)
+            EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(EffectVisualData));
+        else
+            effectEntity.AddComponent(visual);
+    }
+
+    /// <summary>
+    /// 判断视觉步骤是否必须等待区域/线形搜索生成具体目标后才能执行。
+    /// </summary>
+    private static bool NeedsResolvedTarget(EffectVisualKind kind)
+    {
+        return kind is EffectVisualKind.AttachTarget or EffectVisualKind.AttachEachTarget;
+    }
+
+    /// <summary>
+    /// 根据视觉步骤创建 ECS 特效实体；不直接执行任何 War3 原生调用。
+    /// </summary>
+    private static Entity? CreateVisualEntity(EffectVisualStepSpec visual, EffectSource source,
+        EffectTargetInfo target, float duration)
+    {
+        switch (visual.kind)
+        {
+            case EffectVisualKind.Point:
+                var x = visual.hasPoint ? visual.x : target.targetX;
+                var y = visual.hasPoint ? visual.y : target.targetY;
+                var z = visual.hasPoint ? visual.z : 0f;
+                return EffectHelper.CreatePosition(visual.model, x, y, z, duration);
+            case EffectVisualKind.TargetPoint:
+                return EffectHelper.CreatePosition(visual.model, target.targetX, target.targetY, 0f, duration);
+            case EffectVisualKind.AttachCaster:
+            case EffectVisualKind.AttachOwner:
+                return source.caster.IsNull
+                    ? null
+                    : EffectHelper.CreateAttached(source.caster, visual.model, visual.attachPoint, duration);
+            case EffectVisualKind.AttachTarget:
+            case EffectVisualKind.AttachEachTarget:
+                return target.targetUnit.IsNull
+                    ? null
+                    : EffectHelper.CreateAttached(target.targetUnit, visual.model, visual.attachPoint, duration);
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    /// 按 owner 与 key 请求销毁长期视觉特效，避免同名 key 跨单位误删。
+    /// </summary>
+    private static void RemoveLinkedEffects(Entity owner, string? key)
+    {
+        if (owner.IsNull || string.IsNullOrEmpty(key))
+            return;
+
+        var query = Game.Store.Query<EffectVisualLink>();
+        query.ForEachEntity((ref EffectVisualLink link, Entity visualEntity) =>
+        {
+            if (link.owner == owner && link.key == key)
+                EffectHelper.Destroy(visualEntity, hideFirst: true);
+        });
     }
 }
 
@@ -1052,14 +1204,24 @@ internal static class EffectSettlementHelper
             effectEntity.RemoveComponent<ApplyBuffData>();
         else if (settlementType == typeof(GroundAreaCreateData))
             effectEntity.RemoveComponent<GroundAreaCreateData>();
+        else if (settlementType == typeof(EffectVisualData))
+            effectEntity.RemoveComponent<EffectVisualData>();
 
-        if (!effectEntity.HasComponent<DamageEffectData>() &&
-            !effectEntity.HasComponent<HealEffectData>() &&
-            !effectEntity.HasComponent<ApplyBuffData>() &&
-            !effectEntity.HasComponent<GroundAreaCreateData>())
+        if (!HasSettlementPayload(effectEntity))
         {
             effectEntity.AddTag<EffectCompleted>();
         }
+    }
+
+    public static bool HasSettlementPayload(Entity effectEntity)
+    {
+        return effectEntity.HasComponent<DamageEffectData>() ||
+               effectEntity.HasComponent<HealEffectData>() ||
+               effectEntity.HasComponent<ApplyBuffData>() ||
+               effectEntity.HasComponent<GroundAreaCreateData>() ||
+               effectEntity.HasComponent<EffectVisualData>() ||
+               effectEntity.HasComponent<AreaSearchData>() ||
+               effectEntity.HasComponent<LineSearchData>();
     }
 }
 

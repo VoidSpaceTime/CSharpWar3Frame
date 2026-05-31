@@ -127,10 +127,61 @@ public static class AbilityEffectHelper
         if (parentEffect.TryGetComponent<ApplyBuffData>(out var buff))
             childEntity.AddComponent(buff);
 
+        if (parentEffect.TryGetComponent<EffectVisualData>(out var visual))
+            childEntity.AddComponent(visual);
+
         if (parentEffect.TryGetComponent<GroundAreaCreateData>(out var groundAreaCreate))
             childEntity.AddComponent(groundAreaCreate);
 
         return childEntity;
+    }
+
+    /// <summary>
+    /// 触发技能生命周期行为效果，供施法、挂载和移除工作流复用。
+    /// </summary>
+    public static bool TriggerBehaviorEffect(Entity owner, Entity ability, AbilityBehaviorTrigger trigger,
+        Entity targetUnit = default, float targetX = 0f, float targetY = 0f)
+    {
+        if (!TryGetBehaviorEffect(ability, trigger, out var effect))
+            return false;
+
+        var previous = GetCurrentEffectSpec(ability, out var hadPrevious);
+        AbilityHelper.SetEffectSpec(ability, effect.Inner);
+        CreateEffectEntity(owner, ability, targetUnit, targetX, targetY);
+        RestoreEffectSpec(ability, previous, hadPrevious);
+        return true;
+    }
+
+    /// <summary>
+    /// 为弹道到达事件创建独立效果链实例，避免到达后效果污染弹道本体生命周期。
+    /// </summary>
+    public static Entity CreateArriveEffect(Entity projectileEffect, EffectSpec arriveEffect, Position position)
+    {
+        var source = projectileEffect.GetComponent<EffectSource>();
+        var target = projectileEffect.GetComponent<EffectTargetInfo>();
+
+        var arriveEntity = Game.Store.CreateEntity(
+            source,
+            new EffectTargetInfo
+            {
+                targetUnit = target.targetUnit,
+                targetX = position.x,
+                targetY = position.y
+            },
+            new AbilityEffectContext
+            {
+                caster = source.caster,
+                ability = source.ability,
+                sourceEffect = projectileEffect,
+                targetUnit = target.targetUnit,
+                targetX = position.x,
+                targetY = position.y,
+                effectId = _nextEffectId++
+            });
+        arriveEntity.AddTag<EffectPending>();
+        arriveEntity.AddComponent(position);
+        ApplyEffectSpec(arriveEntity, arriveEffect);
+        return arriveEntity;
     }
 
     /// <summary>
@@ -207,6 +258,9 @@ public static class AbilityEffectHelper
                         reaction = step.groundAreaCreate.reaction
                     });
                     break;
+                case EffectStepKind.EffectVisual:
+                    AddEffectVisual(effectEntity, step.effectVisual);
+                    break;
                 case EffectStepKind.Projectile:
                     var projectile = new ProjectileData
                     {
@@ -218,7 +272,8 @@ public static class AbilityEffectHelper
                         maxDistanceValue = step.projectile.maxDistance,
                         hitRadiusValue = step.projectile.hitRadius,
                         hitFilter = step.projectile.hitFilter,
-                        canHitSameTarget = step.projectile.canHitSameTarget
+                        canHitSameTarget = step.projectile.canHitSameTarget,
+                        arriveEffect = step.projectile.arriveEffect
                     };
 
                     effectEntity.AddComponent(projectile);
@@ -260,5 +315,111 @@ public static class AbilityEffectHelper
                 phase = ProjectileLifecyclePhase.PendingStart
             });
         }
+    }
+
+    /// <summary>
+    /// 追加视觉步骤；多个视觉步骤会保留顺序并由 EffectVisualSystem 逐个消费。
+    /// </summary>
+    private static void AddEffectVisual(Entity effectEntity, EffectVisualStepSpec visual)
+    {
+        if (effectEntity.TryGetComponent<EffectVisualData>(out var data) && data.steps != null)
+        {
+            data.steps.Add(visual);
+            effectEntity.AddComponent(data);
+            return;
+        }
+
+        if (effectEntity.TryGetComponent<EffectVisualData>(out var existing))
+        {
+            existing.steps = new List<EffectVisualStepSpec>
+            {
+                ToStep(existing),
+                visual
+            };
+            existing.nextIndex = 0;
+            effectEntity.AddComponent(existing);
+            return;
+        }
+
+        effectEntity.AddComponent(new EffectVisualData
+        {
+            kind = visual.kind,
+            model = visual.model,
+            key = visual.key,
+            attachPoint = visual.attachPoint,
+            durationValue = visual.duration,
+            duration = visual.fallbackDuration,
+            hasPoint = visual.hasPoint,
+            x = visual.x,
+            y = visual.y,
+            z = visual.z
+        });
+    }
+
+    /// <summary>
+    /// 将单步运行时视觉 payload 转回队列步骤，便于升级为多步视觉队列。
+    /// </summary>
+    private static EffectVisualStepSpec ToStep(EffectVisualData data)
+    {
+        return new EffectVisualStepSpec
+        {
+            kind = data.kind,
+            model = data.model,
+            key = data.key,
+            attachPoint = data.attachPoint,
+            duration = data.durationValue,
+            fallbackDuration = data.duration,
+            hasPoint = data.hasPoint,
+            x = data.x,
+            y = data.y,
+            z = data.z
+        };
+    }
+
+    /// <summary>
+    /// 从技能行为配置中查找指定生命周期触发点的效果链。
+    /// </summary>
+    private static bool TryGetBehaviorEffect(Entity ability, AbilityBehaviorTrigger trigger, out AbilityEffectSpec effect)
+    {
+        if (ability.TryGetComponent<AbilityBehaviorData>(out var data) && data.behaviors != null)
+        {
+            foreach (var behavior in data.behaviors)
+            {
+                if (behavior.trigger == trigger && behavior.effect != null)
+                {
+                    effect = behavior.effect;
+                    return true;
+                }
+            }
+        }
+
+        effect = null!;
+        return false;
+    }
+
+    /// <summary>
+    /// 暂存技能当前默认效果链，供临时触发生命周期行为后恢复。
+    /// </summary>
+    private static EffectSpec? GetCurrentEffectSpec(Entity ability, out bool exists)
+    {
+        if (AbilityHelper.TryGetEffectSpec(ability, out var spec))
+        {
+            exists = true;
+            return spec;
+        }
+
+        exists = false;
+        return null;
+    }
+
+    /// <summary>
+    /// 恢复生命周期行为触发前的默认效果链，避免临时 spec 泄漏到后续施法。
+    /// </summary>
+    private static void RestoreEffectSpec(Entity ability, EffectSpec? previous, bool hadPrevious)
+    {
+        if (hadPrevious && previous != null)
+            AbilityHelper.SetEffectSpec(ability, previous);
+        else
+            ability.RemoveComponent<EffectSpecData>();
     }
 }

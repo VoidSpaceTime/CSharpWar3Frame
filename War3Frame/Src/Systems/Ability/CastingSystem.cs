@@ -318,49 +318,7 @@ public class CastingSystem : QuerySystem<CastState>, ITimedSystem
 
     internal static void TriggerBehaviorEffect(Entity unit, CastState cast, AbilityBehaviorTrigger trigger)
     {
-        if (!TryGetBehaviorEffect(cast.ability, trigger, out var effect))
-            return;
-
-        var previous = GetCurrentEffectSpec(cast.ability, out var hadPrevious);
-        AbilityHelper.SetEffectSpec(cast.ability, effect.Inner);
-        AbilityEffectHelper.CreateEffectEntity(unit, cast.ability, cast.targetUnit, cast.targetX, cast.targetY);
-        RestoreEffectSpec(cast.ability, previous, hadPrevious);
-    }
-
-    private static bool TryGetBehaviorEffect(Entity ability, AbilityBehaviorTrigger trigger, out AbilityEffectSpec effect)
-    {
-        if (ability.TryGetComponent<AbilityBehaviorData>(out var data) && data.behaviors != null)
-        {
-            foreach (var behavior in data.behaviors)
-            {
-                if (behavior.trigger == trigger && behavior.effect != null)
-                {
-                    effect = behavior.effect;
-                    return true;
-                }
-            }
-        }
-
-        effect = null!;
-        return false;
-    }
-
-    private static EffectSpec? GetCurrentEffectSpec(Entity ability, out bool exists)
-    {
-        if (AbilityHelper.TryGetEffectSpec(ability, out var spec))
-        {
-            exists = true;
-            return spec;
-        }
-
-        exists = false;
-        return null;
-    }
-
-    private static void RestoreEffectSpec(Entity ability, EffectSpec? previous, bool hadPrevious)
-    {
-        if (hadPrevious && previous != null)
-            AbilityHelper.SetEffectSpec(ability, previous);
+        AbilityEffectHelper.TriggerBehaviorEffect(unit, cast.ability, trigger, cast.targetUnit, cast.targetX, cast.targetY);
     }
 
     internal static void StartBackswingOrFinish(Entity unit, CastState cast)
