@@ -150,3 +150,12 @@ public struct EffectDirty : IComponent
 {
     public EffectDirtyFlags flags;
 }
+
+/// <summary>
+/// 记录视觉特效与施法/天赋来源的关系，便于按 key 清理长期特效。
+/// </summary>
+public struct EffectVisualLink : IComponent
+{
+    public Entity owner;
+    public string key;
+}

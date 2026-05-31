@@ -89,7 +89,22 @@ public enum EffectStepKind
     AreaSearch,
     Projectile,
     LineSearch,
-    GroundAreaCreate
+    GroundAreaCreate,
+    EffectVisual
+}
+
+/// <summary>
+/// 视觉特效步骤类型，只描述 ECS 视觉意图，不直接调用 War3 原生接口。
+/// </summary>
+public enum EffectVisualKind
+{
+    Point,
+    TargetPoint,
+    AttachCaster,
+    AttachTarget,
+    AttachOwner,
+    AttachEachTarget,
+    RemoveByKey
 }
 
 /// <summary>
@@ -124,6 +139,7 @@ public struct EffectStepSpec
     public ProjectileEffectStepSpec projectile;
     public LineSearchEffectStepSpec lineSearch;
     public GroundAreaCreateEffectStepSpec groundAreaCreate;
+    public EffectVisualStepSpec effectVisual;
 
     public static EffectStepSpec Damage(DamageEffectStepSpec damage)
     {
@@ -185,6 +201,18 @@ public struct EffectStepSpec
         {
             kind = EffectStepKind.GroundAreaCreate,
             groundAreaCreate = groundAreaCreate
+        };
+    }
+
+    /// <summary>
+    /// 创建视觉特效步骤描述；这里只保存配置，不执行 ECS 或原生副作用。
+    /// </summary>
+    public static EffectStepSpec EffectVisual(EffectVisualStepSpec effectVisual)
+    {
+        return new EffectStepSpec
+        {
+            kind = EffectStepKind.EffectVisual,
+            effectVisual = effectVisual
         };
     }
 }
@@ -273,4 +301,19 @@ public struct ProjectileEffectStepSpec
     public EffectValueSpec hitRadius;
     public TargetFilter hitFilter;
     public bool canHitSameTarget;
+    public EffectSpec? arriveEffect;
+}
+
+public struct EffectVisualStepSpec
+{
+    public EffectVisualKind kind;
+    public string model;
+    public string? key;
+    public EffectAttachType attachPoint;
+    public EffectValueSpec duration;
+    public float fallbackDuration;
+    public bool hasPoint;
+    public float x;
+    public float y;
+    public float z;
 }

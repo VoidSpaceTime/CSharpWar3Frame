@@ -243,6 +243,25 @@ public struct GroundAreaReactionRequest : IComponent
     public GroundAreaTag incomingTag;
 }
 
+/// <summary>
+/// 视觉特效 payload。系统会把它转换成 EffectBase/EffectAttachment 等 ECS 视觉实体。
+/// </summary>
+public struct EffectVisualData : IComponent
+{
+    public EffectVisualKind kind;
+    public string model;
+    public string? key;
+    public EffectAttachType attachPoint;
+    public EffectValueSpec durationValue;
+    public float duration;
+    public bool hasPoint;
+    public float x;
+    public float y;
+    public float z;
+    public List<EffectVisualStepSpec>? steps;
+    public int nextIndex;
+}
+
 /// <summary>标记某个 Buff 由指定地面区域产生，便于离开范围或区域消失时清理。</summary>
 public struct GroundAreaBuffLink : ILinkComponent
 {
@@ -318,6 +337,7 @@ public struct ProjectileData : IComponent
     public float hitRadius;
     public TargetFilter hitFilter;
     public bool canHitSameTarget;
+    public EffectSpec? arriveEffect;
 }
 
 public struct ProjectileArriveRequest : ITag;
