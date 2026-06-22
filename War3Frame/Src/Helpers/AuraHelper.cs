@@ -113,7 +113,7 @@ public static class AuraHelper
     {
         var buffs = aura.GetIncomingLinks<AuraBuffLink>();
         var toDelete = new List<Entity>();
-        var unitsToRefresh = new HashSet<Entity>();
+        var attrsToRefresh = new HashSet<Entity>();
 
         foreach (var link in buffs)
         {
@@ -121,7 +121,7 @@ public static class AuraHelper
             if (buff.TryGetComponent<ModifyTarget>(out var target))
             {
                 if (!target.target.IsNull)
-                    unitsToRefresh.Add(target.target);
+                    attrsToRefresh.Add(target.target);
             }
             toDelete.Add(buff);
         }
@@ -131,11 +131,11 @@ public static class AuraHelper
             buff.DeleteEntity();
         }
 
-        foreach (var unit in unitsToRefresh)
+        foreach (var attr in attrsToRefresh)
         {
-            if (!unit.IsNull)
+            if (!attr.IsNull)
             {
-                unit.AddTag<AttrDirty>();
+                attr.AddTag<AttrDirty>();
             }
         }
     }
