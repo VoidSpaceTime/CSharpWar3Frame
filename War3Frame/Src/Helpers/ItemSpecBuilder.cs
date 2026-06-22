@@ -92,7 +92,18 @@ public sealed class ItemSpecBuilder
         return this;
     }
 
-    public ItemSpecBuilder UseEffect(AbilityEffectSpec effectSpec)
+    /// <summary>
+    /// 通过效果链 Builder 设置物品使用时执行的一次性效果。
+    /// </summary>
+    public ItemSpecBuilder UseEffect(Func<EffectChainBuilder, EffectChainBuilder> configure)
+    {
+        return UseEffect(configure(EffectChainBuilder.Chain()).Build());
+    }
+
+    /// <summary>
+    /// 设置物品使用时执行的预构建效果规格。
+    /// </summary>
+    public ItemSpecBuilder UseEffect(EffectSpec effectSpec)
     {
         _spec.useEffectSpec = effectSpec;
         _spec.isUsable = true;

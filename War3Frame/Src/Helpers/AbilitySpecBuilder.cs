@@ -147,7 +147,7 @@ public sealed class AbilitySpecBuilder
     /// <summary>
     /// 添加技能真正生效点触发的效果链。
     /// </summary>
-    public AbilitySpecBuilder OnEffect(Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder> configure)
+    public AbilitySpecBuilder OnEffect(Func<EffectChainBuilder, EffectChainBuilder> configure)
     {
         return AddEffectBehavior(AbilityBehaviorTrigger.OnEffect, configure);
     }
@@ -155,7 +155,7 @@ public sealed class AbilitySpecBuilder
     /// <summary>
     /// 添加持续吟唱每跳触发的效果链。
     /// </summary>
-    public AbilitySpecBuilder OnChannelTick(Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder> configure)
+    public AbilitySpecBuilder OnChannelTick(Func<EffectChainBuilder, EffectChainBuilder> configure)
     {
         return AddEffectBehavior(AbilityBehaviorTrigger.OnChannelTick, configure);
     }
@@ -163,7 +163,7 @@ public sealed class AbilitySpecBuilder
     /// <summary>
     /// 添加施法被打断时触发的效果链。
     /// </summary>
-    public AbilitySpecBuilder OnInterrupted(Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder> configure)
+    public AbilitySpecBuilder OnInterrupted(Func<EffectChainBuilder, EffectChainBuilder> configure)
     {
         return AddEffectBehavior(AbilityBehaviorTrigger.OnInterrupted, configure);
     }
@@ -171,7 +171,7 @@ public sealed class AbilitySpecBuilder
     /// <summary>
     /// 添加技能完整结束时触发的效果链。
     /// </summary>
-    public AbilitySpecBuilder OnFinished(Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder> configure)
+    public AbilitySpecBuilder OnFinished(Func<EffectChainBuilder, EffectChainBuilder> configure)
     {
         return AddEffectBehavior(AbilityBehaviorTrigger.OnFinished, configure);
     }
@@ -179,7 +179,7 @@ public sealed class AbilitySpecBuilder
     /// <summary>
     /// 添加技能授予时触发的效果链。
     /// </summary>
-    public AbilitySpecBuilder OnGranted(Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder> configure)
+    public AbilitySpecBuilder OnGranted(Func<EffectChainBuilder, EffectChainBuilder> configure)
     {
         return AddEffectBehavior(AbilityBehaviorTrigger.OnGranted, configure);
     }
@@ -187,7 +187,7 @@ public sealed class AbilitySpecBuilder
     /// <summary>
     /// 添加技能移除时触发的效果链。
     /// </summary>
-    public AbilitySpecBuilder OnRemoved(Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder> configure)
+    public AbilitySpecBuilder OnRemoved(Func<EffectChainBuilder, EffectChainBuilder> configure)
     {
         return AddEffectBehavior(AbilityBehaviorTrigger.OnRemoved, configure);
     }
@@ -210,9 +210,9 @@ public sealed class AbilitySpecBuilder
     }
 
     private AbilitySpecBuilder AddEffectBehavior(AbilityBehaviorTrigger trigger,
-        Func<AbilityEffectSpecBuilder, AbilityEffectSpecBuilder> configure)
+        Func<EffectChainBuilder, EffectChainBuilder> configure)
     {
-        var effect = configure(AbilityEffectSpecBuilder.Chain()).Build();
+        var effect = configure(EffectChainBuilder.Chain()).Build();
         _spec.behaviors.Add(new AbilityBehaviorSpec
         {
             trigger = trigger,
@@ -254,11 +254,11 @@ public sealed class AbilitySpecBuilder
 
             var effect = FindEffect(spec.behaviors, AbilityBehaviorTrigger.OnEffect);
             if (effect != null)
-                AbilityHelper.SetEffectSpec(ability, effect.Inner);
+                AbilityHelper.SetEffectSpec(ability, effect);
         }
     }
 
-    private static AbilityEffectSpec? FindEffect(List<AbilityBehaviorSpec> behaviors, AbilityBehaviorTrigger trigger)
+    private static EffectSpec? FindEffect(List<AbilityBehaviorSpec> behaviors, AbilityBehaviorTrigger trigger)
     {
         foreach (var behavior in behaviors)
         {

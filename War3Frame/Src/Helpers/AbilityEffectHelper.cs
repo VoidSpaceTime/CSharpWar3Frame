@@ -146,7 +146,7 @@ public static class AbilityEffectHelper
             return false;
 
         var previous = GetCurrentEffectSpec(ability, out var hadPrevious);
-        AbilityHelper.SetEffectSpec(ability, effect.Inner);
+        AbilityHelper.SetEffectSpec(ability, effect);
         CreateEffectEntity(owner, ability, targetUnit, targetX, targetY);
         RestoreEffectSpec(ability, previous, hadPrevious);
         return true;
@@ -379,7 +379,7 @@ public static class AbilityEffectHelper
     /// <summary>
     /// 从技能行为配置中查找指定生命周期触发点的效果链。
     /// </summary>
-    private static bool TryGetBehaviorEffect(Entity ability, AbilityBehaviorTrigger trigger, out AbilityEffectSpec effect)
+    private static bool TryGetBehaviorEffect(Entity ability, AbilityBehaviorTrigger trigger, out EffectSpec effect)
     {
         if (ability.TryGetComponent<AbilityBehaviorData>(out var data) && data.behaviors != null)
         {

@@ -63,7 +63,15 @@ public sealed class AbilityBehaviorBuilder
     /// <summary>
     /// 设置该行为触发后要执行的技能效果规格。
     /// </summary>
-    public AbilityBehaviorBuilder Do(AbilityEffectSpec effect)
+    public AbilityBehaviorBuilder Do(Func<EffectChainBuilder, EffectChainBuilder> configure)
+    {
+        return Do(configure(EffectChainBuilder.Chain()).Build());
+    }
+
+    /// <summary>
+    /// 设置该行为触发后要执行的预构建效果规格。
+    /// </summary>
+    public AbilityBehaviorBuilder Do(EffectSpec effect)
     {
         _spec.effect = effect;
         return this;

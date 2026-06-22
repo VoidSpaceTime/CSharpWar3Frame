@@ -20,10 +20,7 @@ public class AmuletOfVigorTemplate : IItemTemplate
             .Stack(max: 1)
             .Usable(consumable: false)
             .Attr(AttributeHelper.Health, ModifyType.Flat, 150)
-            .UseEffect(AbilityEffectSpecBuilder
-                .Chain()
-                .Heal(AbilityValue.Constant(120f))
-                .Build())
+            .UseEffect(e => e.Heal(AbilityValue.Constant(120f)))
             .BuildTo(item);
     }
 }
