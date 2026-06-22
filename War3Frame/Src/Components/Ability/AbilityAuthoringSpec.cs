@@ -69,21 +69,6 @@ public readonly struct AbilityValue
 }
 
 /// <summary>
-/// 技能效果规格的新命名包装，迁移期内部复用现有 EffectSpec。
-/// </summary>
-public sealed class AbilityEffectSpec
-{
-    public EffectSpec Inner { get; }
-
-    internal AbilityEffectSpec(EffectSpec inner)
-    {
-        Inner = inner;
-    }
-
-    public static implicit operator EffectSpec(AbilityEffectSpec spec) => spec.Inner;
-}
-
-/// <summary>
 /// 技能行为触发类型，描述行为从哪个生命周期入口启动。
 /// </summary>
 public enum AbilityBehaviorTrigger
@@ -104,7 +89,7 @@ public enum AbilityBehaviorTrigger
 public sealed class AbilityBehaviorSpec
 {
     public AbilityBehaviorTrigger trigger;
-    public AbilityEffectSpec? effect;
+    public EffectSpec? effect;
 }
 
 /// <summary>

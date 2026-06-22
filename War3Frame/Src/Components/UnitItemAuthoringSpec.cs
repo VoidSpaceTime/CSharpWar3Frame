@@ -89,7 +89,7 @@ public sealed class ItemSpec
     public bool isInstantiate = true;
     public readonly List<ItemAttributeContributionSpec> attributes = new();
     public string? useAbilityTemplateName;
-    public AbilityEffectSpec? useEffectSpec;
+    public EffectSpec? useEffectSpec;
     public ExperienceData? experience;
 }
 
@@ -114,5 +114,5 @@ public struct ItemUseAbilityData : IComponent
 /// </summary>
 public struct ItemUseEffectData : IComponent
 {
-    public AbilityEffectSpec effectSpec;
+    public EffectSpec effectSpec;
 }
