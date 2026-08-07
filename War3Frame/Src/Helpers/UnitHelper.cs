@@ -105,41 +105,6 @@ public static class UnitHelper
 
     #endregion
 
-    #region 生命周期推进
-
-    /// <summary>
-    /// 推进单位生命周期阶段。
-    /// 根据当前阶段执行对应的副作用：Death → Corpse、ClearCorpse → Remove、Remove → Dispose
-    /// </summary>
-    public static void TransitionLifecycle(Entity entity)
-    {
-        if (!entity.TryGetComponent<UnitLifeState>(out var state))
-        {
-            return;
-        }
-
-        // 兼容旧调用入口；新流程优先由 UnitLifecycleTransitionSystem 推进。
-        if (state.lifePhase == UnitLifecyclePhase.Death)
-        {
-            // Death → Corpse
-            state.lifePhase = UnitLifecyclePhase.Corpse;
-            entity.AddComponent(state);
-        }
-        else if (state.lifePhase == UnitLifecyclePhase.ClearCorpse)
-        {
-            // ClearCorpse → Remove
-            state.lifePhase = UnitLifecyclePhase.Remove;
-            entity.AddComponent(state);
-        }
-        else if (state.lifePhase == UnitLifecyclePhase.Remove)
-        {
-            // Remove → Dispose
-            CleanupFinalizeEntityDispose(entity);
-        }
-    }
-
-    #endregion
-
     #region 查询
 
     /// <summary>

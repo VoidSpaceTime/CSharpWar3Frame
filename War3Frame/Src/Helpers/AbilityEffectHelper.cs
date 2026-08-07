@@ -84,12 +84,7 @@ public static class AbilityEffectHelper
 
         if (ability.TryGetComponent<ProjectileData>(out var projectile))
         {
-            if (projectile.arrivalThreshold <= 0f)
-                projectile.arrivalThreshold = 30f;
-
-            if (projectile.trajectoryType == default)
-                projectile.trajectoryType = ProjectileTrajectoryType.Tracking;
-
+            // arrivalThreshold 和 trajectoryType 的默认值由 NormalizeProjectileDefaults 处理，此处不重复设置。
             effectEntity.AddComponent(projectile);
             EnsureProjectilePosition(effectEntity, caster);
             EnsureProjectileRuntimeState(effectEntity);

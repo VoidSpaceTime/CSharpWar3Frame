@@ -12,8 +12,8 @@ public enum UnitLifecyclePhase
     Corpse, //尸体
     ClearCorpse, //清理尸体
     Remove, //删除
-    RebornPending, //复活等待
-    Pooled //单位池
+    RebornPending, // 复活等待 — 待实现
+    Pooled         // 单位池   — 待实现
 }
 
 /// <summary>

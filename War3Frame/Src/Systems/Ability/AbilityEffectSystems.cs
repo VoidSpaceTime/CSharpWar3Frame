@@ -82,45 +82,38 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
     private static void NormalizeProjectileDefaults(ref ProjectileData projectile, ref EffectSource source,
         ref EffectTargetInfo target, Entity effectEntity)
     {
-        // spec 数值优先，旧 float 字段和 AbilityHelper stat 作为兼容回退。
-        var legacySpeed = projectile.speed;
-        var sourceAbility = source.ability;
+        // speedValue 未配置时回退到 ProjectileSpeed stat；不再读运行时 speed 字段作为 legacy 初值。
         projectile.speed = EffectFormulaRegistry.Resolve(
             source.caster,
             source.ability,
             target.targetUnit,
             effectEntity,
             projectile.speedValue,
-            () => legacySpeed > 0f
-                ? legacySpeed
-                : AbilityHelper.GetFinalValue(sourceAbility, AbilityHelper.ProjectileSpeed));
+            AbilityHelper.GetFinalValue(source.ability, AbilityHelper.ProjectileSpeed));
 
-        var fallbackArrivalThreshold = projectile.arrivalThreshold;
         projectile.arrivalThreshold = EffectFormulaRegistry.Resolve(
             source.caster,
             source.ability,
             target.targetUnit,
             effectEntity,
             projectile.arrivalThresholdValue,
-            fallbackArrivalThreshold);
+            0f);
 
-        var fallbackMaxDistance = projectile.maxDistance;
         projectile.maxDistance = EffectFormulaRegistry.Resolve(
             source.caster,
             source.ability,
             target.targetUnit,
             effectEntity,
             projectile.maxDistanceValue,
-            fallbackMaxDistance);
+            0f);
 
-        var fallbackHitRadius = projectile.hitRadius;
         projectile.hitRadius = EffectFormulaRegistry.Resolve(
             source.caster,
             source.ability,
             target.targetUnit,
             effectEntity,
             projectile.hitRadiusValue,
-            fallbackHitRadius);
+            0f);
 
         if (projectile.arrivalThreshold <= 0f)
             projectile.arrivalThreshold = 30f;
