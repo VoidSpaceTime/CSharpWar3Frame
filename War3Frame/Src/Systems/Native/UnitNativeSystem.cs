@@ -56,10 +56,12 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
 
             // 同步单位位置
             // 位置以 native 世界为准回写到 ECS，供距离、弹道、区域搜索等系统读取。
+            // Position 是 struct，TryGetComponent 返回副本，必须显式 AddComponent 写回。
             if (entity.TryGetComponent<Position>(out var position))
             {
                 position.x = JassApi.GetUnitX(native.unit);
                 position.y = JassApi.GetUnitY(native.unit);
+                entity.AddComponent(position);
             }
 
             if (hasSnapshot)
