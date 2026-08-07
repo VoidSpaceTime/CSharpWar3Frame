@@ -2,7 +2,7 @@
 
 public static class TeamHelper
 {
-    public static SortedDictionary<string, List<int>> Teams = new();
+    public static SortedDictionary<string, List<int>> Teams = new(StringComparer.Ordinal);
 
     public static void CreateTeam(string teamName, int color, bool nameSync, bool colorSync, List<int> members)
     {

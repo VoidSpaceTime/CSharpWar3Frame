@@ -23,7 +23,7 @@ public class UnitTemplateAttribute : Attribute
 /// </summary>
 public static partial class UnitTemplate
 {
-    private static readonly SortedDictionary<string, IUnitTemplate> _templates = new();
+    private static readonly SortedDictionary<string, IUnitTemplate> _templates = new(StringComparer.Ordinal);
     private static bool _initialized = false;
 
     /// <summary>

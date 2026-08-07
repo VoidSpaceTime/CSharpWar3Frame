@@ -16,7 +16,7 @@ public static class TargetFilterRegistry
     public delegate bool FilterFunc(Entity caster, Entity target);
 
     /// <summary>已注册的自定义筛选器</summary>
-    private static readonly Dictionary<string, FilterFunc> _filters = new();
+    private static readonly SortedDictionary<string, FilterFunc> _filters = new(StringComparer.Ordinal);
 
     #region 注册与移除
 

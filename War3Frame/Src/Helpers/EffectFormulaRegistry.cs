@@ -34,7 +34,7 @@ public struct EffectFormulaContext
 /// </summary>
 public static class EffectFormulaRegistry
 {
-    private static readonly Dictionary<string, EffectFormulaFunc> _formulas = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly SortedDictionary<string, EffectFormulaFunc> _formulas = new(StringComparer.OrdinalIgnoreCase);
 
     static EffectFormulaRegistry()
     {
@@ -82,7 +82,7 @@ public static class EffectFormulaRegistry
         if (!TryResolve(formulaId, out var formula))
             throw new InvalidOperationException($"Unknown effect formula id '{formulaId}'.");
 
-        return formula(new EffectFormulaContext
+        var result = formula(new EffectFormulaContext
         {
             caster = caster,
             ability = ability,
@@ -91,6 +91,10 @@ public static class EffectFormulaRegistry
             effectContext = effectContext,
             value = value
         });
+        if (!float.IsFinite(result))
+            throw new InvalidOperationException($"Effect formula '{formulaId}' produced a non-finite value.");
+
+        return result;
     }
 
     public static float Resolve(Entity caster, Entity ability, Entity target, Entity effectEntity,
@@ -150,6 +154,9 @@ public static class EffectFormulaRegistry
 
     private static float ResolveOwnerAttrFinal(EffectFormulaContext context)
     {
+        if (context.effectEntity.TryGetComponent<ItemEffectOrigin>(out var itemOrigin))
+            return ResolveUnitAttr(context, itemOrigin.user);
+
         return ResolveUnitAttr(context, ResolveAbilityOwner(context.ability));
     }
 

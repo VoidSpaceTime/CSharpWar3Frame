@@ -11,7 +11,7 @@ namespace War3Frame;
 /// </summary>
 public static class SyncHelper
 {
-    private static readonly Dictionary<string, Action<JPlayer, string>> _handlers = new();
+    private static readonly SortedDictionary<string, Action<JPlayer, string>> _handlers = new(StringComparer.Ordinal);
     private static JTrigger _syncTrigger;
     private static bool _initialized;
 

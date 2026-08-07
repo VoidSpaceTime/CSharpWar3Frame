@@ -79,7 +79,7 @@ public abstract class UIPanel
 /// </summary>
 public static class UIManager
 {
-    private static readonly Dictionary<string, UIPanel> _panels = new();
+    private static readonly SortedDictionary<string, UIPanel> _panels = new(StringComparer.Ordinal);
     private static int _gameUI;
     private static bool _initialized;
 
