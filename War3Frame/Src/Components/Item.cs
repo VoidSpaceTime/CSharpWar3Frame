@@ -17,6 +17,39 @@ public struct ItemOwner : ILinkComponent
     public Entity unit;
 }
 
+/// <summary>
+/// 物品到主动 companion ability 的唯一链接，source 为物品，target 为 companion。
+/// </summary>
+public struct ItemActiveAbility : ILinkComponent
+{
+    public Entity ability;
+
+    public ItemActiveAbility(Entity ability)
+    {
+        this.ability = ability;
+    }
+
+    public Entity GetIndexedValue()
+    {
+        return ability;
+    }
+}
+
+/// <summary>
+/// 请求通过受控流程销毁物品及其 companion ability。
+/// </summary>
+public struct ItemDestroyRequest : IComponent
+{
+    public Entity item;
+}
+
+/// <summary>
+/// 标记物品正在等待 companion 引用释放，期间拒绝新的使用请求。
+/// </summary>
+public struct ItemDestroyPendingTag : ITag
+{
+}
+
 public struct ItemSlotIndex : IComponent
 {
     public int index;

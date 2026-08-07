@@ -3,6 +3,15 @@ using Friflo.Engine.ECS;
 namespace War3Frame;
 
 // ============================================================================
+
+/// <summary>
+/// 记录由物品使用发起的施法来源；普通施法保持默认空值。
+/// </summary>
+public struct ItemCastOrigin
+{
+    public Entity item;
+    public Entity user;
+}
 // 施法状态机组件
 // ============================================================================
 
@@ -35,6 +44,9 @@ public struct CastRequest : IComponent
 
     /// <summary>目标点 Y 坐标（对点施法时）</summary>
     public float targetY;
+
+    /// <summary>物品施法来源，供提交效果时固化 ItemEffectOrigin。</summary>
+    public ItemCastOrigin itemOrigin;
 }
 
 /// <summary>
@@ -62,6 +74,9 @@ public struct CastState : IComponent
 
     /// <summary>生效点是否已经提交。</summary>
     public bool effectCommitted;
+
+    /// <summary>从请求复制的物品施法来源。</summary>
+    public ItemCastOrigin itemOrigin;
 }
 
 /// <summary>

@@ -8,6 +8,110 @@ using War3Frame.TemplateInit;
 namespace War3Frame.Scripts.Template;
 
 /// <summary>
+/// 力量护符的零冷却无目标 companion ability。
+/// </summary>
+[AbilityTemplate("amulet_of_vigor_cast")]
+public sealed class AmuletOfVigorCastTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        AbilitySpecBuilder.Create("amulet_of_vigor_cast")
+            .Name("护符治疗")
+            .TargetType(AbilityTargetType.None)
+            .BaseValue(AbilityHelper.CooldownDuration, 0f)
+            .BaseValue(AbilityHelper.Range, 0f)
+            .OnEffect(effect => effect.Heal(AbilityValue.Constant(120f)))
+            .BuildTo(ability, level);
+    }
+}
+
+/// <summary>
+/// 火球卷轴的点目标 companion ability。
+/// </summary>
+[AbilityTemplate("scroll_fireball_cast")]
+public sealed class ScrollFireballCastTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        AbilitySpecBuilder.Create("scroll_fireball_cast")
+            .Name("卷轴火球")
+            .TargetType(AbilityTargetType.Point)
+            .BaseValue(AbilityHelper.CooldownDuration, 2f)
+            .BaseValue(AbilityHelper.Range, 700f)
+            .BaseValue(AbilityHelper.ProjectileSpeed, 600f)
+            .OnEffect(effect => effect
+                .Projectile(
+                    string.Empty,
+                    AbilityValue.AbilityStat(AbilityHelper.ProjectileSpeed),
+                    arrivalThreshold: AbilityValue.Constant(20f))
+                .OnProjectileArrive(arrive => arrive
+                    .Area(TargetFilter.EnemyAlive, radius: AbilityValue.Constant(160f))
+                    .Damage(AbilityValue.Constant(80f), DamageType.Magical, DamageSrc.Skill)))
+            .BuildTo(ability, level);
+    }
+}
+
+/// <summary>
+/// ItemUse Unit 目标兼容性验证技能。
+/// </summary>
+[AbilityTemplate("item_test_unit_cast")]
+public sealed class ItemTestUnitCastTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        AbilitySpecBuilder.Create("item_test_unit_cast")
+            .TargetType(AbilityTargetType.Unit)
+            .BaseValue(AbilityHelper.CooldownDuration, 0f)
+            .BaseValue(AbilityHelper.Range, 99999f)
+            .OnEffect(effect => effect.Heal(AbilityValue.Constant(1f)))
+            .BuildTo(ability, level);
+    }
+}
+
+/// <summary>
+/// ItemUse Area 目标兼容性与 ground-area 来源验证技能。
+/// </summary>
+[AbilityTemplate("item_test_area_cast")]
+public sealed class ItemTestAreaCastTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        AbilitySpecBuilder.Create("item_test_area_cast")
+            .TargetType(AbilityTargetType.Area)
+            .BaseValue(AbilityHelper.CooldownDuration, 0f)
+            .BaseValue(AbilityHelper.Range, 99999f)
+            .OnEffect(effect => effect.GroundArea(
+                GroundAreaTag.Oil,
+                AbilityValue.Constant(120f),
+                duration: AbilityValue.Constant(2f)))
+            .BuildTo(ability, level);
+    }
+}
+
+/// <summary>
+/// Item companion 阶段清理验证技能。
+/// </summary>
+[AbilityTemplate("item_test_phased_cast")]
+public sealed class ItemTestPhasedCastTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        AbilitySpecBuilder.Create("item_test_phased_cast")
+            .TargetType(AbilityTargetType.None)
+            .CastPoint(1f)
+            .Channel(2f, 0.25f)
+            .Backswing(1f)
+            .BaseValue(AbilityHelper.CooldownDuration, 3f)
+            .BaseValue(AbilityHelper.Range, 0f)
+            .OnEffect(effect => effect.Heal(AbilityValue.Constant(1f)))
+            .OnChannelTick(effect => effect.Heal(AbilityValue.Constant(1f)))
+            .OnInterrupted(effect => effect.Heal(AbilityValue.Constant(999f)))
+            .OnFinished(effect => effect.Heal(AbilityValue.Constant(999f)))
+            .BuildTo(ability, level);
+    }
+}
+
+/// <summary>
 /// 示例技能模板：火焰冲击。
 /// </summary>
 [AbilityTemplate("fire_blast")]

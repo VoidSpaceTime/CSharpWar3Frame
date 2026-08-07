@@ -1,6 +1,7 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using War3Frame.Components;
+using War3Frame.Helpers;
 using War3Frame.Systems;
 
 namespace War3Frame.Src.Systems;
@@ -12,32 +13,202 @@ namespace War3Frame.Src.Systems;
 public class ItemAttachWorkflowSystem : QuerySystem<ItemAttachRequest>
 {
     // 物品挂载只更新归属、槽位和属性应用请求；实际属性修改由 ItemAttributeApplySystem 完成。
+    private readonly List<(Entity entity, ItemAttachRequest request)> _pending = new();
 
     protected override void OnUpdate()
     {
+        _pending.Clear();
         Query.ForEachEntity((ref ItemAttachRequest request, Entity requestEntity) =>
         {
-            AttachItem(request.owner, request.item, request.slotIndex);
-            requestEntity.DeleteEntity();
+            _pending.Add((requestEntity, request));
         });
+
+        foreach (var pending in _pending)
+        {
+            try
+            {
+                if (!pending.request.owner.IsNull
+                    && !pending.request.item.IsNull
+                    && ReferenceEquals(pending.entity.Store, pending.request.owner.Store)
+                    && ReferenceEquals(pending.entity.Store, pending.request.item.Store))
+                {
+                    ItemLifecycleOperations.Attach(pending.request.owner, pending.request.item, pending.request.slotIndex);
+                }
+            }
+            finally
+            {
+                if (!pending.entity.IsNull)
+                    pending.entity.DeleteEntity();
+            }
+        }
+    }
+}
+
+/// <summary>
+/// 物品移除工作流系统。
+/// </summary>
+[SystemRegister(SystemKind.Immediate)]
+public class ItemRemoveWorkflowSystem : QuerySystem<ItemRemoveRequest>
+{
+    // 物品移除只撤销归属/槽位并发出属性移除请求；属性层由后续系统统一清理。
+    private readonly List<(Entity entity, ItemRemoveRequest request)> _pending = new();
+
+    protected override void OnUpdate()
+    {
+        _pending.Clear();
+        Query.ForEachEntity((ref ItemRemoveRequest request, Entity requestEntity) =>
+        {
+            _pending.Add((requestEntity, request));
+        });
+
+        foreach (var pending in _pending)
+        {
+            try
+            {
+                if (!pending.request.owner.IsNull
+                    && ReferenceEquals(pending.entity.Store, pending.request.owner.Store))
+                {
+                    ItemLifecycleOperations.Remove(
+                        pending.request.owner,
+                        pending.request.slotIndex,
+                        pending.request.dropToGround,
+                        pending.request.x,
+                        pending.request.y,
+                        pending.request.z);
+                }
+            }
+            finally
+            {
+                if (!pending.entity.IsNull)
+                    pending.entity.DeleteEntity();
+            }
+        }
+    }
+}
+
+/// <summary>
+/// 消费受控物品销毁请求，先进入 pending 并通过统一生命周期解除 owner。
+/// </summary>
+[SystemRegister(SystemKind.Immediate, 1)]
+public sealed class ItemDestroyRequestSystem : QuerySystem<ItemDestroyRequest>
+{
+    private readonly List<(Entity entity, ItemDestroyRequest request)> _pending = new();
+
+    protected override void OnUpdate()
+    {
+        _pending.Clear();
+        Query.ForEachEntity((ref ItemDestroyRequest request, Entity requestEntity) =>
+        {
+            _pending.Add((requestEntity, request));
+        });
+
+        foreach (var pending in _pending)
+        {
+            try
+            {
+                if (!pending.request.item.IsNull
+                    && ReferenceEquals(pending.entity.Store, pending.request.item.Store))
+                    BeginDestroy(pending.request.item);
+            }
+            finally
+            {
+                if (!pending.entity.IsNull)
+                    pending.entity.DeleteEntity();
+            }
+        }
     }
 
-    private static void AttachItem(Entity owner, Entity item, int slotIndex)
+    private static void BeginDestroy(Entity item)
     {
+        if (item.IsNull || !item.TryGetComponent<ItemBase>(out _))
+            return;
+
+        item.AddTag<ItemDestroyPendingTag>();
+        ItemLifecycleOperations.Detach(item, false, 0f, 0f, 0f);
+    }
+}
+
+/// <summary>
+/// 等待 companion 的 Cast、Effect 和 GroundArea 引用释放后，按 companion 到 Item 的顺序删除。
+/// </summary>
+[SystemRegister(SystemKind.Interval, 131)]
+public sealed class ItemCompanionDeferredDeleteSystem : QuerySystem<ItemBase>
+{
+    private readonly List<(Entity item, Entity companion)> _pending = new();
+
+    public ItemCompanionDeferredDeleteSystem()
+    {
+        Filter.AnyTags(Tags.Get<ItemDestroyPendingTag>());
+    }
+
+    protected override void OnUpdate()
+    {
+        _pending.Clear();
+        Query.ForEachEntity((ref ItemBase itemBase, Entity item) =>
+        {
+            var companion = item.TryGetComponent<ItemActiveAbility>(out var active)
+                ? active.ability
+                : default;
+            _pending.Add((item, companion));
+        });
+
+        if (_pending.Count == 0)
+            return;
+
+        var referenced = ItemCompanionCastCleanup.CollectReferencedAbilityIds(_pending[0].item.Store);
+        foreach (var entry in _pending)
+        {
+            if (!entry.companion.IsNull && referenced.Contains(entry.companion.Id))
+                continue;
+
+            if (!entry.companion.IsNull)
+            {
+                if (ItemCompanionAbilityHelper.IsOwnedCompanion(entry.item, entry.companion))
+                    AbilityHelper.RemoveAbility(entry.companion);
+            }
+            ModifyHelper.RemoveModifiersFromSource(entry.item);
+            entry.item.DeleteEntity();
+        }
+    }
+}
+
+/// <summary>
+/// Item attach/remove 工作流共享的权威状态变更操作。
+/// </summary>
+internal static class ItemLifecycleOperations
+{
+    /// <summary>
+    /// 将物品挂到目标槽位；跨 owner 时先按 companion identity 清理旧施法。
+    /// </summary>
+    public static void Attach(Entity owner, Entity item, int slotIndex)
+    {
+        if (owner.IsNull || item.IsNull || !item.TryGetComponent<ItemBase>(out _))
+            throw new InvalidOperationException("Item attach 请求包含无效实体");
+        if (!ReferenceEquals(owner.Store, item.Store))
+            throw new InvalidOperationException("Item 与 owner 必须位于同一个 EntityStore");
+        if (item.Tags.Has<ItemDestroyPendingTag>())
+            return;
         if (!owner.TryGetComponent<ItemSlotContainer>(out var container))
             throw new InvalidOperationException($"实体 {owner.Id} 没有 ItemSlotContainer 组件");
-
-        if (item.IsNull || !item.TryGetComponent<ItemBase>(out _))
-            throw new InvalidOperationException($"实体 {item.Id} 不是合法物品实体");
-
         if (slotIndex < 0 || slotIndex >= container.maxSlots)
             throw new InvalidOperationException($"槽位索引 {slotIndex} 超出范围 [0, {container.maxSlots})");
 
-        if (IsSlotOccupied(owner, slotIndex))
+        var occupied = GetItemAtSlot(owner, slotIndex);
+        if (occupied.HasValue && occupied.Value != item)
             throw new InvalidOperationException($"物品槽位 {slotIndex} 已被占用");
 
-        if (item.TryGetComponent<ItemOwner>(out var ownerInfo) && !ownerInfo.unit.IsNull)
-            throw new InvalidOperationException($"物品 {item.Id} 已经归属到实体 {ownerInfo.unit.Id}");
+        if (item.TryGetComponent<ItemOwner>(out var currentOwner)
+            && item.TryGetComponent<ItemSlotIndex>(out var currentSlot))
+        {
+            if (currentOwner.unit == owner && currentSlot.index == slotIndex)
+            {
+                ItemCompanionAbilityHelper.TryEnsureCompanion(item, out _);
+                return;
+            }
+
+            Detach(item, false, 0f, 0f, 0f);
+            container = owner.GetComponent<ItemSlotContainer>();
+        }
 
         item.RemoveTag<ItemGroundTag>();
         item.RemoveTag<ItemStoredTag>();
@@ -54,80 +225,65 @@ public class ItemAttachWorkflowSystem : QuerySystem<ItemAttachRequest>
 
         container.currentCount++;
         owner.AddComponent(container);
+        ItemCompanionAbilityHelper.TryEnsureCompanion(item, out _);
     }
 
-    private static Entity? GetItemAtSlot(Entity owner, int slotIndex)
-    {
-        var links = owner.GetIncomingLinks<ItemOwner>();
-        foreach (var link in links)
-        {
-            var itemEntity = link.Entity;
-            if (itemEntity.TryGetComponent<ItemSlotIndex>(out var index) && index.index == slotIndex)
-                return itemEntity;
-        }
-
-        return null;
-    }
-
-    private static bool IsSlotOccupied(Entity owner, int slotIndex)
-    {
-        return GetItemAtSlot(owner, slotIndex) != null;
-    }
-}
-
-/// <summary>
-/// 物品移除工作流系统。
-/// </summary>
-[SystemRegister(SystemKind.Immediate)]
-public class ItemRemoveWorkflowSystem : QuerySystem<ItemRemoveRequest>
-{
-    // 物品移除只撤销归属/槽位并发出属性移除请求；属性层由后续系统统一清理。
-
-    protected override void OnUpdate()
-    {
-        Query.ForEachEntity((ref ItemRemoveRequest request, Entity requestEntity) =>
-        {
-            RemoveItem(request.owner, request.slotIndex, request.dropToGround, request.x, request.y, request.z);
-            requestEntity.DeleteEntity();
-        });
-    }
-
-    private static void RemoveItem(Entity owner, int slotIndex, bool dropToGround, float x, float y, float z)
+    /// <summary>
+    /// 从指定 owner 槽位移除物品，并按请求决定是否落地。
+    /// </summary>
+    public static void Remove(Entity owner, int slotIndex, bool dropToGround, float x, float y, float z)
     {
         var item = GetItemAtSlot(owner, slotIndex);
-        if (item == null) return;
+        if (item.HasValue)
+            Detach(item.Value, dropToGround, x, y, z);
+    }
 
-        if (owner.TryGetComponent<ItemSlotContainer>(out var container))
+    /// <summary>
+    /// 解除物品 owner 和槽位；companion 在 owner Link 移除前完成阶段清理。
+    /// </summary>
+    public static void Detach(Entity item, bool dropToGround, float x, float y, float z)
+    {
+        ItemCompanionAbilityHelper.UnbindOwner(item);
+        ModifyHelper.RemoveModifiersFromSource(item);
+
+        if (item.TryGetComponent<ItemOwner>(out var owner)
+            && !owner.unit.IsNull
+            && owner.unit.TryGetComponent<ItemSlotContainer>(out var container))
         {
             container.currentCount = Math.Max(0, container.currentCount - 1);
-            owner.AddComponent(container);
+            owner.unit.AddComponent(container);
         }
 
-        item.Value.RemoveTag<ItemEquippedTag>();
-        item.Value.RemoveTag<ItemInventoryTag>();
-        item.Value.RemoveTag<ItemStoredTag>();
-        item.Value.AddTag<ItemAttrRemoveRequest>();
-        item.Value.RemoveTag<ItemAttrApplyRequest>();
-        item.Value.RemoveComponent<ItemOwner>();
-        item.Value.RemoveComponent<ItemSlotIndex>();
+        item.RemoveTag<ItemEquippedTag>();
+        item.RemoveTag<ItemInventoryTag>();
+        item.RemoveTag<ItemStoredTag>();
+        item.RemoveTag<ItemAttrRemoveRequest>();
+        item.RemoveTag<ItemAttrApplyRequest>();
+        item.RemoveComponent<ItemOwner>();
+        item.RemoveComponent<ItemSlotIndex>();
 
         if (dropToGround)
         {
-            item.Value.AddTag<ItemGroundTag>();
-            item.Value.AddComponent(new Position { x = x, y = y, z = z });
+            item.AddTag<ItemGroundTag>();
+            item.AddComponent(new Position { x = x, y = y, z = z });
+        }
+        else
+        {
+            item.RemoveTag<ItemGroundTag>();
         }
     }
 
     private static Entity? GetItemAtSlot(Entity owner, int slotIndex)
     {
-        var links = owner.GetIncomingLinks<ItemOwner>();
-        foreach (var link in links)
-        {
-            var itemEntity = link.Entity;
-            if (itemEntity.TryGetComponent<ItemSlotIndex>(out var index) && index.index == slotIndex)
-                return itemEntity;
-        }
+        if (owner.IsNull)
+            return null;
 
+        foreach (var link in owner.GetIncomingLinks<ItemOwner>())
+        {
+            var item = link.Entity;
+            if (item.TryGetComponent<ItemSlotIndex>(out var index) && index.index == slotIndex)
+                return item;
+        }
         return null;
     }
 }

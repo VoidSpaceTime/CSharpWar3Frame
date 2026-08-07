@@ -89,7 +89,6 @@ public sealed class ItemSpec
     public bool isInstantiate = true;
     public readonly List<ItemAttributeContributionSpec> attributes = new();
     public string? useAbilityTemplateName;
-    public EffectSpec? useEffectSpec;
     public ExperienceData? experience;
 }
 
@@ -107,12 +106,4 @@ public struct ItemSpecData : IComponent
 public struct ItemUseAbilityData : IComponent
 {
     public string abilityTemplateName;
-}
-
-/// <summary>
-/// 物品使用时的一次性效果配置。
-/// </summary>
-public struct ItemUseEffectData : IComponent
-{
-    public EffectSpec effectSpec;
 }

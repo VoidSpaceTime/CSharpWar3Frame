@@ -221,7 +221,10 @@ public sealed class AbilitySpecBuilder
         return this;
     }
 
-    private static void Apply(Entity ability, int level, AbilitySpec spec)
+    /// <summary>
+    /// 将已完成的技能规格按指定等级写入 ability，供内部模板复用统一应用逻辑。
+    /// </summary>
+    internal static void Apply(Entity ability, int level, AbilitySpec spec)
     {
         ability.AddComponent(new AbilityBase
         {

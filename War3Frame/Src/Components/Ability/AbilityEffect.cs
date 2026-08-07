@@ -7,12 +7,21 @@ namespace War3Frame;
 
 /// <summary>
 /// 记录一次效果的来源。
-/// caster 是施法者，ability 是定义效果链和数值的技能实体。
+/// caster 是执行者；ability 始终指向提供配置的技能，包括物品的 companion ability。
 /// </summary>
 public struct EffectSource : IComponent
 {
     public Entity caster;
     public Entity ability;
+}
+
+/// <summary>
+/// 记录物品来源施法的显式上下文，延迟结算不得从当前 AbilityOwner 反推 user。
+/// </summary>
+public struct ItemEffectOrigin : IComponent
+{
+    public Entity item;
+    public Entity user;
 }
 
 /// <summary>

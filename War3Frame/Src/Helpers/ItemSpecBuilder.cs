@@ -1,5 +1,6 @@
 using Friflo.Engine.ECS;
 using War3Frame.Components;
+using War3Frame.TemplateInit;
 
 namespace War3Frame.Helpers;
 
@@ -9,6 +10,7 @@ namespace War3Frame.Helpers;
 public sealed class ItemSpecBuilder
 {
     private readonly ItemSpec _spec = new();
+    private bool _hasUseAbility;
 
     private ItemSpecBuilder(string templateName)
     {
@@ -85,28 +87,60 @@ public sealed class ItemSpecBuilder
         return this;
     }
 
+    /// <summary>
+    /// 引用已注册的共享 Ability template。
+    /// </summary>
     public ItemSpecBuilder UseAbility(string abilityTemplateName)
     {
-        _spec.useAbilityTemplateName = abilityTemplateName;
-        _spec.isUsable = true;
+        EnsureAbilityNotConfigured();
+        ArgumentException.ThrowIfNullOrWhiteSpace(abilityTemplateName);
+        CommitUseAbility(abilityTemplateName);
         return this;
     }
 
     /// <summary>
-    /// 通过效果链 Builder 设置物品使用时执行的一次性效果。
+    /// 立即构建并注册当前物品私有的完整 AbilitySpec。
     /// </summary>
-    public ItemSpecBuilder UseEffect(Func<EffectChainBuilder, EffectChainBuilder> configure)
+    public ItemSpecBuilder UseAbility(Func<AbilitySpecBuilder, AbilitySpecBuilder> configure)
     {
-        return UseEffect(configure(EffectChainBuilder.Chain()).Build());
+        EnsureAbilityNotConfigured();
+        ArgumentNullException.ThrowIfNull(configure);
+
+        var templateName = AbilityTemplate.GetInlineItemAbilityName(_spec.templateName);
+        var configured = configure(AbilitySpecBuilder.Create(templateName))
+                         ?? throw new InvalidOperationException("Inline Ability 配置必须返回 AbilitySpecBuilder");
+        var abilitySpec = configured.Build();
+        ValidateFullInlineBehaviors(abilitySpec);
+        var registeredName = AbilityTemplate.RegisterInlineItemAbility(_spec.templateName, abilitySpec);
+        CommitUseAbility(registeredName);
+        return this;
     }
 
     /// <summary>
-    /// 设置物品使用时执行的预构建效果规格。
+    /// 立即构建 None 目标、零施法阶段和零冷却的物品私有 Effect Ability。
     /// </summary>
-    public ItemSpecBuilder UseEffect(EffectSpec effectSpec)
+    public ItemSpecBuilder UseAbility(Func<EffectChainBuilder, EffectChainBuilder> configure)
     {
-        _spec.useEffectSpec = effectSpec;
-        _spec.isUsable = true;
+        EnsureAbilityNotConfigured();
+        ArgumentNullException.ThrowIfNull(configure);
+
+        var templateName = AbilityTemplate.GetInlineItemAbilityName(_spec.templateName);
+        var configured = configure(EffectChainBuilder.Chain())
+                         ?? throw new InvalidOperationException("Inline Effect 配置必须返回 EffectChainBuilder");
+        var abilitySpec = AbilitySpecBuilder.Create(templateName)
+            .TargetType(AbilityTargetType.None)
+            .CastPoint(0f)
+            .Channel(0f, 0f)
+            .Backswing(0f)
+            .BaseValue(AbilityHelper.CooldownDuration, 0f)
+            .Behavior(new AbilityBehaviorSpec
+            {
+                trigger = AbilityBehaviorTrigger.OnEffect,
+                effect = configured.Build()
+            })
+            .Build();
+        var registeredName = AbilityTemplate.RegisterInlineItemAbility(_spec.templateName, abilitySpec);
+        CommitUseAbility(registeredName);
         return this;
     }
 
@@ -153,9 +187,6 @@ public sealed class ItemSpecBuilder
             });
         }
 
-        if (spec.useEffectSpec != null)
-            item.AddComponent(new ItemUseEffectData { effectSpec = spec.useEffectSpec });
-
         item.AddComponent(new ItemSpecData { spec = spec });
     }
 
@@ -192,5 +223,33 @@ public sealed class ItemSpecBuilder
         }
 
         return resolved;
+    }
+
+    private void EnsureAbilityNotConfigured()
+    {
+        if (_hasUseAbility)
+            throw new InvalidOperationException("同一 ItemSpecBuilder 只能配置一次 UseAbility");
+    }
+
+    private void CommitUseAbility(string abilityTemplateName)
+    {
+        _spec.useAbilityTemplateName = abilityTemplateName;
+        _spec.isUsable = true;
+        _hasUseAbility = true;
+    }
+
+    /// <summary>
+    /// 在注册前拒绝不适用于 item companion 生命周期的行为。
+    /// </summary>
+    private static void ValidateFullInlineBehaviors(AbilitySpec spec)
+    {
+        foreach (var behavior in spec.behaviors)
+        {
+            if (behavior?.trigger is AbilityBehaviorTrigger.OnGranted or AbilityBehaviorTrigger.OnRemoved)
+            {
+                throw new InvalidOperationException(
+                    "Item inline Ability 不允许 OnGranted 或 OnRemoved 行为");
+            }
+        }
     }
 }

@@ -23,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\War3Frame\War3Frame.csproj"/>
+        <ProjectReference Include="..\..\War3Frame\War3Frame.csproj" Aliases="global,War3FrameRuntime"/>
         <TrimmerRootAssembly Include="Friflo.Engine.ECS"/>
     </ItemGroup>
 

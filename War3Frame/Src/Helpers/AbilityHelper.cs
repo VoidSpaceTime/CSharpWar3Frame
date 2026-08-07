@@ -79,4 +79,31 @@ public static partial class AbilityHelper
     }
 
     #endregion
+
+    #region 状态控制
+
+    /// <summary>
+    /// 按技能冷却值进入 Cooldown，零或负冷却直接恢复 Ready。
+    /// 供 helper 层与施法系统共用，不属于任何单一系统。
+    /// </summary>
+    public static void EnterCooldownOrReady(Entity ability)
+    {
+        var cooldown = GetCooldown(ability);
+        if (!ability.TryGetComponent<AbilityBase>(out var abilityBase))
+            return;
+
+        if (cooldown <= 0f)
+        {
+            ability.RemoveComponent<AbilityCooldownState>();
+            abilityBase.state = AbilityState.Ready;
+            ability.AddComponent(abilityBase);
+            return;
+        }
+
+        abilityBase.state = AbilityState.Cooldown;
+        ability.AddComponent(abilityBase);
+        ability.AddComponent(new AbilityCooldownState { remaining = cooldown });
+    }
+
+    #endregion
 }

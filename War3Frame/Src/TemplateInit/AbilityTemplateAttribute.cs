@@ -56,7 +56,10 @@ public class AbilityTemplateAttribute : Attribute
 /// </summary>
 public static partial class AbilityTemplate
 {
-    private static readonly SortedDictionary<string, IAbilityTemplate> _templates = new();
+    internal const string InlineItemAbilityPrefix = "__item_inline__:";
+    internal const int MaxInlineItemAbilityOwnerLength = 256;
+
+    private static readonly SortedDictionary<string, IAbilityTemplate> _templates = new(StringComparer.Ordinal);
     private static bool _initialized = false;
 
     /// <summary>
@@ -65,10 +68,10 @@ public static partial class AbilityTemplate
     public static void Initialize()
     {
         if (_initialized) return;
-        _initialized = true;
 
-        // 调用 Source Generator 自动生成的注册方法
+        // 调用 Source Generator 自动生成的注册方法。
         RegisterGenerated();
+        _initialized = true;
     }
 
     /// <summary>
@@ -76,7 +79,44 @@ public static partial class AbilityTemplate
     /// </summary>
     public static void Register(string name, IAbilityTemplate template)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(template);
+        if (name.StartsWith(InlineItemAbilityPrefix, StringComparison.Ordinal))
+            throw new ArgumentException($"技能模板名称前缀 '{InlineItemAbilityPrefix}' 由框架保留", nameof(name));
+
         _templates[name] = template;
+    }
+
+    /// <summary>
+    /// 根据物品模板逻辑名称生成确定性的内部 Ability template name。
+    /// </summary>
+    internal static string GetInlineItemAbilityName(string itemTemplateName)
+    {
+        return InlineItemAbilityPrefix + NormalizeInlineOwner(itemTemplateName);
+    }
+
+    /// <summary>
+    /// 注册物品私有 AbilitySpec；同名重复注册按 first-wins 幂等返回已有模板。
+    /// </summary>
+    internal static string RegisterInlineItemAbility(string itemTemplateName, AbilitySpec spec)
+    {
+        ArgumentNullException.ThrowIfNull(spec);
+
+        var owner = NormalizeInlineOwner(itemTemplateName);
+        var templateName = InlineItemAbilityPrefix + owner;
+        if (!string.Equals(spec.templateName, templateName, StringComparison.Ordinal))
+            throw new InvalidOperationException($"Inline AbilitySpec 必须使用内部模板名称 '{templateName}'");
+
+        if (_templates.TryGetValue(templateName, out var existing))
+        {
+            if (existing is not InlineItemAbilityTemplate)
+                throw new InvalidOperationException($"内部技能模板名称 '{templateName}' 已被其他模板占用");
+
+            return templateName;
+        }
+
+        _templates.Add(templateName, new InlineItemAbilityTemplate(owner, spec));
+        return templateName;
     }
 
     /// <summary>
@@ -89,8 +129,7 @@ public static partial class AbilityTemplate
 
     public static bool TryGet(string templateName, out IAbilityTemplate template)
     {
-        var flag = _templates.TryGetValue(templateName, out template);
-        return flag;
+        return _templates.TryGetValue(templateName, out template!);
     }
 
 
@@ -109,12 +148,32 @@ public static partial class AbilityTemplate
     /// <summary>
     /// 检查模板是否存在
     /// </summary>
-    public static bool HasTemplate(string name) => _templates.ContainsKey(name);
+    public static bool HasTemplate(string name)
+    {
+        return _templates.ContainsKey(name);
+    }
 
     /// <summary>
     /// 获取所有已注册的模板名称
     /// </summary>
-    public static IEnumerable<string> GetAllTemplateNames() => _templates.Keys;
+    public static IEnumerable<string> GetAllTemplateNames()
+    {
+        // 返回快照，避免调用方遍历期间注册新模板导致集合被修改。
+        return _templates.Keys.ToArray();
+    }
+
+    private static string NormalizeInlineOwner(string itemTemplateName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(itemTemplateName);
+        var owner = itemTemplateName.Trim();
+        if (owner.Length > MaxInlineItemAbilityOwnerLength)
+        {
+            throw new ArgumentException(
+                $"物品模板 owner 长度不能超过 {MaxInlineItemAbilityOwnerLength}", nameof(itemTemplateName));
+        }
+
+        return owner;
+    }
 
     /// <summary>
     /// Source Generator 自动生成的注册方法

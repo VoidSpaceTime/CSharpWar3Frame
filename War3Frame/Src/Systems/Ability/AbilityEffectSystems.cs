@@ -17,6 +17,9 @@ namespace War3Frame;
 [SystemRegister(SystemKind.Interval, 100)]
 public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, EffectTargetInfo, Position, ProjectileRuntimeState>
 {
+    private readonly List<Entity> _arriveRequests = new();
+    private readonly List<Entity> _expireRequests = new();
+
     public ProjectileSystem()
     {
         Filter.AnyTags(Tags.Get<EffectPending>());
@@ -24,8 +27,8 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
 
     protected override void OnUpdate()
     {
-        var arriveRequests = new List<Entity>();
-        var expireRequests = new List<Entity>();
+        _arriveRequests.Clear();
+        _expireRequests.Clear();
 
         Query.ForEachEntity((ref ProjectileData projectile, ref EffectSource source,
             ref EffectTargetInfo target, ref Position position,
@@ -47,7 +50,7 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
             if (decision == ProjectileTravelDecision.RequestExpire)
             {
                 runtimeState.phase = ProjectileLifecyclePhase.ExpireRequested;
-                expireRequests.Add(effectEntity);
+                _expireRequests.Add(effectEntity);
                 return;
             }
 
@@ -69,27 +72,28 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
             if (arrived && decision != ProjectileTravelDecision.SuppressArrivalThisTick)
             {
                 runtimeState.phase = ProjectileLifecyclePhase.ArriveRequested;
-                arriveRequests.Add(effectEntity);
+                _arriveRequests.Add(effectEntity);
             }
         });
 
-        ProjectileFlowHelper.ApplyRequests(arriveRequests, expireRequests);
+        ProjectileFlowHelper.ApplyRequests(_arriveRequests, _expireRequests);
     }
 
     private static void NormalizeProjectileDefaults(ref ProjectileData projectile, ref EffectSource source,
         ref EffectTargetInfo target, Entity effectEntity)
     {
         // spec 数值优先，旧 float 字段和 AbilityHelper stat 作为兼容回退。
-        var fallbackSpeed = projectile.speed > 0f
-            ? projectile.speed
-            : AbilityHelper.GetFinalValue(source.ability, AbilityHelper.ProjectileSpeed);
+        var legacySpeed = projectile.speed;
+        var sourceAbility = source.ability;
         projectile.speed = EffectFormulaRegistry.Resolve(
             source.caster,
             source.ability,
             target.targetUnit,
             effectEntity,
             projectile.speedValue,
-            fallbackSpeed);
+            () => legacySpeed > 0f
+                ? legacySpeed
+                : AbilityHelper.GetFinalValue(sourceAbility, AbilityHelper.ProjectileSpeed));
 
         var fallbackArrivalThreshold = projectile.arrivalThreshold;
         projectile.arrivalThreshold = EffectFormulaRegistry.Resolve(
@@ -511,14 +515,14 @@ public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, Effect
             if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
                 return;
 
-            var fallbackRadius = AbilityHelper.GetRadius(source.ability);
+            var sourceAbility = source.ability;
             var radius = EffectFormulaRegistry.Resolve(
                 source.caster,
                 source.ability,
                 target.targetUnit,
                 effectEntity,
                 area.radiusValue,
-                fallbackRadius);
+                () => AbilityHelper.GetRadius(sourceAbility));
             var centerX = area.centerX == 0f && area.centerY == 0f ? target.targetX : area.centerX;
             var centerY = area.centerX == 0f && area.centerY == 0f ? target.targetY : area.centerY;
 
@@ -567,14 +571,15 @@ public class LineSearchSystem : QuerySystem<LineSearchData, EffectSource, Effect
                 return;
             }
 
-            var fallbackRange = line.range > 0f ? line.range : AbilityHelper.GetCastRange(source.ability);
+            var legacyRange = line.range;
+            var sourceAbility = source.ability;
             var range = EffectFormulaRegistry.Resolve(
                 source.caster,
                 source.ability,
                 target.targetUnit,
                 effectEntity,
                 line.rangeValue,
-                fallbackRange);
+                () => legacyRange > 0f ? legacyRange : AbilityHelper.GetCastRange(sourceAbility));
             var width = EffectFormulaRegistry.Resolve(
                 source.caster,
                 source.ability,
@@ -626,6 +631,8 @@ public class LineSearchSystem : QuerySystem<LineSearchData, EffectSource, Effect
 [SystemRegister(SystemKind.Interval, 112)]
 public class GroundAreaCreateSystem : QuerySystem<GroundAreaCreateData, EffectSource, EffectTargetInfo>
 {
+    private readonly List<(GroundAreaCreateData create, EffectSource source, EffectTargetInfo target, Entity effect)> _pending = new();
+
     public GroundAreaCreateSystem()
     {
         Filter.AnyTags(Tags.Get<EffectPending>());
@@ -633,42 +640,61 @@ public class GroundAreaCreateSystem : QuerySystem<GroundAreaCreateData, EffectSo
 
     protected override void OnUpdate()
     {
+        _pending.Clear();
         Query.ForEachEntity((ref GroundAreaCreateData create, ref EffectSource source,
             ref EffectTargetInfo target, Entity effectEntity) =>
         {
             if (!EffectSettlementHelper.CanSettle(effectEntity))
                 return;
-
-            var radius = EffectFormulaRegistry.Resolve(
-                source.caster,
-                source.ability,
-                target.targetUnit,
-                effectEntity,
-                create.radiusValue,
-                create.radius > 0f ? create.radius : AbilityHelper.GetRadius(source.ability));
-            var duration = EffectFormulaRegistry.Resolve(
-                source.caster,
-                source.ability,
-                target.targetUnit,
-                effectEntity,
-                create.durationValue,
-                create.duration);
-
-            var area = Game.Store.CreateEntity(
-                new GroundAreaData { tags = create.tags, radius = radius, radiusValue = create.radiusValue },
-                new GroundAreaSource { caster = source.caster, ability = source.ability, sourceEffect = effectEntity },
-                new GroundAreaLifetime { duration = duration, remaining = duration },
-                new Position { x = target.targetX, y = target.targetY, z = 0f });
-
-            if (create.buff.enabled)
-                area.AddComponent(create.buff);
-            if (create.periodicDamage.enabled)
-                area.AddComponent(create.periodicDamage);
-            if (create.reaction.enabled)
-                area.AddComponent(create.reaction);
-
-            EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(GroundAreaCreateData));
+            _pending.Add((create, source, target, effectEntity));
         });
+
+        foreach (var pending in _pending)
+            CreateArea(pending.create, pending.source, pending.target, pending.effect);
+    }
+
+    /// <summary>
+    /// 在查询结束后创建区域并传播来源，避免查询期间执行结构变更。
+    /// </summary>
+    private static void CreateArea(GroundAreaCreateData create, EffectSource source,
+        EffectTargetInfo target, Entity effectEntity)
+    {
+        if (effectEntity.IsNull)
+            return;
+
+        var sourceAbility = source.ability;
+        var legacyRadius = create.radius;
+        var radius = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            target.targetUnit,
+            effectEntity,
+            create.radiusValue,
+            () => legacyRadius > 0f ? legacyRadius : AbilityHelper.GetRadius(sourceAbility));
+        var duration = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            target.targetUnit,
+            effectEntity,
+            create.durationValue,
+            create.duration);
+
+        var area = effectEntity.Store.CreateEntity(
+            new GroundAreaData { tags = create.tags, radius = radius, radiusValue = create.radiusValue },
+            new GroundAreaSource { caster = source.caster, ability = source.ability, sourceEffect = effectEntity },
+            new GroundAreaLifetime { duration = duration, remaining = duration },
+            new Position { x = target.targetX, y = target.targetY, z = 0f });
+
+        if (effectEntity.TryGetComponent<ItemEffectOrigin>(out var itemOrigin))
+            area.AddComponent(itemOrigin);
+        if (create.buff.enabled)
+            area.AddComponent(create.buff);
+        if (create.periodicDamage.enabled)
+            area.AddComponent(create.periodicDamage);
+        if (create.reaction.enabled)
+            area.AddComponent(create.reaction);
+
+        EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(GroundAreaCreateData));
     }
 }
 
@@ -698,7 +724,7 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
                 return;
             }
 
-            var fallbackDamage = AbilityHelper.GetDamageAmount(source.ability);
+            var sourceAbility = source.ability;
             // delegate 是高级自定义覆盖；普通技能走 EffectValueSpec 的 formulaId/statId。
             var amount = damageData.damageFunc != null
                 ? damageData.damageFunc(source.caster, source.ability, target.targetUnit, damageData)
@@ -708,7 +734,7 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
                     target.targetUnit,
                     effectEntity,
                     damageData.value,
-                    fallbackDamage);
+                    () => AbilityHelper.GetDamageAmount(sourceAbility));
 
             Game.Store.CreateEntity(new DamageRequest
             {
@@ -755,9 +781,8 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
                 return;
             }
 
-            var fallbackHeal = heal.amount > 0f
-                ? heal.amount
-                : AbilityHelper.GetHealAmount(source.ability);
+            var legacyHealAmount = heal.amount;
+            var sourceAbility = source.ability;
             var amount = heal.healFunc != null
                 ? heal.healFunc(source.caster, source.ability, target.targetUnit, heal)
                 : EffectFormulaRegistry.Resolve(
@@ -766,7 +791,9 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
                     target.targetUnit,
                     effectEntity,
                     heal.value,
-                    fallbackHeal);
+                    () => legacyHealAmount > 0f
+                        ? legacyHealAmount
+                        : AbilityHelper.GetHealAmount(sourceAbility));
 
             Game.Store.CreateEntity(new HealRequest
             {
@@ -1105,48 +1132,72 @@ public class GroundAreaPeriodicDamageSystem : QuerySystem<GroundAreaData, Ground
 [SystemRegister(SystemKind.Interval, 129)]
 public class GroundAreaReactionSystem : QuerySystem<GroundAreaReactionRequest>
 {
+    private readonly List<(Entity entity, GroundAreaReactionRequest request)> _pending = new();
+
     protected override void OnUpdate()
     {
-        var resolved = new List<Entity>();
-
+        _pending.Clear();
         Query.ForEachEntity((ref GroundAreaReactionRequest request, Entity requestEntity) =>
         {
-            resolved.Add(requestEntity);
-            var areaEntity = request.groundArea;
-            if (areaEntity.IsNull ||
-                !areaEntity.TryGetComponent<GroundAreaReactionData>(out var reaction) ||
-                !areaEntity.TryGetComponent<GroundAreaData>(out var area) ||
-                !areaEntity.TryGetComponent<GroundAreaSource>(out var source) ||
-                !areaEntity.TryGetComponent<Position>(out var position))
-            {
-                return;
-            }
-
-            if (!reaction.enabled || (reaction.triggerTag & request.incomingTag) == GroundAreaTag.None)
-                return;
-
-            var duration = EffectFormulaRegistry.Resolve(
-                source.caster,
-                source.ability,
-                default,
-                areaEntity,
-                reaction.resultDuration,
-                reaction.fallbackDuration);
-
-            GroundAreaQueryHelper.DeleteAreaBuffs(areaEntity);
-            areaEntity.DeleteEntity();
-
-            var burning = Game.Store.CreateEntity(
-                new GroundAreaData { tags = reaction.resultTags, radius = area.radius, radiusValue = area.radiusValue },
-                source,
-                new GroundAreaLifetime { duration = duration, remaining = duration },
-                position);
-            if (reaction.resultPeriodicDamage.enabled)
-                burning.AddComponent(reaction.resultPeriodicDamage);
+            _pending.Add((requestEntity, request));
         });
 
-        foreach (var entity in resolved)
-            entity.DeleteEntity();
+        foreach (var pending in _pending)
+        {
+            try
+            {
+                Process(pending.entity, pending.request);
+            }
+            finally
+            {
+                if (!pending.entity.IsNull)
+                    pending.entity.DeleteEntity();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 在请求查询结束后替换区域并保留物品来源。
+    /// </summary>
+    private static void Process(Entity requestEntity, GroundAreaReactionRequest request)
+    {
+        var areaEntity = request.groundArea;
+        if (areaEntity.IsNull
+            || !ReferenceEquals(requestEntity.Store, areaEntity.Store)
+            || !areaEntity.TryGetComponent<GroundAreaReactionData>(out var reaction) ||
+            !areaEntity.TryGetComponent<GroundAreaData>(out var area) ||
+            !areaEntity.TryGetComponent<GroundAreaSource>(out var source) ||
+            !areaEntity.TryGetComponent<Position>(out var position))
+        {
+            return;
+        }
+
+        if (!reaction.enabled || (reaction.triggerTag & request.incomingTag) == GroundAreaTag.None)
+            return;
+
+        var duration = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            default,
+            areaEntity,
+            reaction.resultDuration,
+            reaction.fallbackDuration);
+
+        var hasItemOrigin = areaEntity.TryGetComponent<ItemEffectOrigin>(out var itemOrigin);
+        var store = areaEntity.Store;
+
+        GroundAreaQueryHelper.DeleteAreaBuffs(areaEntity);
+        areaEntity.DeleteEntity();
+
+        var burning = store.CreateEntity(
+            new GroundAreaData { tags = reaction.resultTags, radius = area.radius, radiusValue = area.radiusValue },
+            source,
+            new GroundAreaLifetime { duration = duration, remaining = duration },
+            position);
+        if (hasItemOrigin)
+            burning.AddComponent(itemOrigin);
+        if (reaction.resultPeriodicDamage.enabled)
+            burning.AddComponent(reaction.resultPeriodicDamage);
     }
 }
 

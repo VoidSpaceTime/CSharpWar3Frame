@@ -68,7 +68,7 @@ namespace CSharpWar3FrameConsole
             public string ProjectName { get; set; }
         }
 
-        [Verb("multi", HelpText = "新建项目")]
+        [Verb("multi", HelpText = "多开")]
         class MultiOptions
         {
             [Value(0, Default = 2, Required = false, HelpText = "项目名称")]

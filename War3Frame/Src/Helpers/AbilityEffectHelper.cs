@@ -17,9 +17,12 @@ public static class AbilityEffectHelper
     /// ability 持有长期配置；这里只生成带 EffectPending 的临时 effect entity。
     /// </summary>
     public static Entity CreateEffectEntity(Entity caster, Entity ability,
-        Entity targetUnit, float targetX, float targetY)
+        Entity targetUnit, float targetX, float targetY, ItemCastOrigin itemOrigin = default)
     {
-        var effectEntity = Game.Store.CreateEntity(
+        if (caster.IsNull || ability.IsNull || !ReferenceEquals(caster.Store, ability.Store))
+            throw new InvalidOperationException("Effect caster 与 ability 必须位于同一个 EntityStore");
+
+        var effectEntity = ability.Store.CreateEntity(
             new EffectSource { caster = caster, ability = ability },
             new EffectTargetInfo
             {
@@ -38,6 +41,15 @@ public static class AbilityEffectHelper
                 effectId = _nextEffectId++
             });
         effectEntity.AddTag<EffectPending>();
+
+        if (!itemOrigin.item.IsNull)
+        {
+            effectEntity.AddComponent(new ItemEffectOrigin
+            {
+                item = itemOrigin.item,
+                user = itemOrigin.user
+            });
+        }
 
         // 兼容旧路径：直接挂在 ability 上的效果 payload 会被复制到运行时 effect。
         if (ability.TryGetComponent<HealEffectData>(out var heal))
@@ -98,7 +110,7 @@ public static class AbilityEffectHelper
     {
         var source = parentEffect.GetComponent<EffectSource>();
 
-        var childEntity = Game.Store.CreateEntity(
+        var childEntity = parentEffect.Store.CreateEntity(
             source,
             new EffectTargetInfo
             {
@@ -117,6 +129,9 @@ public static class AbilityEffectHelper
                 effectId = _nextEffectId++
             });
         childEntity.AddTag<EffectPending>();
+
+        if (parentEffect.TryGetComponent<ItemEffectOrigin>(out var itemOrigin))
+            childEntity.AddComponent(itemOrigin);
 
         if (parentEffect.TryGetComponent<DamageEffectData>(out var damage))
             childEntity.AddComponent(damage);
@@ -140,14 +155,15 @@ public static class AbilityEffectHelper
     /// 触发技能生命周期行为效果，供施法、挂载和移除工作流复用。
     /// </summary>
     public static bool TriggerBehaviorEffect(Entity owner, Entity ability, AbilityBehaviorTrigger trigger,
-        Entity targetUnit = default, float targetX = 0f, float targetY = 0f)
+        Entity targetUnit = default, float targetX = 0f, float targetY = 0f,
+        ItemCastOrigin itemOrigin = default)
     {
         if (!TryGetBehaviorEffect(ability, trigger, out var effect))
             return false;
 
         var previous = GetCurrentEffectSpec(ability, out var hadPrevious);
         AbilityHelper.SetEffectSpec(ability, effect);
-        CreateEffectEntity(owner, ability, targetUnit, targetX, targetY);
+        CreateEffectEntity(owner, ability, targetUnit, targetX, targetY, itemOrigin);
         RestoreEffectSpec(ability, previous, hadPrevious);
         return true;
     }
@@ -160,7 +176,7 @@ public static class AbilityEffectHelper
         var source = projectileEffect.GetComponent<EffectSource>();
         var target = projectileEffect.GetComponent<EffectTargetInfo>();
 
-        var arriveEntity = Game.Store.CreateEntity(
+        var arriveEntity = projectileEffect.Store.CreateEntity(
             source,
             new EffectTargetInfo
             {
@@ -180,6 +196,10 @@ public static class AbilityEffectHelper
             });
         arriveEntity.AddTag<EffectPending>();
         arriveEntity.AddComponent(position);
+
+        if (projectileEffect.TryGetComponent<ItemEffectOrigin>(out var itemOrigin))
+            arriveEntity.AddComponent(itemOrigin);
+
         ApplyEffectSpec(arriveEntity, arriveEffect);
         return arriveEntity;
     }

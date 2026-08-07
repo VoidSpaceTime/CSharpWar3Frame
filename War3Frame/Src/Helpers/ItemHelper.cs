@@ -10,61 +10,45 @@ namespace War3Frame;
 public static class ItemHelper
 {
     /// <summary>
+    /// 创建无显式目标的物品使用请求；运行时会将目标规范化为使用者。
+    /// </summary>
+    public static Entity RequestUse(Entity user, Entity item)
+    {
+        return RequestUse(user, item, new ItemUseTarget { kind = AbilityTargetType.None });
+    }
+
+    /// <summary>
+    /// 创建带显式目标意图的物品使用请求。
+    /// </summary>
+    public static Entity RequestUse(Entity user, Entity item, ItemUseTarget target)
+    {
+        if (user.IsNull || item.IsNull || !ReferenceEquals(user.Store, item.Store))
+            throw new InvalidOperationException("ItemUse 的 user 与 item 必须位于同一个 EntityStore");
+        if (!target.targetUnit.IsNull && !ReferenceEquals(item.Store, target.targetUnit.Store))
+            throw new InvalidOperationException("ItemUse 的 targetUnit 必须与 item 位于同一个 EntityStore");
+
+        return item.Store.CreateEntity(
+            new ItemUseRequest
+            {
+                user = user,
+                item = item
+            },
+            target);
+    }
+
+    /// <summary>
     /// 将物品装备到单位身上。
     /// </summary>
     public static void EquipToUnit(Entity item, Entity unit, int slotIndex)
     {
         if (item.IsNull || unit.IsNull) return;
 
-        // 直接实现逻辑
-        if (!unit.TryGetComponent<ItemSlotContainer>(out var container))
-            throw new InvalidOperationException($"实体 {unit.Id} 没有 ItemSlotContainer 组件");
-
-        if (!item.TryGetComponent<ItemBase>(out _))
-            throw new InvalidOperationException($"实体 {item.Id} 不是合法物品实体");
-
-        if (slotIndex < 0 || slotIndex >= container.maxSlots)
-            throw new InvalidOperationException($"槽位索引 {slotIndex} 超出范围 [0, {container.maxSlots})");
-
-        if (IsItemSlotOccupied(unit, slotIndex))
-            throw new InvalidOperationException($"物品槽位 {slotIndex} 已被占用");
-
-        if (item.TryGetComponent<ItemOwner>(out var ownerInfo) && !ownerInfo.unit.IsNull)
-            throw new InvalidOperationException($"物品 {item.Id} 已经归属到实体 {ownerInfo.unit.Id}");
-
-        item.RemoveTag<ItemGroundTag>();
-        item.RemoveTag<ItemStoredTag>();
-        item.AddTag<ItemInventoryTag>();
-        item.AddTag<ItemEquippedTag>();
-        item.AddTag<ItemAttrApplyRequest>();
-        item.RemoveTag<ItemAttrRemoveRequest>();
-        item.AddComponent(new AttributeContributionSource
+        item.Store.CreateEntity(new ItemAttachRequest
         {
-            kind = Components.ModifierSourceType.Item
+            owner = unit,
+            item = item,
+            slotIndex = slotIndex
         });
-        item.AddComponent(new ItemOwner(unit));
-        item.AddComponent(new ItemSlotIndex { index = slotIndex });
-
-        container.currentCount++;
-        unit.AddComponent(container);
-    }
-
-    private static Entity? GetItemAtSlot(Entity owner, int slotIndex)
-    {
-        var links = owner.GetIncomingLinks<ItemOwner>();
-        foreach (var link in links)
-        {
-            var itemEntity = link.Entity;
-            if (itemEntity.TryGetComponent<ItemSlotIndex>(out var index) && index.index == slotIndex)
-                return itemEntity;
-        }
-
-        return null;
-    }
-
-    private static bool IsItemSlotOccupied(Entity owner, int slotIndex)
-    {
-        return GetItemAtSlot(owner, slotIndex) != null;
     }
 
     /// <summary>
@@ -87,38 +71,30 @@ public static class ItemHelper
     {
         if (item.IsNull) return;
 
-        if (!item.TryGetComponent<ItemOwner>(out var owner) || !item.TryGetComponent<ItemSlotIndex>(out var slotIndex))
-        {
-            item.RemoveTag<ItemEquippedTag>();
-            item.RemoveTag<ItemInventoryTag>();
-            item.RemoveTag<ItemStoredTag>();
-            item.AddTag<ItemGroundTag>();
-            item.AddTag<ItemAttrRemoveRequest>();
-            item.RemoveTag<ItemAttrApplyRequest>();
-            item.RemoveComponent<ItemOwner>();
-            item.RemoveComponent<ItemSlotIndex>();
-            item.AddComponent(new Position { x = x, y = y, z = z });
+        if (!item.TryGetComponent<ItemOwner>(out var owner)
+            || owner.unit.IsNull
+            || !item.TryGetComponent<ItemSlotIndex>(out var slotIndex))
             return;
-        }
 
-        // 直接实现逻辑
-        var itemEntity = GetItemAtSlot(owner.unit, slotIndex.index);
-        if (itemEntity == null) return;
-
-        if (owner.unit.TryGetComponent<ItemSlotContainer>(out var container))
+        item.Store.CreateEntity(new ItemRemoveRequest
         {
-            container.currentCount = Math.Max(0, container.currentCount - 1);
-            owner.unit.AddComponent(container);
-        }
+            owner = owner.unit,
+            slotIndex = slotIndex.index,
+            dropToGround = true,
+            x = x,
+            y = y,
+            z = z
+        });
+    }
 
-        itemEntity.Value.RemoveTag<ItemEquippedTag>();
-        itemEntity.Value.RemoveTag<ItemInventoryTag>();
-        itemEntity.Value.RemoveTag<ItemStoredTag>();
-        itemEntity.Value.AddTag<ItemAttrRemoveRequest>();
-        itemEntity.Value.RemoveTag<ItemAttrApplyRequest>();
-        itemEntity.Value.RemoveComponent<ItemOwner>();
-        itemEntity.Value.RemoveComponent<ItemSlotIndex>();
-        itemEntity.Value.AddTag<ItemGroundTag>();
-        itemEntity.Value.AddComponent(new Position { x = x, y = y, z = z });
+    /// <summary>
+    /// 请求通过受控流程销毁物品及其 companion ability。
+    /// </summary>
+    public static Entity RequestDestroy(Entity item)
+    {
+        if (item.IsNull)
+            return default;
+
+        return item.Store.CreateEntity(new ItemDestroyRequest { item = item });
     }
 }

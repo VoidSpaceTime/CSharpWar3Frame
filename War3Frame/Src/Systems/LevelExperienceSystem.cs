@@ -54,6 +54,9 @@ public class ItemLevelStatRebuildSystem : QuerySystem<ItemSpecData, ItemLevel>
     {
         Query.ForEachEntity((ref ItemSpecData specData, ref ItemLevel level, Entity item) =>
         {
+            if (!ItemCompanionAbilityHelper.SynchronizeLevel(item))
+                return;
+
             ApplyItemAttributes(item, specData.spec, level.level);
             item.RemoveTag<LevelStatDirty>();
         });
