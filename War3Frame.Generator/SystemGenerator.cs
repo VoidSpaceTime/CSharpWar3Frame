@@ -57,7 +57,7 @@ public class SystemGenerator : IIncrementalGenerator
             return null;
 
         var kindArg = attributeData.ConstructorArguments[0];
-        var kind = kindArg.Value?.ToString();
+        var kind = ResolveEnumMemberName(kindArg);
 
         var order = 1;
         if (attributeData.ConstructorArguments.Length > 1 &&
@@ -69,8 +69,30 @@ public class SystemGenerator : IIncrementalGenerator
         return new SystemInfo(
             classSymbol.ToDisplayString(),
             classSymbol.ContainingNamespace.ToDisplayString(),
-            kind ?? "",
+            kind,
             order);
+    }
+
+    /// <summary>
+    /// 取枚举成员名称。
+    /// TypedConstant.Value 对枚举返回的是装箱底层整数，直接 ToString 只会得到 "0"/"1"，
+    /// 因此必须回到枚举符号上按常量值反查成员名。
+    /// </summary>
+    private static string ResolveEnumMemberName(TypedConstant constant)
+    {
+        if (constant.Type is not INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
+            return constant.Value?.ToString() ?? "";
+
+        foreach (var member in enumType.GetMembers())
+        {
+            if (member is IFieldSymbol { HasConstantValue: true } field
+                && Equals(field.ConstantValue, constant.Value))
+            {
+                return field.Name;
+            }
+        }
+
+        return constant.Value?.ToString() ?? "";
     }
 
     /// <summary>
@@ -119,8 +141,12 @@ public class SystemGenerator : IIncrementalGenerator
         foreach (var systemInfo in systemInfos.OrderBy(t => t.Order)
                      .ThenBy(t => t.ClassName, StringComparer.Ordinal))
         {
-            var rootName = systemInfo.Kind == "Immediate" ? "ImmediateRoot" : "Root";
-            sb.AppendLine($"        {rootName}.Add(new {systemInfo.ClassName}());");
+            // Immediate 以 0f 间隔注册：TimedSystemRoot 不会为其建 TimerInfo，
+            // 因此每次 Root.Update 都会执行，恢复同 tick 消费请求的语义。
+            if (systemInfo.Kind == "Immediate")
+                sb.AppendLine($"        Root.Add(new {systemInfo.ClassName}(), 0f);");
+            else
+                sb.AppendLine($"        Root.Add(new {systemInfo.ClassName}());");
         }
 
         sb.AppendLine("    }");

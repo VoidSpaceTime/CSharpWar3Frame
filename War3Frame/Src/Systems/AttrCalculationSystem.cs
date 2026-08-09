@@ -1,6 +1,7 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using War3Frame.Components;
+using War3Frame.Systems;
 
 namespace War3Frame.Src.Systems;
 
@@ -8,6 +9,11 @@ namespace War3Frame.Src.Systems;
 ///     属性计算系统 - 当单位标记为 AttrsDirty 时重新计算属性
 ///     使用 AttrWriterRegistry 自动处理所有已注册的属性类型
 /// </summary>
+/// <remarks>
+/// order 45：位于 dirty 写入方（Item/Level 0、Buff 40/41、Aura 42）之后、
+/// 效果结算（100+）之前，确保结算读到的是已重算的 finalValue。
+/// </remarks>
+[SystemRegister(SystemKind.Interval, 45)]
 public class AttrCalculationSystem : QuerySystem<AttrValue>
 {
     public AttrCalculationSystem()

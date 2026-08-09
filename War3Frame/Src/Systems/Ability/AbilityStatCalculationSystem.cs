@@ -1,9 +1,17 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using War3Frame.Components;
+using War3Frame.Systems;
 
 namespace War3Frame.Src.Systems;
 
+/// <summary>
+/// 技能数值计算系统 - 消费 AbilityStatDirty 并重算 AbilityStatValue.finalValue。
+/// </summary>
+/// <remarks>
+/// order 30：位于 Buff/Aura 写入之后、技能效果结算（100+）之前。
+/// </remarks>
+[SystemRegister(SystemKind.Interval, 30)]
 public class AbilityStatCalculationSystem : QuerySystem<AbilityStatValue>
 {
     public AbilityStatCalculationSystem() 
