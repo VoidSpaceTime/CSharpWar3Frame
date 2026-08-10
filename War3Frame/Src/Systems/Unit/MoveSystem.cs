@@ -145,8 +145,9 @@ public class MoveToTaskSystem : QuerySystem<MoveOutcome, MoveContinuation>
                 return;
             }
 
-            // 非到达 取消
-            if (outcome.outcome is MoveOutcomeType.Arrived)
+            // 非到达（取消 / 被覆盖 / 打断 / 失败）
+            if (outcome.outcome is MoveOutcomeType.Cancelled or MoveOutcomeType.Overridden
+                or MoveOutcomeType.Interrupted or MoveOutcomeType.Failed)
             {
                 unit.AddComponent(new MoveTaskState
                 {
