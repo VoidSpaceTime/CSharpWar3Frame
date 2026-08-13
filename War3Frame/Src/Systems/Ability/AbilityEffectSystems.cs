@@ -1417,28 +1417,12 @@ internal static class ProjectileFlowHelper
 
 internal static class ProjectileHookBridge
 {
-    /// <summary>
-    /// 兼容新旧 projectile hook：模板基类、旧接口和 V2 hook 会按顺序被调用。
-    /// </summary>
     public static void DispatchStartHooks(Entity effectEntity, ref ProjectileData projectile,
         ref EffectSource source, ref EffectTargetInfo target, ref Position position,
         ref ProjectileRuntimeState runtimeState)
     {
-        if (!TryResolveTemplate(source.ability, out var template))
-            return;
-
-        if (template is AbilityTemplateBase templateBase)
-            templateBase.OnProjectileStart(effectEntity, ref source, ref target, ref position, ref runtimeState);
-
-        if (template is IProjectileOnStart legacyStart)
-        {
-            var legacyProjectile = CreateLegacyProjectile(source, target, position, projectile.speed);
-            legacyStart.ProjectileOnStart(ref legacyProjectile, ref position, effectEntity);
-            ApplyLegacyProjectile(ref legacyProjectile, ref target, ref projectile.speed);
-        }
-
-        if (template is IProjectileHooksV2 hooksV2)
-            hooksV2.OnStart(effectEntity, ref source, ref target, ref position, ref runtimeState);
+        if (TryResolveTemplate(source.ability, out var template))
+            template.OnProjectileStart(effectEntity, ref source, ref target, ref position, ref runtimeState);
     }
 
     public static ProjectileTravelDecision DispatchTravelHooks(Entity effectEntity, ref ProjectileData projectile,
@@ -1448,96 +1432,26 @@ internal static class ProjectileHookBridge
         if (!TryResolveTemplate(source.ability, out var template))
             return ProjectileTravelDecision.Continue;
 
-        var decision = ProjectileTravelDecision.Continue;
-
-        if (template is AbilityTemplateBase templateBase)
-        {
-            decision = MergeDecision(decision,
-                templateBase.OnProjectileTravel(effectEntity, ref source, ref target, ref position, ref runtimeState));
-        }
-
-        if (template is IProjectileOnTravel legacyTravel)
-        {
-            var legacyProjectile = CreateLegacyProjectile(source, target, position, projectile.speed);
-            var allowArrive = legacyTravel.ProjectileOnTravel(ref legacyProjectile, ref position, effectEntity);
-            ApplyLegacyProjectile(ref legacyProjectile, ref target, ref projectile.speed);
-            if (!allowArrive)
-                decision = MergeDecision(decision, ProjectileTravelDecision.SuppressArrivalThisTick);
-        }
-
-        if (template is IProjectileHooksV2 hooksV2)
-        {
-            decision = MergeDecision(decision,
-                hooksV2.OnTravel(effectEntity, ref source, ref target, ref position, ref runtimeState));
-        }
-
-        return decision;
+        return template.OnProjectileTravel(effectEntity, ref source, ref target, ref position, ref runtimeState);
     }
 
     public static void DispatchArriveHooks(Entity effectEntity, ref EffectSource source,
         ref EffectTargetInfo target, ref Position position, ref ProjectileRuntimeState runtimeState)
     {
-        if (!TryResolveTemplate(source.ability, out var template))
-            return;
-
-        var speed = effectEntity.TryGetComponent<ProjectileData>(out var projectile) ? projectile.speed : 0f;
-
-        if (template is AbilityTemplateBase templateBase)
-            templateBase.OnProjectileArrive(effectEntity, ref source, ref target, ref position, ref runtimeState);
-
-        if (template is IProjectileOnArrive legacyArrive)
-        {
-            var legacyProjectile = CreateLegacyProjectile(source, target, position, speed);
-            legacyArrive.ProjectileOnArrive(ref legacyProjectile, ref position, effectEntity);
-        }
-
-        if (template is IProjectileHooksV2 hooksV2)
-            hooksV2.OnArrive(effectEntity, ref source, ref target, ref position, ref runtimeState);
+        if (TryResolveTemplate(source.ability, out var template))
+            template.OnProjectileArrive(effectEntity, ref source, ref target, ref position, ref runtimeState);
     }
 
-    private static ProjectileTravelDecision MergeDecision(ProjectileTravelDecision current, ProjectileTravelDecision incoming)
-    {
-        if (current == ProjectileTravelDecision.RequestExpire || incoming == ProjectileTravelDecision.RequestExpire)
-            return ProjectileTravelDecision.RequestExpire;
-
-        if (current == ProjectileTravelDecision.SuppressArrivalThisTick ||
-            incoming == ProjectileTravelDecision.SuppressArrivalThisTick)
-            return ProjectileTravelDecision.SuppressArrivalThisTick;
-
-        return ProjectileTravelDecision.Continue;
-    }
-
-    private static ProjectileBase CreateLegacyProjectile(EffectSource source, EffectTargetInfo target,
-        Position position, float speed)
-    {
-        return new ProjectileBase
-        {
-            TargetEntity = target.targetUnit.IsNull ? null : target.targetUnit,
-            SourceAbility = source.ability,
-            SourceEntity = source.caster,
-            targetX = target.targetX,
-            targetY = target.targetY,
-            targetZ = position.z,
-            speed = speed,
-            height = position.z,
-            startX = position.x,
-            startY = position.y
-        };
-    }
-
-    private static void ApplyLegacyProjectile(ref ProjectileBase projectile, ref EffectTargetInfo target, ref float speed)
-    {
-        target.targetX = projectile.targetX;
-        target.targetY = projectile.targetY;
-        speed = projectile.speed;
-    }
-
-    private static bool TryResolveTemplate(Entity abilityEntity, out IAbilityTemplate template)
+    private static bool TryResolveTemplate(Entity abilityEntity, out AbilityTemplateBase template)
     {
         template = null!;
         if (!abilityEntity.TryGetComponent(out AbilityBase abilityBase))
             return false;
 
-        return AbilityTemplate.TryGet(abilityBase.templateName, out template);
+        if (!AbilityTemplate.TryGet(abilityBase.templateName, out var raw))
+            return false;
+
+        template = raw as AbilityTemplateBase ?? null!;
+        return template != null;
     }
 }

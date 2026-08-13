@@ -7,6 +7,16 @@ public interface IAbilityTemplate
     public void Configure(Entity entity, int level);
 }
 
+/// <summary>
+/// 弹道飞行帧的返回决策。
+/// </summary>
+public enum ProjectileTravelDecision
+{
+    Continue,
+    SuppressArrivalThisTick,
+    RequestExpire
+}
+
 public abstract class AbilityTemplateBase : IAbilityTemplate
 {
     public abstract void Configure(Entity entity, int level);
