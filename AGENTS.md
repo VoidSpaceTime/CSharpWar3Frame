@@ -118,6 +118,36 @@
 - `AGENTS.md` 只定义入口规则，不替代 change 内的正式提案记录。
 - 若文档之间对工件要求有冲突，以 `openspec/.../spec.md` 中的 capability requirement 为准。
 
+## OpenSpec 提案生命周期与归档规范
+
+### 提案生命周期状态
+
+所有提案在 `proposal.md` 中必须显式标注以下状态之一：
+- `待审核`：提案已提交，等待用户批准。
+- `已批准`：用户已批准，尚未开始实施。
+- `实施中`：正在进行代码编写或文档修改。
+- `已实施`：变更已完成实施、验证与总结。
+- `已取消`：提案被放弃，不再实施。
+- `已取代`：提案被新的提案替代。
+
+### 实施完成（已实施）的硬性要求
+
+一个变更要标记为 `已实施`，必须同时满足以下条件：
+1. 批准的变更范围已全部完成。
+2. 要求的验证（如测试、构建、静态检查）已全部通过。
+3. 实施后总结已完成，且必须在 change 目录下存在 `summary.md`。
+4. 无阻塞性未完成项。
+
+`R0/R1/R2/R3` 证据和 verdict 用于支持验证，但绝不能替代 `summary.md`。
+
+### 归档前置条件与规则
+
+1. 归档位置（`openspec/changes/archive/`）表示变更已关闭且不再活跃，并不等同于已实施。
+2. 状态为 `已实施` 的变更，在满足上述实施完成要求后可以归档。
+3. 状态为 `已取消` 或 `已取代` 的变更，只要在 `proposal.md` 中记录了关闭原因，即可直接归档，不要求提供 `summary.md`。
+4. 归档目录命名规范：`openspec/changes/archive/<yyyy-MM-dd>-<change-id>/`，日期使用归档当天。
+5. 若已批准提案的验证计划包含真实 War3 客户端验证，该验证默认是阻塞的。只有在审核阶段显式声明为非阻塞，并在 `summary.md` 中记录未执行原因与剩余风险时，才允许推迟该验证并归档。
+
 ## 实施后验证与复盘强度
 
 OpenSpec 提案等级、实施后复盘强度和审查工具启用是三个独立层次：提案等级决定治理工件与默认强度，实际风险可以提高最终强度，具体工具还必须满足独立授权与可用性要求。实施前的 `review` 仍是用户批准门禁；实施后的直接验证与专业复盘属于 `test` 阶段，不能相互替代。
@@ -308,7 +338,7 @@ OpenSpec 提案等级、实施后复盘强度和审查工具启用是三个独�
 - `light`：可用一个短段落或少量要点，写清改动范围、验证结果、是否需要后续提案。
 - `full`：保持完整总结，说明实际改动范围、全局影响、验证覆盖、风险与后续建议。
 - `architecture`：在 `full` 基础上，额外说明阶段结果、迁移状态、剩余风险与未完成事项。
-- 所有等级都不得跳过 `summarize` 阶段。
+- 所有进入 `已实施` 状态的变更都必须完成 `summarize` 阶段并生成 `summary.md`；`已取消` 或 `已取代` 的变更可跳过此阶段，但须在 `proposal.md` 中记录关闭原因。
 
 ### 6. Commit
 
@@ -320,8 +350,9 @@ OpenSpec 提案等级、实施后复盘强度和审查工具启用是三个独�
 - 分级提案模板：`openspec/templates/proposal-levels.md`
 - 审核检查清单：`openspec/templates/review-checklist.md`
 - OpenSpec 使用说明：`openspec/README.md`
-- 当前治理变更：`openspec/changes/establish-openspec-governance/`
-- 当前治理澄清变更：`openspec/changes/clarify-graded-governance-artifact-rules/`
+- 历史治理变更：`openspec/changes/archive/2026-08-13-establish-openspec-governance/`
+- 历史治理澄清变更：`openspec/changes/archive/2026-08-13-clarify-graded-governance-artifact-rules/`
+- 当前活跃变更：`openspec/changes/define-openspec-implemented-and-archive-markers/`
 
 ## 特别说明
 
