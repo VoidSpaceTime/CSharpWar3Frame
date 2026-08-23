@@ -8,49 +8,6 @@ public interface IAbilityTemplate
 }
 
 /// <summary>
-/// 弹道飞行帧的返回决策。
-/// </summary>
-public enum ProjectileTravelDecision
-{
-    Continue,
-    SuppressArrivalThisTick,
-    RequestExpire
-}
-
-public abstract class AbilityTemplateBase : IAbilityTemplate
-{
-    public abstract void Configure(Entity entity, int level);
-
-    public virtual void OnProjectileStart(
-        Entity effectEntity,
-        ref EffectSource source,
-        ref EffectTargetInfo target,
-        ref Position position,
-        ref ProjectileRuntimeState runtimeState)
-    {
-    }
-
-    public virtual ProjectileTravelDecision OnProjectileTravel(
-        Entity effectEntity,
-        ref EffectSource source,
-        ref EffectTargetInfo target,
-        ref Position position,
-        ref ProjectileRuntimeState runtimeState)
-    {
-        return ProjectileTravelDecision.Continue;
-    }
-
-    public virtual void OnProjectileArrive(
-        Entity effectEntity,
-        ref EffectSource source,
-        ref EffectTargetInfo target,
-        ref Position position,
-        ref ProjectileRuntimeState runtimeState)
-    {
-    }
-}
-
-/// <summary>
 /// 标记一个类为技能模板
 /// Source Generator 会自动发现并注册这些类
 /// </summary>

@@ -55,7 +55,10 @@ public struct EffectPending : ITag;
 /// <summary>效果已经完成所有结算，可由生命周期系统清理。</summary>
 public struct EffectCompleted : ITag;
 
-/// <summary>效果被请求过期，通常由弹道或生命周期提前结束触发。</summary>
+/// <summary>
+/// 效果被请求过期，通常由弹道或生命周期提前结束触发。
+/// 当前无写入方，为后续超距 / 超时能力保留；不是死代码，勿清理。
+/// </summary>
 public struct EffectExpired : ITag;
 
 public delegate float DamageFormulaFunc(Entity caster, Entity ability, Entity target, DamageEffectData damage);
@@ -294,11 +297,13 @@ public enum ProjectileLifecyclePhase
     InFlight,
     ArriveRequested,
     Arrived,
+
+    // 以下两个阶段当前无写入方，为后续超距 / 超时能力保留；不是死代码，勿清理。
     ExpireRequested,
     Expired
 }
 
-/// <summary>弹道轨迹类型。Custom 保留给模板 hook 或后续扩展。</summary>
+/// <summary>弹道轨迹类型。Custom 保留给后续扩展。</summary>
 public enum ProjectileTrajectoryType
 {
     Tracking,
@@ -351,6 +356,9 @@ public struct ProjectileData : IComponent
 
 public struct ProjectileArriveRequest : ITag;
 
+/// <summary>
+/// 请求弹道进入过期结算。当前无写入方，为后续超距 / 超时能力保留；不是死代码，勿清理。
+/// </summary>
 public struct ProjectileExpireRequest : ITag;
 
 public struct ProjectileArrived : ITag;

@@ -18,6 +18,9 @@ namespace War3Frame;
 public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, EffectTargetInfo, Position, ProjectileRuntimeState>
 {
     private readonly List<Entity> _arriveRequests = new();
+
+    // 过期请求管线：当前无写入方，为后续超距 / 超时能力保留（见 openspec
+    // remove-dead-projectile-template-hooks 的「预留」章节）。不是死代码，勿清理。
     private readonly List<Entity> _expireRequests = new();
 
     public ProjectileSystem()
@@ -42,16 +45,7 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
             if (runtimeState.phase == ProjectileLifecyclePhase.PendingStart)
             {
                 InitializeProjectileRuntime(ref projectile, ref target, ref position, ref runtimeState);
-                ProjectileHookBridge.DispatchStartHooks(effectEntity, ref projectile, ref source, ref target, ref position, ref runtimeState);
                 runtimeState.phase = ProjectileLifecyclePhase.InFlight;
-            }
-
-            var decision = ProjectileHookBridge.DispatchTravelHooks(effectEntity, ref projectile, ref source, ref target, ref position, ref runtimeState);
-            if (decision == ProjectileTravelDecision.RequestExpire)
-            {
-                runtimeState.phase = ProjectileLifecyclePhase.ExpireRequested;
-                _expireRequests.Add(effectEntity);
-                return;
             }
 
             var arrived = projectile.trajectoryType switch
@@ -69,7 +63,7 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
                 EffectHelper.SetPosition(projectile.effectEntity, position.x, position.y, position.z);
             }
 
-            if (arrived && decision != ProjectileTravelDecision.SuppressArrivalThisTick)
+            if (arrived)
             {
                 runtimeState.phase = ProjectileLifecyclePhase.ArriveRequested;
                 _arriveRequests.Add(effectEntity);
@@ -275,7 +269,7 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
 
 /// <summary>
 /// 弹道生命周期应用系统。
-/// 将 ProjectileSystem 产生的请求标记转换为 Arrived / Expired 状态，并调用模板 hook。
+/// 将 ProjectileSystem 产生的请求标记转换为 Arrived / Expired 状态并执行到达结算。
 /// </summary>
 [SystemRegister(SystemKind.Interval, 102)]
 public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState, EffectSource, EffectTargetInfo, Position>
@@ -317,7 +311,6 @@ public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState
                 effectEntity.AddTag<ProjectileArrived>();
 
             ProjectileFlowHelper.DestroyProjectileVisual(effectEntity);
-            ProjectileHookBridge.DispatchArriveHooks(effectEntity, ref source, ref target, ref pos, ref runtimeState);
             if (effectEntity.TryGetComponent<ProjectileData>(out var projectile) && projectile.arriveEffect != null)
                 AbilityEffectHelper.CreateArriveEffect(effectEntity, projectile.arriveEffect, pos);
             if (!EffectSettlementHelper.HasSettlementPayload(effectEntity))
@@ -325,6 +318,8 @@ public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState
             effectEntity.AddComponent(runtimeState);
         }
 
+        // 过期结算分支：当前无写入方（ProjectileExpireRequest 暂无来源），
+        // 为后续超距 / 超时能力保留。不是死代码，勿清理。
         foreach (var effectEntity in toExpire)
         {
             if (effectEntity.TryGetComponent<ProjectileRuntimeState>(out var runtimeState))
@@ -1389,6 +1384,7 @@ internal static class ProjectileFlowHelper
 
     /// <summary>
     /// 将弹道系统收集的到达/过期实体批量打标，避免查询遍历中直接执行复杂副作用。
+    /// expireRequests 当前恒为空，为后续超距 / 超时能力保留。
     /// </summary>
     public static void ApplyRequests(List<Entity> arriveRequests, List<Entity> expireRequests)
     {
@@ -1412,46 +1408,5 @@ internal static class ProjectileFlowHelper
     {
         if (effectEntity.TryGetComponent<ProjectileData>(out var projectile) && !projectile.effectEntity.IsNull)
             EffectHelper.Destroy(projectile.effectEntity, hideFirst: true);
-    }
-}
-
-internal static class ProjectileHookBridge
-{
-    public static void DispatchStartHooks(Entity effectEntity, ref ProjectileData projectile,
-        ref EffectSource source, ref EffectTargetInfo target, ref Position position,
-        ref ProjectileRuntimeState runtimeState)
-    {
-        if (TryResolveTemplate(source.ability, out var template))
-            template.OnProjectileStart(effectEntity, ref source, ref target, ref position, ref runtimeState);
-    }
-
-    public static ProjectileTravelDecision DispatchTravelHooks(Entity effectEntity, ref ProjectileData projectile,
-        ref EffectSource source, ref EffectTargetInfo target, ref Position position,
-        ref ProjectileRuntimeState runtimeState)
-    {
-        if (!TryResolveTemplate(source.ability, out var template))
-            return ProjectileTravelDecision.Continue;
-
-        return template.OnProjectileTravel(effectEntity, ref source, ref target, ref position, ref runtimeState);
-    }
-
-    public static void DispatchArriveHooks(Entity effectEntity, ref EffectSource source,
-        ref EffectTargetInfo target, ref Position position, ref ProjectileRuntimeState runtimeState)
-    {
-        if (TryResolveTemplate(source.ability, out var template))
-            template.OnProjectileArrive(effectEntity, ref source, ref target, ref position, ref runtimeState);
-    }
-
-    private static bool TryResolveTemplate(Entity abilityEntity, out AbilityTemplateBase template)
-    {
-        template = null!;
-        if (!abilityEntity.TryGetComponent(out AbilityBase abilityBase))
-            return false;
-
-        if (!AbilityTemplate.TryGet(abilityBase.templateName, out var raw))
-            return false;
-
-        template = raw as AbilityTemplateBase ?? null!;
-        return template != null;
     }
 }
