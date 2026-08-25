@@ -309,6 +309,73 @@ OpenSpec 提案等级、实施后复盘强度和审查工具启用是三个独�
 - 如果某个系统或 helper 既推进语义状态又直接执行原生副作用，默认判定为高风险设计，需要单独提案审查。
 - 若只是一次性、短生命周期、无需重放的便利调用，可以保留在 helper，但必须在代码注释中说明其“非长期语义 owner”身份。
 
+## ECS 消息与 Tag 命名规则
+
+信号事实与请求-响应同时存在，但语义不能合并成一种类型。统一的是生命周期、命名和挂载位置，不是把所有消息收成 `Message`。`Signal` 只作口头说法，代码一律叫 `Event`。
+
+标准链路：
+
+```text
+XxxRequest / XxxCommand
+  -> Resolve / Workflow System
+  -> XxxEvent（对外事实）或 XxxOutcome（该主体工作流结果）
+```
+
+触发器是规则（匹配事件 + 条件 + 策略 + 动作），不是第四种消息类型。触发命中后只允许产生已有的 `XxxRequest` / `XxxCommand`，不得在触发回调里直接调用 War3 原生 API。
+
+### 五种消息
+
+| 概念 | 类型 | 挂在哪 | 命名 | 正例 |
+|---|---|---|---|---|
+| 事实 | `IComponent` | 独立事件实体 | `XxxEvent` | `DamageEvent`、`HealEvent`、`BuffAppliedEvent` |
+| 一次性意图 | `IComponent` | 主体或独立请求实体 | `XxxRequest` | `DamageRequest`、`HealRequest`、`CastRequest`、`ItemUseRequest` |
+| 持续到完成的意图 | `IComponent` | 主体 | `XxxCommand` | `MoveCommand` |
+| 该主体工作流结果 | `IComponent` | 主体自己 | `XxxOutcome` | `MoveOutcome` |
+| Native 副作用意图 | `IComponent` | 主体 | `XxxNativeRequest` | `MoveNativeCommandRequest`、`NativeUnitCreateRequest` |
+
+规则：
+
+- `Request`：一次性，由唯一 Resolve 消费后删除；不能当成已经成功。
+- `Command`：挂在主体上直到完成或取消。
+- `Event`：独立实体，只读，允许多监听者；由统一清理系统删除，监听者不得删除。
+- `Outcome`：挂主体，只给该主体后续流程看（施法、任务）；同实体同类型通常一份，用 token 对齐发起方。
+- 不要把 `Outcome` 收进 `Command` 或 `Request`。`Command` 还在表示未完成；`Request` 表示意图。`Outcome` 与 `Event` 都是已发生，差别只在广播范围。
+
+### Tag 规则
+
+`ITag` 只用于零数据的分类、脏标记或同实体内部阶段。有字段就必须用 `IComponent`。
+
+| 用途 | 命名 | 正例 |
+|---|---|---|
+| 持续分类状态 | `XxxTag`，或稳定领域名词 | `MovingTag`、`ItemGroundTag`、`Buff`、`Aura` |
+| 需重算 | `XxxDirty` | `AttrDirty`、`AbilityStatDirty`、`LevelStatDirty` |
+| 同实体内部阶段 | 过去式：`XxxExpired` / `XxxArrived` / `XxxCompleted` | `TimerExpired`、`BuffExpired`、`ProjectileArrived`、`EffectCompleted` |
+
+禁止：
+
+- 用 Tag 对外广播、给多个无关系统监听，或表达同帧可重复发生的事实 → 用独立 `XxxEvent` 实体。
+- 把意图做成 `ITag`，即使零数据也不行 → 用 `IComponent` 的 `XxxRequest`。
+- Tag 名字带 `Request` 或 `Event`。
+- 让全局 Trigger 去扫内部阶段 Tag（如 `ProjectileArrived`）。内部阶段只给拥有这条生命周期的实体看；对外监听另发 `XxxEvent`。
+
+脏标记例外：无载荷用 `ITag`（`AttrDirty`）；有载荷用 `IComponent`（`EffectDirty` 带 flags）。
+
+### 新代码检查清单
+
+1. 已经发生还是希望发生？ → `Event` / `Request`
+2. 有没有字段？ → 有字段必 `IComponent`
+3. 谁消费、能否多次、要不要多监听？ → 多次或多监听 = 独立 `XxxEvent` 实体
+4. 只是给本实体分类或标阶段、且零数据？ → `ITag`，名字不得带 `Request`/`Event`
+
+### 历史命名，新代码不要复制
+
+以下已存在，本规则不要求立刻清理，但新增禁止再写：
+
+- `ItemAttrApplyRequest : ITag`、`AbilityAttrApplyRequest : ITag`
+- `ProjectileArriveRequest : ITag`、`ProjectileExpireRequest : ITag`
+
+内部阶段继续用 `ProjectileArrived` / `ProjectileExpired`；若剧情或其他系统要监听命中，另发独立 `ProjectileHitEvent`。
+
 ## 执行要求
 
 ### 1. Design
@@ -352,7 +419,7 @@ OpenSpec 提案等级、实施后复盘强度和审查工具启用是三个独�
 - OpenSpec 使用说明：`openspec/README.md`
 - 历史治理变更：`openspec/changes/archive/2026-08-13-establish-openspec-governance/`
 - 历史治理澄清变更：`openspec/changes/archive/2026-08-13-clarify-graded-governance-artifact-rules/`
-- 当前活跃变更：`openspec/changes/define-openspec-implemented-and-archive-markers/`
+- 当前活跃变更：`openspec/changes/define-openspec-implemented-and-archive-markers/`、`openspec/changes/document-ecs-message-naming/`、`openspec/changes/remove-dead-projectile-template-hooks/`
 
 ## 特别说明
 
