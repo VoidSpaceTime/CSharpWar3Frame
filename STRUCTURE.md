@@ -54,17 +54,17 @@ CSharpWar3Frame/
 
 **`War3Frame/Src/Components/`:**
 - Purpose: Friflo ECS components, tags, link components, relations, and enums — the semantic truth model.
-- Contains: Domain subfolders (`Ability/`, `Attribute/`, `Unit/`, `AbilityEffectExtend/`) plus root-level component files (`Item.cs`, `MoveCommand.cs`, `Effects.cs`, `Buff.cs`, `Damage.cs`, `Combat.cs`, `CastState.cs`, `Time.cs`, `Player.cs`, `Settlement.cs`, `LevelExperience.cs`, `ItemUse.cs`, `UnitItemAuthoringSpec.cs`).
+- Contains: Domain subfolders (`Ability/`, `Attribute/`, `Unit/`, `AbilityEffectExtend/`, `Item/`) plus root-level component files (`Item.cs`, `MoveCommand.cs`, `Effects.cs`, `Buff.cs`, `Damage.cs`, `Combat.cs`, `CastState.cs`, `Time.cs`, `Player.cs`, `Settlement.cs`, `LevelExperience.cs`, `ItemUse.cs`, `UnitItemAuthoringSpec.cs`).
 - Key files: `War3Frame/Src/Components/Unit/Units.cs`, `War3Frame/Src/Components/Attribute/Attribute.cs`, `War3Frame/Src/Components/MoveCommand.cs`, `War3Frame/Src/Components/Ability/Ability.cs`
 
 **`War3Frame/Src/Systems/`:**
 - Purpose: ECS systems that advance state and emit requests/outcomes. All systems carry `[SystemRegister(...)]`.
-- Contains: Domain subfolders (`Ability/`, `Native/`, `Time/`, `Unit/`) plus root-level systems (`AttrCalculationSystem.cs`, `AuraSystem.cs`, `BuffSystem.cs`, `EffectRuntimeSystem.cs`, `ItemSystem.cs`, `ItemUseSystem.cs`, `LevelExperienceSystem.cs`, `SpatialGridSystem.cs`, `TimedSystemRoot.cs`, `SystemRegisterAttribute.cs`).
+- Contains: Domain subfolders (`Ability/`, `Attribute/`, `Item/`, `Native/`, `Time/`, `Unit/`) plus root-level systems (`AuraSystem.cs`, `BuffSystem.cs`, `EffectRuntimeSystem.cs`, `LevelExperienceSystem.cs`, `SpatialGridSystem.cs`, `TimedSystemRoot.cs`, `SystemRegisterAttribute.cs`).
 - Key files: `War3Frame/Src/Systems/TimedSystemRoot.cs`, `War3Frame/Src/Systems/SystemRegisterAttribute.cs`, `War3Frame/Src/Systems/Ability/CastingSystem.cs`, `War3Frame/Src/Systems/Ability/AbilityEffectSystems.cs`, `War3Frame/Src/Systems/Unit/MoveSystem.cs`, `War3Frame/Src/Systems/Native/UnitNativeSystem.cs`
 
 **`War3Frame/Src/Systems/Native/`:**
 - Purpose: The only layer allowed to execute War3 native side effects (per the native-call layering rules).
-- Contains: `UnitCreateNativeSystem.cs`, `UnitNativeSystem.cs`, `UnitNativeSyncRegistry.cs`, `UnitRemoveNativeSystem.cs`, `UnitMoveNaitveSystem.cs`, `PlayerNativeSystem.cs`, `EffectNativeSystem.cs`, `War3NativeBootstrap.cs`.
+- Contains: `UnitCreateNativeSystem.cs`, `UnitNativeSystem.cs`, `UnitNativeSyncRegistry.cs`, `UnitRemoveNativeSystem.cs`, `UnitMoveNativeSystem.cs`, `ItemCreateNativeSystem.cs`, `PlayerNativeSystem.cs`, `EffectNativeSystem.cs`, `War3NativeBootstrap.cs`.
 - Key files: `War3Frame/Src/Systems/Native/War3NativeBootstrap.cs`, `War3Frame/Src/Systems/Native/UnitNativeSyncRegistry.cs`
 
 **`War3Frame/Src/Helpers/`:**
@@ -158,9 +158,9 @@ CSharpWar3Frame/
 
 **Files:** PascalCase `.cs`; systems end in `System`, helpers end in `Helper`, spec builders end in `SpecBuilder`, templates end in `Template`. Examples: `CastingSystem.cs`, `EffectHelper.cs`, `UnitSpecBuilder.cs`, `InlineItemAbilityTemplate.cs`.
 
-**Directories:** PascalCase domain folders under `War3Frame/Src/` (`Components/`, `Systems/`, `Helpers/`); component/system subfolders group by gameplay domain (`Ability/`, `Attribute/`, `Unit/`, `Native/`, `Time/`). Command files under `FrameBuild/CommandManager/` are partial `CommandManager` classes named after the verb (`Run.cs`, `WE.cs`, `New.cs`, `Clear.cs`).
+**Directories:** PascalCase domain folders under `War3Frame/Src/` (`Components/`, `Systems/`, `Helpers/`); component/system subfolders group by gameplay domain (`Ability/`, `Attribute/`, `Unit/`, `Native/`, `Time/`, `Item/`). Command files under `FrameBuild/CommandManager/` are partial `CommandManager` classes named after the verb (`Run.cs`, `WE.cs`, `New.cs`, `Clear.cs`).
 
-**Components:** Structs implementing `IComponent` (data), `ITag` (markers), `ILinkComponent`/`ILinkRelation` (ownership). Domains use `Base`/`State`/`Request`/`Runtime` suffixes: `AbilityBase`, `CastState`, `NativeUnitCreateRequest`, `AbilityRuntime`.
+**Components:** Structs implementing `IComponent` (data), `ITag` (markers), `ILinkComponent`/`ILinkRelation` (ownership). Domains use `Base`/`State`/`Request`/`Runtime` suffixes: `AbilityBase`, `CastState`, `UnitCreateNativeRequest`, `AbilityRuntime`.
 
 **Enums:** Stateful domain enums with explicit members, e.g. `SystemKind.Interval|Immediate`, `UnitLifecyclePhase`, `CastPhase`, `MoveOutcomeType`, `AbilityBehaviorTrigger`.
 

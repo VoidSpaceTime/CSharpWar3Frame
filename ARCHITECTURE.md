@@ -84,14 +84,14 @@
 3. `TimedSystemRoot.Update` runs each enabled system when its accumulated time reaches its interval; systems without `TimerInfo` (Immediate, registered at `0f`) run on every tick — `War3Frame/Src/Systems/TimedSystemRoot.cs`
 
 **Request → workflow → native execution (unit creation):**
-1. `UnitTemplate.Create` writes `NativeUnitCreateRequest` alongside `UnitLifeState` + `Position` — `War3Frame/Src/TemplateInit/UnitTemplateAttribute.cs`
+1. `UnitTemplate.Create` writes `UnitCreateNativeRequest` alongside `UnitLifeState` + `Position` — `War3Frame/Src/TemplateInit/UnitTemplateAttribute.cs`
 2. `UnitCreateNativeSystem` (Immediate) consumes the request and creates the native unit — `War3Frame/Src/Systems/Native/UnitCreateNativeSystem.cs`
 3. The native unit handle is stored in `UnitNative`; lifecycle phase transitions are driven separately by `UnitLifecycleTransitionSystem` → `UnitRemoveNativeSystem`/`UnitLifecycleDisposeSystem` — `War3Frame/Src/Systems/Unit/*.cs`
 
 **Move command → outcome → continuation:**
 1. Business layers write `MoveCommand` (`MoveReason`, `MoveOrderType`, `commandToken`) — `War3Frame/Src/Components/MoveCommand.cs`
 2. `MoveSystem` (0.1s interval) measures distance, writes `MoveOutcome`, and requests the native command through `UnitHelper.RequestMoveCommand` — `War3Frame/Src/Systems/Unit/MoveSystem.cs`
-3. `UnitMoveNaitveSystem` (Immediate) executes the native `Issue*Order` — `War3Frame/Src/Systems/Native/UnitMoveNaitveSystem.cs`
+3. `UnitMoveNativeSystem` (Immediate) executes the native `Issue*Order` — `War3Frame/Src/Systems/Native/UnitMoveNativeSystem.cs`
 4. Consumers like `MoveToTaskSystem` bridge the outcome into a task state — `War3Frame/Src/Systems/Unit/MoveSystem.cs`
 
 **Cast workflow:**

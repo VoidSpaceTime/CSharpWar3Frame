@@ -63,24 +63,22 @@ public struct EffectDestroyRequest : IComponent
 }
 
 /// <summary>
-/// 一次性特效变换请求。
-/// 用于表达旋转/重置等 native 矩阵操作意图。
+/// 特效累积变换状态。
+/// 保存旋转等变换的累积值，作为 ECS 真相。
 /// </summary>
-public struct EffectTransformRequest : IComponent
+public struct EffectTransform : IComponent
 {
-    public EffectTransformOperation operation;
-    public float value;
-}
+    /// <summary>X 轴累积旋转角度（度）。</summary>
+    public float rotateX;
 
-/// <summary>
-/// 特效变换操作类型。
-/// </summary>
-public enum EffectTransformOperation
-{
-    Reset,
-    RotateX,
-    RotateY,
-    RotateZ
+    /// <summary>Y 轴累积旋转角度（度）。</summary>
+    public float rotateY;
+
+    /// <summary>Z 轴累积旋转角度（度）。</summary>
+    public float rotateZ;
+
+    /// <summary>标记是否需要重置矩阵。</summary>
+    public bool needsReset;
 }
 
 /// <summary>
@@ -141,6 +139,7 @@ public enum EffectDirtyFlags
     Visible = 1 << 3,
     Alpha = 1 << 4,
     TeamColor = 1 << 5,
+    Transform = 1 << 6,
 }
 
 /// <summary>

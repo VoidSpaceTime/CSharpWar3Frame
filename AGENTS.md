@@ -295,7 +295,7 @@ OpenSpec 提案等级、实施后复盘强度和审查工具启用是三个独�
 - `UnitLifecycleTransitionSystem` 推进阶段，`UnitNativeRemoveSystem` 执行 `KillUnit/RemoveUnit`。
 - `UnitNativeSystem` 统一执行血蓝同步，而不是各业务入口直接 `SetUnitState`。
 - `EffectHelper` 写 `Position` / `EffectAnimationRequest`，由 `EffectNativeSystem` 同步到原生特效。
-- `MoveSystem` / 后续 `MoveNativeExecutionSystem` 负责原生命令执行，施法系统只消费 move outcome。
+- `MoveSystem` / `UnitMoveNativeSystem` 负责原生命令执行，施法系统只消费 move outcome。
 
 ### 典型反例
 
@@ -331,7 +331,7 @@ XxxRequest / XxxCommand
 | 一次性意图 | `IComponent` | 主体或独立请求实体 | `XxxRequest` | `DamageRequest`、`HealRequest`、`CastRequest`、`ItemUseRequest` |
 | 持续到完成的意图 | `IComponent` | 主体 | `XxxCommand` | `MoveCommand` |
 | 该主体工作流结果 | `IComponent` | 主体自己 | `XxxOutcome` | `MoveOutcome` |
-| Native 副作用意图 | `IComponent` | 主体 | `XxxNativeRequest` | `MoveNativeCommandRequest`、`NativeUnitCreateRequest` |
+| Native 副作用意图 | `IComponent` | 主体 | `{领域}{动作}NativeRequest` | `UnitCreateNativeRequest`、`MoveNativeRequest` |
 
 规则：
 
@@ -351,6 +351,8 @@ XxxRequest / XxxCommand
 | 需重算 | `XxxDirty` | `AttrDirty`、`AbilityStatDirty`、`LevelStatDirty` |
 | 同实体内部阶段 | 过去式：`XxxExpired` / `XxxArrived` / `XxxCompleted` | `TimerExpired`、`BuffExpired`、`ProjectileArrived`、`EffectCompleted` |
 
+后缀判定：分类状态一律 `XxxTag` 结尾（`EffectPendingTag`，不用现在式裸名）；`XxxDirty` 只用于需重算标记；过去式阶段**不加** `Tag`（`TimerExpiredTag` 冗余）；核心稳定领域名词（`Buff`、`Aura`）可豁免不加后缀。
+
 禁止：
 
 - 用 Tag 对外广播、给多个无关系统监听，或表达同帧可重复发生的事实 → 用独立 `XxxEvent` 实体。
@@ -369,12 +371,52 @@ XxxRequest / XxxCommand
 
 ### 历史命名，新代码不要复制
 
-以下已存在，本规则不要求立刻清理，但新增禁止再写：
+内部阶段继续用 `ProjectileArrived` / `ProjectileExpired`；若剧情或其他系统要监听命中，另发独立 `ProjectileHitEvent`。零数据意图必须是 `IComponent` 的 `XxxRequest`，不得再把 `Request` 做成 `ITag`。
 
-- `ItemAttrApplyRequest : ITag`、`AbilityAttrApplyRequest : ITag`
-- `ProjectileArriveRequest : ITag`、`ProjectileExpireRequest : ITag`
+## Native 同步三模式规则
 
-内部阶段继续用 `ProjectileArrived` / `ProjectileExpired`；若剧情或其他系统要监听命中，另发独立 `ProjectileHitEvent`。
+ECS 是唯一运行时真相，War3 原生对象只是同步后的代理。ECS 状态与原生之间的同步按数据特征选择三种模式之一，不得随意混用。
+
+### 模式决策树
+
+| 数据特征 | 模式 | 机制 | 示例 |
+|---|---|---|---|
+| 高频、连续、常态化变化，多路径写入 | **Compare-Sync** | Native 系统每轮刷新对比 ECS 值与上一快照，只同步有意义的差异；业务写入点无需打标记 | 单位血量/法力（`UnitNativeSyncRegistry` + `UnitNativeSystem`） |
+| 低频、离散、集中修改的持久状态 | **Dirty-Driven** | 修改入口写 ECS 状态 + 附加 Dirty 标记；Native 系统只处理带标记实体，同步后清除标记 | 特效外观（`EffectBase` + `EffectDirty` + `EffectTransform`）、玩家名称/颜色、物品状态 |
+| 一次性、无持久状态的副作用 | **Request** | 写入 `XxxRequest`，Native 系统消费后删除；不保存最终值 | 动画播放、特效销毁、单位创建、移动命令 |
+
+### 判定规则
+
+1. 该字段会被多个系统从不同路径修改，且追踪写入点成本高 → **Compare-Sync**
+2. 修改点集中（通常在 Helper/Modifier 内），大部分时间不变，且状态需要被查询 → **Dirty-Driven**
+3. 执行完即可忘记、无需回读最终值 → **Request**
+
+### Dirty 契约
+
+- Dirty 不是业务状态，只表示"ECS 状态等待同步到原生"。
+- 同一实体同帧多次修改：合并 flags（按位 OR），同步完成后统一清除。
+- 有载荷脏标记用 `IComponent`（`EffectDirty` 带 flags）；无载荷脏标记用 `ITag`（`AttrDirty`）。
+- 累积型状态（旋转/位移/计数器）必须存状态组件（如 `EffectTransform`），不允许只用一次性 Request 表达，否则 ECS 丢失真相。
+
+### 修改入口与分层
+
+```
+ECS 组件层（数据）  ← 业务系统内部受控写入
+Helper 层（入口）   ← 对外唯一修改入口：写 ECS 状态 + 打 Dirty / 写 Request
+Modifier 层（链式） ← Helper 之上的流式封装，返回 this，不绕过 Helper
+Native 层（执行）   ← 消费 Dirty/Request，调用 War3 API，不承担业务决策
+```
+
+- 对外业务调用一律走领域 Helper（`EffectHelper` / `PlayerHelper` / `ItemHelper` 等）；Helper 负责在修改持久状态后立即打 Dirty 或写 Request，集中维护字段与 Dirty flag 的对应关系，防止调用方漏标。
+- 链式 `XxxModifier` 建立在 Helper 之上，返回自身支持连续调用；不得绕过 Helper 直接操作原生 API。
+- 不绝对禁止系统内部直接写组件（结算、初始化、同领域核心逻辑可以），但涉及需要同步到原生的字段时，必须满足对应模式的契约（Compare-Sync 无需标记；Dirty-Driven 必须打标；Request 必须写请求组件），否则视为违规。
+- Native 系统只消费 ECS 状态/请求并调用 War3 API，不承担业务决策。
+
+### 迁移原则
+
+- 新代码按决策树选型，禁止默认全用 Compare-Sync 或全用 Request。
+- 已有代码迁移按领域分批（先 Effect，再 Player/Item），每批核对全部写入点后改造，不做机械全局替换。
+- 高频数值（血量/蓝量）保持 Compare-Sync，不为形式统一改成 Dirty。
 
 ## 执行要求
 
@@ -419,7 +461,7 @@ XxxRequest / XxxCommand
 - OpenSpec 使用说明：`openspec/README.md`
 - 历史治理变更：`openspec/changes/archive/2026-08-13-establish-openspec-governance/`
 - 历史治理澄清变更：`openspec/changes/archive/2026-08-13-clarify-graded-governance-artifact-rules/`
-- 当前活跃变更：`openspec/changes/define-openspec-implemented-and-archive-markers/`、`openspec/changes/document-ecs-message-naming/`、`openspec/changes/remove-dead-projectile-template-hooks/`
+- 当前活跃变更：`openspec/changes/define-openspec-implemented-and-archive-markers/`、`openspec/changes/document-ecs-message-naming/`、`openspec/changes/remove-dead-projectile-template-hooks/`、`openspec/changes/unify-native-request-naming/`、`openspec/changes/fix-historical-request-tags/`
 
 ## 特别说明
 

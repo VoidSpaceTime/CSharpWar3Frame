@@ -224,54 +224,73 @@ public static class EffectHelper
     /// <summary>
     /// 重置特效矩阵（旋转归零）。
     /// </summary>
-    public static void Reset(Entity entity)
+    public static void ResetTransform(Entity entity)
     {
-        entity.AddComponent(new EffectTransformRequest
+        if (!entity.TryGetComponent<EffectTransform>(out var transform))
         {
-            operation = EffectTransformOperation.Reset
-        });
+            transform = new EffectTransform();
+        }
+
+        transform.rotateX = 0f;
+        transform.rotateY = 0f;
+        transform.rotateZ = 0f;
+        transform.needsReset = true;
+        entity.AddComponent(transform);
+        MarkDirty(entity, EffectDirtyFlags.Transform);
     }
 
     /// <summary>
-    /// 设置特效 X 轴旋转。
+    /// 累加特效 X 轴旋转角度。
     /// </summary>
-    public static void SetRotateX(Entity entity, float angle)
+    public static void RotateX(Entity entity, float angleDelta)
     {
-        entity.AddComponent(new EffectTransformRequest
+        if (!entity.TryGetComponent<EffectTransform>(out var transform))
         {
-            operation = EffectTransformOperation.RotateX,
-            value = angle
-        });
+            transform = new EffectTransform();
+        }
+
+        transform.rotateX += angleDelta;
+        entity.AddComponent(transform);
+        MarkDirty(entity, EffectDirtyFlags.Transform);
     }
 
     /// <summary>
-    /// 设置特效 Y 轴旋转。
+    /// 累加特效 Y 轴旋转角度。
     /// </summary>
-    public static void SetRotateY(Entity entity, float angle)
+    public static void RotateY(Entity entity, float angleDelta)
     {
-        entity.AddComponent(new EffectTransformRequest
+        if (!entity.TryGetComponent<EffectTransform>(out var transform))
         {
-            operation = EffectTransformOperation.RotateY,
-            value = angle
-        });
+            transform = new EffectTransform();
+        }
+
+        transform.rotateY += angleDelta;
+        entity.AddComponent(transform);
+        MarkDirty(entity, EffectDirtyFlags.Transform);
     }
 
     /// <summary>
-    /// 设置特效 Z 轴旋转。
+    /// 累加特效 Z 轴旋转角度。
     /// </summary>
-    public static void SetRotateZ(Entity entity, float angle)
+    public static void RotateZ(Entity entity, float angleDelta)
     {
-        entity.AddComponent(new EffectTransformRequest
+        if (!entity.TryGetComponent<EffectTransform>(out var transform))
         {
-            operation = EffectTransformOperation.RotateZ,
-            value = angle
-        });
+            transform = new EffectTransform();
+        }
+
+        transform.rotateZ += angleDelta;
+        entity.AddComponent(transform);
+        MarkDirty(entity, EffectDirtyFlags.Transform);
     }
 
     #endregion
 
     #region 私有方法
 
+    /// <summary>
+    /// 合并特效 Dirty flags（按位 OR），等待 Native 层消费。
+    /// </summary>
     private static void MarkDirty(Entity entity, EffectDirtyFlags flag)
     {
         if (entity.TryGetComponent<EffectDirty>(out var dirty))
@@ -285,6 +304,9 @@ public static class EffectHelper
         }
     }
 
+    /// <summary>
+    /// 挂点枚举转 War3 挂点字符串；未知值回退 origin。
+    /// </summary>
     private static string GetAttachPointString(EffectAttachType attachType)
     {
         return attachType switch

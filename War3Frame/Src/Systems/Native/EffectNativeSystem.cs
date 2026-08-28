@@ -29,16 +29,19 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
                 entity.AddComponent(new EffectDirty
                 {
                     flags = EffectDirtyFlags.Color | EffectDirtyFlags.Scale | EffectDirtyFlags.Speed |
-                            EffectDirtyFlags.Visible | EffectDirtyFlags.Alpha | EffectDirtyFlags.TeamColor
+                            EffectDirtyFlags.Visible | EffectDirtyFlags.Alpha | EffectDirtyFlags.TeamColor |
+                            EffectDirtyFlags.Transform
                 });
             }
 
+            // 更新位置
             if (entity.TryGetComponent<Position>(out var position))
             {
                 YDApi.EXSetEffectXY(native.effect, position.x, position.y);
                 YDApi.EXSetEffectZ(native.effect, position.z);
             }
 
+            // 同步外观与变换脏标记
             if (entity.TryGetComponent<EffectDirty>(out var dirty))
             {
                 // 只同步被标记为 dirty 的字段，避免每帧重复写所有原生属性。
@@ -73,34 +76,28 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
                     KKApi.DzSetEffectVisible(native.effect, effect.visible);
                 }
 
+                // 同步累积变换
+                if (dirty.flags.HasFlag(EffectDirtyFlags.Transform)
+                    && entity.TryGetComponent<EffectTransform>(out var transform))
+                {
+                    if (transform.needsReset)
+                    {
+                        YDApi.EXEffectMatReset(native.effect);
+                    }
+
+                    YDApi.EXEffectMatRotateX(native.effect, transform.rotateX);
+                    YDApi.EXEffectMatRotateY(native.effect, transform.rotateY);
+                    YDApi.EXEffectMatRotateZ(native.effect, transform.rotateZ);
+                }
+
                 entity.RemoveComponent<EffectDirty>();
             }
 
+            // 播放动画 
             if (entity.TryGetComponent<EffectAnimationRequest>(out var animation))
             {
                 KKApi.DzPlayEffectAnimation(native.effect, animation.animation, animation.link);
                 entity.RemoveComponent<EffectAnimationRequest>();
-            }
-
-            if (entity.TryGetComponent<EffectTransformRequest>(out var transform))
-            {
-                switch (transform.operation)
-                {
-                    case EffectTransformOperation.Reset:
-                        YDApi.EXEffectMatReset(native.effect);
-                        break;
-                    case EffectTransformOperation.RotateX:
-                        YDApi.EXEffectMatRotateX(native.effect, transform.value);
-                        break;
-                    case EffectTransformOperation.RotateY:
-                        YDApi.EXEffectMatRotateY(native.effect, transform.value);
-                        break;
-                    case EffectTransformOperation.RotateZ:
-                        YDApi.EXEffectMatRotateZ(native.effect, transform.value);
-                        break;
-                }
-
-                entity.RemoveComponent<EffectTransformRequest>();
             }
 
             if (entity.TryGetComponent<EffectDestroyRequest>(out var destroy))
