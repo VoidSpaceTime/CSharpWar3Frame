@@ -26,9 +26,9 @@ public struct AttributeContributionEntry : IComponent
 /// <summary>
 /// 挂载技能属性应用请求。
 /// </summary>
-public struct AbilityAttrApplyRequest : ITag { }
+public struct AbilityAttrApplyRequest : IComponent { }
 
 /// <summary>
 /// 挂载技能属性移除请求。
 /// </summary>
-public struct AbilityAttrRemoveRequest : ITag { }
+public struct AbilityAttrRemoveRequest : IComponent { }

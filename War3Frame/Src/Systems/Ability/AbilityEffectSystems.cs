@@ -25,7 +25,7 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
 
     public ProjectileSystem()
     {
-        Filter.AnyTags(Tags.Get<EffectPending>());
+        Filter.AnyTags(Tags.Get<EffectPendingTag>());
     }
 
     protected override void OnUpdate()
@@ -276,7 +276,7 @@ public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState
 {
     public ProjectileLifecycleApplySystem()
     {
-        Filter.AnyTags(Tags.Get<EffectPending>());
+        Filter.AnyTags(Tags.Get<EffectPendingTag>());
     }
 
     protected override void OnUpdate()
@@ -287,10 +287,10 @@ public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState
         Query.ForEachEntity((ref ProjectileRuntimeState runtimeState, ref EffectSource source,
             ref EffectTargetInfo target, ref Position pos, Entity effectEntity) =>
         {
-            if (effectEntity.Tags.Has<ProjectileArriveRequest>())
+            if (effectEntity.HasComponent<ProjectileArriveRequest>())
                 toArrive.Add(effectEntity);
 
-            if (effectEntity.Tags.Has<ProjectileExpireRequest>())
+            if (effectEntity.HasComponent<ProjectileExpireRequest>())
                 toExpire.Add(effectEntity);
         });
 
@@ -306,7 +306,7 @@ public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState
 
             runtimeState.phase = ProjectileLifecyclePhase.Arrived;
             effectEntity.AddComponent(runtimeState);
-            effectEntity.RemoveTag<ProjectileArriveRequest>();
+            effectEntity.RemoveComponent<ProjectileArriveRequest>();
             if (!effectEntity.Tags.Has<ProjectileArrived>())
                 effectEntity.AddTag<ProjectileArrived>();
 
@@ -328,7 +328,7 @@ public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState
                 effectEntity.AddComponent(runtimeState);
             }
 
-            effectEntity.RemoveTag<ProjectileExpireRequest>();
+            effectEntity.RemoveComponent<ProjectileExpireRequest>();
             ProjectileFlowHelper.DestroyProjectileVisual(effectEntity);
             effectEntity.AddTag<EffectExpired>();
         }
@@ -344,7 +344,7 @@ public class EffectVisualSystem : QuerySystem<EffectVisualData, EffectSource, Ef
 {
     public EffectVisualSystem()
     {
-        Filter.AnyTags(Tags.Get<EffectPending>());
+        Filter.AnyTags(Tags.Get<EffectPendingTag>());
     }
 
     protected override void OnUpdate()
@@ -492,7 +492,7 @@ public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, Effect
 {
     public AreaSearchSystem()
     {
-        Filter.AnyTags(Tags.Get<EffectPending>());
+        Filter.AnyTags(Tags.Get<EffectPendingTag>());
     }
 
     protected override void OnUpdate()
@@ -542,7 +542,7 @@ public class LineSearchSystem : QuerySystem<LineSearchData, EffectSource, Effect
 {
     public LineSearchSystem()
     {
-        Filter.AnyTags(Tags.Get<EffectPending>());
+        Filter.AnyTags(Tags.Get<EffectPendingTag>());
     }
 
     protected override void OnUpdate()
@@ -623,7 +623,7 @@ public class GroundAreaCreateSystem : QuerySystem<GroundAreaCreateData, EffectSo
 
     public GroundAreaCreateSystem()
     {
-        Filter.AnyTags(Tags.Get<EffectPending>());
+        Filter.AnyTags(Tags.Get<EffectPendingTag>());
     }
 
     protected override void OnUpdate()
@@ -695,7 +695,7 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
 {
     public DamageEffectSystem()
     {
-        Filter.AnyTags(Tags.Get<EffectPending>());
+        Filter.AnyTags(Tags.Get<EffectPendingTag>());
     }
 
     protected override void OnUpdate()
@@ -752,7 +752,7 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
 {
     public HealEffectSystem()
     {
-        Filter.AnyTags(Tags.Get<EffectPending>());
+        Filter.AnyTags(Tags.Get<EffectPendingTag>());
     }
 
     protected override void OnUpdate()
@@ -804,7 +804,7 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
 {
     public BuffEffectSystem()
     {
-        Filter.AnyTags(Tags.Get<EffectPending>());
+        Filter.AnyTags(Tags.Get<EffectPendingTag>());
     }
 
     protected override void OnUpdate()
@@ -1198,7 +1198,7 @@ public class EffectLifecycleSystem : QuerySystem<EffectSource>
 {
     public EffectLifecycleSystem()
     {
-        Filter.AnyTags(Tags.Get<EffectPending>());
+        Filter.AnyTags(Tags.Get<EffectPendingTag>());
     }
 
     protected override void OnUpdate()
@@ -1390,14 +1390,14 @@ internal static class ProjectileFlowHelper
     {
         foreach (var effectEntity in arriveRequests)
         {
-            if (!effectEntity.Tags.Has<ProjectileArriveRequest>())
-                effectEntity.AddTag<ProjectileArriveRequest>();
+            if (!effectEntity.HasComponent<ProjectileArriveRequest>())
+                effectEntity.AddComponent(new ProjectileArriveRequest());
         }
 
         foreach (var effectEntity in expireRequests)
         {
-            if (!effectEntity.Tags.Has<ProjectileExpireRequest>())
-                effectEntity.AddTag<ProjectileExpireRequest>();
+            if (!effectEntity.HasComponent<ProjectileExpireRequest>())
+                effectEntity.AddComponent(new ProjectileExpireRequest());
         }
     }
 

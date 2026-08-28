@@ -9,13 +9,13 @@ namespace War3Frame.Systems.Native;
 /// 仅负责将 ECS 中的命令请求翻译成 Warcraft 原生命令。
 /// </summary>
 [SystemRegister(SystemKind.Immediate)]
-public class MoveNativeExecutionSystem : QuerySystem<MoveNativeCommandRequest, UnitNative>
+public class UnitMoveNativeSystem : QuerySystem<MoveNativeRequest, UnitNative>
 {
     // Native 执行层只翻译并下发移动命令，不推进施法、任务等业务流程。
 
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref MoveNativeCommandRequest request, ref UnitNative native, Entity unit) =>
+        Query.ForEachEntity((ref MoveNativeRequest request, ref UnitNative native, Entity unit) =>
         {
             // commandToken 由上层 move 系统用于匹配结果；native 层只执行当前请求。
             switch (request.orderType)
@@ -30,7 +30,7 @@ public class MoveNativeExecutionSystem : QuerySystem<MoveNativeCommandRequest, U
                     JassApi.IssueImmediateOrder(native.unit, "holdposition");
                     break;
             }
-            unit.RemoveComponent<MoveNativeCommandRequest>();
+            unit.RemoveComponent<MoveNativeRequest>();
         });
     }
 }

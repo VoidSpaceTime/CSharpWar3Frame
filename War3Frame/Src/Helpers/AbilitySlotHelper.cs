@@ -76,8 +76,8 @@ public static class AbilitySlotHelper
             {
                 kind = Components.ModifierSourceType.Ability
             });
-            ability.AddTag<AbilityAttrApplyRequest>();
-            ability.RemoveTag<AbilityAttrRemoveRequest>();
+            ability.AddComponent(new AbilityAttrApplyRequest());
+            ability.RemoveComponent<AbilityAttrRemoveRequest>();
         }
 
         container.currentCount++;
@@ -129,7 +129,7 @@ public static class AbilitySlotHelper
             unit.AddComponent(container);
         }
 
-        ability.Value.AddTag<AbilityAttrRemoveRequest>();
+        ability.Value.AddComponent(new AbilityAttrRemoveRequest());
         ability.Value.RemoveComponent<AbilityOwner>();
         ability.Value.RemoveComponent<AbilitySlotIndex>();
         ability.Value.AddComponent(new AbilityMountInfo

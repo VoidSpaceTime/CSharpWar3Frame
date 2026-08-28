@@ -8,17 +8,17 @@ namespace War3Frame.Src.Systems;
 /// 原生单位创建系统 - 立即消费创建请求
 /// </summary>
 [SystemRegister(SystemKind.Immediate)]
-public class UnitCreateNativeSystem : QuerySystem<NativeUnitCreateRequest>
+public class UnitCreateNativeSystem : QuerySystem<UnitCreateNativeRequest>
 {
     // 原生单位创建集中在 Native 层，创建出的句柄回写为 UnitNative。
 
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref NativeUnitCreateRequest request, Entity entity) =>
+        Query.ForEachEntity((ref UnitCreateNativeRequest request, Entity entity) =>
         {
             if (entity.HasComponent<UnitNative>())
             {
-                entity.RemoveComponent<NativeUnitCreateRequest>();
+                entity.RemoveComponent<UnitCreateNativeRequest>();
                 return;
             }
 
@@ -31,7 +31,7 @@ public class UnitCreateNativeSystem : QuerySystem<NativeUnitCreateRequest>
                 player = request.player
             });
 
-            entity.RemoveComponent<NativeUnitCreateRequest>();
+            entity.RemoveComponent<UnitCreateNativeRequest>();
         });
     }
 }

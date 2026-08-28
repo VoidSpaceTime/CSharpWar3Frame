@@ -214,8 +214,8 @@ internal static class ItemLifecycleOperations
         item.RemoveTag<ItemStoredTag>();
         item.AddTag<ItemInventoryTag>();
         item.AddTag<ItemEquippedTag>();
-        item.AddTag<ItemAttrApplyRequest>();
-        item.RemoveTag<ItemAttrRemoveRequest>();
+        item.AddComponent(new ItemAttrApplyRequest());
+        item.RemoveComponent<ItemAttrRemoveRequest>();
         item.AddComponent(new AttributeContributionSource
         {
             kind = War3Frame.Components.ModifierSourceType.Item
@@ -257,8 +257,8 @@ internal static class ItemLifecycleOperations
         item.RemoveTag<ItemEquippedTag>();
         item.RemoveTag<ItemInventoryTag>();
         item.RemoveTag<ItemStoredTag>();
-        item.RemoveTag<ItemAttrRemoveRequest>();
-        item.RemoveTag<ItemAttrApplyRequest>();
+        item.RemoveComponent<ItemAttrRemoveRequest>();
+        item.RemoveComponent<ItemAttrApplyRequest>();
         item.RemoveComponent<ItemOwner>();
         item.RemoveComponent<ItemSlotIndex>();
 
@@ -293,34 +293,29 @@ internal static class ItemLifecycleOperations
 /// 仅在装备态下，将物品定义的统一属性贡献条目映射为单位属性修改器。
 /// </summary>
 [SystemRegister(SystemKind.Interval, 0)]
-public class ItemAttributeApplySystem : QuerySystem<ItemOwner, AttributeContributionEntry>
+public class ItemAttributeApplySystem : QuerySystem<ItemOwner, AttributeContributionEntry, ItemAttrApplyRequest>
 {
     // 将装备物品的 AttributeContributionEntry 映射为单位属性 modifier。
 
-    public ItemAttributeApplySystem()
-    {
-        Filter.AnyTags(Tags.Get<ItemAttrApplyRequest>());
-    }
-
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref ItemOwner owner, ref AttributeContributionEntry contribution, Entity item) =>
+        Query.ForEachEntity((ref ItemOwner owner, ref AttributeContributionEntry contribution, ref ItemAttrApplyRequest request, Entity item) =>
         {
             if (!item.Tags.Has<ItemEquippedTag>())
             {
-                item.RemoveTag<ItemAttrApplyRequest>();
+                item.RemoveComponent<ItemAttrApplyRequest>();
                 return;
             }
 
             if (owner.unit.IsNull)
             {
-                item.RemoveTag<ItemAttrApplyRequest>();
+                item.RemoveComponent<ItemAttrApplyRequest>();
                 return;
             }
 
             ModifyHelper.RemoveModifiersFromSource(item);
             ModifyHelper.AddModifierToUnit(owner.unit, contribution.attrTypeId, item, contribution.modifyType, contribution.value);
-            item.RemoveTag<ItemAttrApplyRequest>();
+            item.RemoveComponent<ItemAttrApplyRequest>();
         });
     }
 }
@@ -330,21 +325,16 @@ public class ItemAttributeApplySystem : QuerySystem<ItemOwner, AttributeContribu
 /// 用于卸下、丢弃或销毁物品时撤销其带来的属性修改。
 /// </summary>
 [SystemRegister(SystemKind.Interval, 0)]
-public class ItemAttributeRemoveSystem : QuerySystem<ItemOwner>
+public class ItemAttributeRemoveSystem : QuerySystem<ItemOwner, ItemAttrRemoveRequest>
 {
     // 按物品实体作为 source 移除 modifier，避免误删其他来源的属性贡献。
 
-    public ItemAttributeRemoveSystem()
-    {
-        Filter.AnyTags(Tags.Get<ItemAttrRemoveRequest>());
-    }
-
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref ItemOwner owner, Entity item) =>
+        Query.ForEachEntity((ref ItemOwner owner, ref ItemAttrRemoveRequest request, Entity item) =>
         {
             ModifyHelper.RemoveModifiersFromSource(item);
-            item.RemoveTag<ItemAttrRemoveRequest>();
+            item.RemoveComponent<ItemAttrRemoveRequest>();
         });
     }
 }
@@ -354,28 +344,23 @@ public class ItemAttributeRemoveSystem : QuerySystem<ItemOwner>
 /// 将 ability 的统一贡献条目映射为所属单位的属性修改器。
 /// </summary>
 [SystemRegister(SystemKind.Interval, 0)]
-public class AbilityAttributeApplySystem : QuerySystem<AbilityOwner, AttributeContributionEntry>
+public class AbilityAttributeApplySystem : QuerySystem<AbilityOwner, AttributeContributionEntry, AbilityAttrApplyRequest>
 {
     // 挂载型技能的属性贡献与物品走同一 modifier 层，保持数值来源可追踪。
 
-    public AbilityAttributeApplySystem()
-    {
-        Filter.AnyTags(Tags.Get<AbilityAttrApplyRequest>());
-    }
-
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref AbilityOwner owner, ref AttributeContributionEntry contribution, Entity ability) =>
+        Query.ForEachEntity((ref AbilityOwner owner, ref AttributeContributionEntry contribution, ref AbilityAttrApplyRequest request, Entity ability) =>
         {
             if (owner.owner.IsNull)
             {
-                ability.RemoveTag<AbilityAttrApplyRequest>();
+                ability.RemoveComponent<AbilityAttrApplyRequest>();
                 return;
             }
 
             ModifyHelper.RemoveModifiersFromSource(ability);
             ModifyHelper.AddModifierToUnit(owner.owner, contribution.attrTypeId, ability, contribution.modifyType, contribution.value);
-            ability.RemoveTag<AbilityAttrApplyRequest>();
+            ability.RemoveComponent<AbilityAttrApplyRequest>();
         });
     }
 }
@@ -385,21 +370,16 @@ public class AbilityAttributeApplySystem : QuerySystem<AbilityOwner, AttributeCo
 /// 用于技能卸下或移除时撤销其带来的属性修改。
 /// </summary>
 [SystemRegister(SystemKind.Interval, 0)]
-public class AbilityAttributeRemoveSystem : QuerySystem<AbilityOwner>
+public class AbilityAttributeRemoveSystem : QuerySystem<AbilityOwner, AbilityAttrRemoveRequest>
 {
     // 技能卸下或移除时，以 ability 实体作为 source 撤销其属性贡献。
 
-    public AbilityAttributeRemoveSystem()
-    {
-        Filter.AnyTags(Tags.Get<AbilityAttrRemoveRequest>());
-    }
-
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref AbilityOwner owner, Entity ability) =>
+        Query.ForEachEntity((ref AbilityOwner owner, ref AbilityAttrRemoveRequest request, Entity ability) =>
         {
             ModifyHelper.RemoveModifiersFromSource(ability);
-            ability.RemoveTag<AbilityAttrRemoveRequest>();
+            ability.RemoveComponent<AbilityAttrRemoveRequest>();
         });
     }
 }

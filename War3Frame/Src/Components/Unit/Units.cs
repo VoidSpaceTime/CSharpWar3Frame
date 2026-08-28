@@ -56,7 +56,7 @@ public struct UnitNativeSyncEntry
 /// <summary>
 /// 原生单位创建请求
 /// </summary>
-public struct NativeUnitCreateRequest : IComponent
+public struct UnitCreateNativeRequest : IComponent
 {
     public JPlayer player;
     public float x;

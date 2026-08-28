@@ -62,8 +62,8 @@ public class AbilityAttachWorkflowSystem : QuerySystem<AbilityAttachRequest>
             {
                 kind = War3Frame.Components.ModifierSourceType.Ability
             });
-            ability.AddTag<AbilityAttrApplyRequest>();
-            ability.RemoveTag<AbilityAttrRemoveRequest>();
+            ability.AddComponent(new AbilityAttrApplyRequest());
+            ability.RemoveComponent<AbilityAttrRemoveRequest>();
         }
 
         AbilityEffectHelper.TriggerBehaviorEffect(unit, ability, AbilityBehaviorTrigger.OnGranted, unit);
@@ -101,7 +101,7 @@ public class AbilityRemoveWorkflowSystem : QuerySystem<AbilityRemoveRequest>
 
         AbilityEffectHelper.TriggerBehaviorEffect(unit, ability.Value, AbilityBehaviorTrigger.OnRemoved, unit);
 
-        ability.Value.AddTag<AbilityAttrRemoveRequest>();
+        ability.Value.AddComponent(new AbilityAttrRemoveRequest());
         ability.Value.RemoveComponent<AbilityOwner>();
         ability.Value.RemoveComponent<AbilitySlotIndex>();
         ability.Value.AddComponent(new AbilityMountInfo

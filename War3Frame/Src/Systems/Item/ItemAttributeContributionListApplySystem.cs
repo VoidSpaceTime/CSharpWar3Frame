@@ -9,28 +9,23 @@ namespace War3Frame.Src.Systems;
 /// 物品多条属性贡献应用系统。
 /// </summary>
 [SystemRegister(SystemKind.Interval, 0)]
-public class ItemAttributeContributionListApplySystem : QuerySystem<ItemOwner, ItemAttributeContributionListData>
+public class ItemAttributeContributionListApplySystem : QuerySystem<ItemOwner, ItemAttributeContributionListData, ItemAttrApplyRequest>
 {
     // 多条贡献按同一物品 source 写入 modifier，保持与单条 AttributeContributionEntry 兼容。
 
-    public ItemAttributeContributionListApplySystem()
-    {
-        Filter.AnyTags(Tags.Get<ItemAttrApplyRequest>());
-    }
-
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref ItemOwner owner, ref ItemAttributeContributionListData contributions, Entity item) =>
+        Query.ForEachEntity((ref ItemOwner owner, ref ItemAttributeContributionListData contributions, ref ItemAttrApplyRequest request, Entity item) =>
         {
             if (!item.Tags.Has<ItemEquippedTag>())
             {
-                item.RemoveTag<ItemAttrApplyRequest>();
+                item.RemoveComponent<ItemAttrApplyRequest>();
                 return;
             }
 
             if (owner.unit.IsNull)
             {
-                item.RemoveTag<ItemAttrApplyRequest>();
+                item.RemoveComponent<ItemAttrApplyRequest>();
                 return;
             }
 
@@ -41,7 +36,7 @@ public class ItemAttributeContributionListApplySystem : QuerySystem<ItemOwner, I
                     contribution.value.Resolve(1));
             }
 
-            item.RemoveTag<ItemAttrApplyRequest>();
+            item.RemoveComponent<ItemAttrApplyRequest>();
         });
     }
 }

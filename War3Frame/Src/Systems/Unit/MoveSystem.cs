@@ -7,7 +7,7 @@ namespace War3Frame.Src.Systems.Unit;
 
 /// <summary>
 /// 移动系统。
-/// 负责推进 ECS 移动语义并产生 MoveOutcome；原生命令只通过 MoveNativeCommandRequest 交给 Native 层。
+/// 负责推进 ECS 移动语义并产生 MoveOutcome；原生命令只通过 MoveNativeRequest 交给 Native 层。
 /// </summary>
 [SystemRegister(SystemKind.Interval)]
 public class MoveSystem : QuerySystem<MoveCommand, Position>, ITimedSystem

@@ -86,7 +86,7 @@ public class ItemLevelStatRebuildSystem : QuerySystem<ItemSpecData, ItemLevel>
             });
         }
 
-        item.AddTag<ItemAttrApplyRequest>();
+        item.AddComponent(new ItemAttrApplyRequest());
     }
 
     private static List<ItemAttributeContributionSpec> ResolveItemAttributes(List<ItemAttributeContributionSpec> attributes,

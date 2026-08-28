@@ -60,8 +60,8 @@ public static class ItemHelper
 
         item.RemoveTag<ItemEquippedTag>();
         item.AddTag<ItemInventoryTag>();
-        item.AddTag<ItemAttrRemoveRequest>();
-        item.RemoveTag<ItemAttrApplyRequest>();
+        item.AddComponent(new ItemAttrRemoveRequest());
+        item.RemoveComponent<ItemAttrApplyRequest>();
     }
 
     /// <summary>

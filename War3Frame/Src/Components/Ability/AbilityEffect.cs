@@ -50,7 +50,10 @@ public struct AbilityEffectContext : IComponent
 }
 
 /// <summary>效果仍在等待 projectile / area / settlement 系统处理。</summary>
-public struct EffectPending : ITag;
+/// <summary>
+/// 特效待结算标记（effect 实体已生成、等待结算系统处理）。
+/// </summary>
+public struct EffectPendingTag : ITag;
 
 /// <summary>效果已经完成所有结算，可由生命周期系统清理。</summary>
 public struct EffectCompleted : ITag;
@@ -354,11 +357,14 @@ public struct ProjectileData : IComponent
     public EffectSpec? arriveEffect;
 }
 
-public struct ProjectileArriveRequest : ITag;
+/// <summary>
+/// 请求弹道进入到达结算。
+/// </summary>
+public struct ProjectileArriveRequest : IComponent;
 
 /// <summary>
 /// 请求弹道进入过期结算。当前无写入方，为后续超距 / 超时能力保留；不是死代码，勿清理。
 /// </summary>
-public struct ProjectileExpireRequest : ITag;
+public struct ProjectileExpireRequest : IComponent;
 
 public struct ProjectileArrived : ITag;

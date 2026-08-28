@@ -118,14 +118,14 @@ public struct ItemStoredTag : ITag
 /// <summary>
 /// 物品属性应用请求。
 /// </summary>
-public struct ItemAttrApplyRequest : ITag
+public struct ItemAttrApplyRequest : IComponent
 {
 }
 
 /// <summary>
 /// 物品属性移除请求。
 /// </summary>
-public struct ItemAttrRemoveRequest : ITag
+public struct ItemAttrRemoveRequest : IComponent
 {
 }
 

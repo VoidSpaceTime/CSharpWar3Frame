@@ -75,7 +75,7 @@ public static partial class UnitTemplate
         var entity = Game.Store.CreateEntity(
             new UnitLifeState { isAlive = true, lifePhase = UnitLifecyclePhase.Alive },
             new Position { x = x, y = y },
-            new NativeUnitCreateRequest
+            new UnitCreateNativeRequest
             {
                 player = player,
                 x = x,

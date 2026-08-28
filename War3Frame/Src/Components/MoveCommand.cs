@@ -137,7 +137,7 @@ public struct MoveTaskState : IComponent
 /// 仅由执行层消费。
 /// </summary>
 // 发往原生执行层的一次性请求；它只表达“请执行命令”，不拥有长期移动语义。
-public struct MoveNativeCommandRequest : IComponent
+public struct MoveNativeRequest : IComponent
 {
     public int commandToken;
     public MoveOrderType orderType;

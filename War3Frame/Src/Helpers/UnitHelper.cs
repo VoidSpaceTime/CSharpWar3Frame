@@ -181,7 +181,7 @@ public static class UnitHelper
         }
 
         // 这是薄入口：只产生一次性 native 请求，不持有长期移动语义。
-        unit.AddComponent(new MoveNativeCommandRequest
+        unit.AddComponent(new MoveNativeRequest
         {
             commandToken = commandToken,
             orderType = orderType,

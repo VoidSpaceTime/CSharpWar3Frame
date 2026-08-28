@@ -14,7 +14,7 @@ public static class AbilityEffectHelper
 
     /// <summary>
     /// 创建一次技能效果实例。
-    /// ability 持有长期配置；这里只生成带 EffectPending 的临时 effect entity。
+    /// ability 持有长期配置；这里只生成带 EffectPendingTag 的临时 effect entity。
     /// </summary>
     public static Entity CreateEffectEntity(Entity caster, Entity ability,
         Entity targetUnit, float targetX, float targetY, ItemCastOrigin itemOrigin = default)
@@ -40,7 +40,7 @@ public static class AbilityEffectHelper
                 targetY = targetY,
                 effectId = _nextEffectId++
             });
-        effectEntity.AddTag<EffectPending>();
+        effectEntity.AddTag<EffectPendingTag>();
 
         if (!itemOrigin.item.IsNull)
         {
@@ -123,7 +123,7 @@ public static class AbilityEffectHelper
                 targetY = 0,
                 effectId = _nextEffectId++
             });
-        childEntity.AddTag<EffectPending>();
+        childEntity.AddTag<EffectPendingTag>();
 
         if (parentEffect.TryGetComponent<ItemEffectOrigin>(out var itemOrigin))
             childEntity.AddComponent(itemOrigin);
@@ -189,7 +189,7 @@ public static class AbilityEffectHelper
                 targetY = position.y,
                 effectId = _nextEffectId++
             });
-        arriveEntity.AddTag<EffectPending>();
+        arriveEntity.AddTag<EffectPendingTag>();
         arriveEntity.AddComponent(position);
 
         if (projectileEffect.TryGetComponent<ItemEffectOrigin>(out var itemOrigin))
