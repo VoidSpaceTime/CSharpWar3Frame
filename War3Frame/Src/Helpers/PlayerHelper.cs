@@ -122,7 +122,6 @@ public static class PlayerHelper
         Relations[playerA.index, playerB.index] = PlayerTeamState.Neutral;
         Relations[playerB.index, playerA.index] = PlayerTeamState.Neutral;
 
-        // 中立也是双向关系。
         SetAllianceBit(playerA, playerB, PlayerAllianceState.AllianceBitNeutral, flag);
         SetAllianceBit(playerB, playerA, PlayerAllianceState.AllianceBitNeutral, flag);
     }

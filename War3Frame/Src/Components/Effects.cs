@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using Friflo.Engine.ECS;
+﻿using Friflo.Engine.ECS;
 
 namespace War3Frame;
 
@@ -104,9 +103,6 @@ public struct EffectBase : IComponent
 
     /// <summary>透明度。</summary>
     public int alpha;
-
-    /// <summary>持续时间。-1 表示永久，>0 表示剩余秒数。</summary>
-    public float duration;
 
     /// <summary>红色通道。</summary>
     public int red;

@@ -47,6 +47,7 @@ public static class BuffHelper
             new ModifyTarget(attrEntity.Value),
             new ModifySource(source),
             BuffDuration.Create(duration),
+            Duration.Create(duration),
             new BuffBehavior
             {
                 buffId = buffId,
@@ -99,6 +100,7 @@ public static class BuffHelper
             new ModifyTarget(attrEntity.Value),
             new ModifySource(source),
             BuffDuration.Create(duration),
+            Duration.Create(duration),
             BuffStacks.Create(maxStacks, valuePerStack),
             new BuffBehavior
             {
@@ -139,7 +141,8 @@ public static class BuffHelper
             },
             new ModifyTarget(attrEntity.Value),
             new ModifySource(source),
-            BuffDuration.Create(0, permanent: true),
+            BuffDuration.Create(0),
+            Duration.Create(-1),
             new BuffBehavior
             {
                 buffId = buffId,
@@ -258,9 +261,9 @@ public static class BuffHelper
         var buff = FindBuffByIdOnUnit(unit, buffId);
         if (buff.IsNull) return 0;
 
-        if (buff.TryGetComponent<BuffDuration>(out var duration))
+        if (buff.TryGetComponent<Duration>(out var duration))
         {
-            return duration.remaining;
+            return duration.remaining < 0f ? -1f : duration.remaining;
         }
         return 0;
     }
@@ -289,9 +292,9 @@ public static class BuffHelper
         switch (behavior)
         {
             case BuffRefreshBehavior.RefreshDuration:
-                if (existing.TryGetComponent<BuffDuration>(out var dur))
+                if (existing.TryGetComponent<Duration>(out var dur))
                 {
-                    dur.Refresh();
+                    dur.remaining = existing.GetComponent<BuffDuration>().duration;
                     existing.AddComponent(dur);
                 }
                 break;
@@ -329,18 +332,18 @@ public static class BuffHelper
                 break;
 
             case BuffRefreshBehavior.RefreshDuration:
-                if (existing.TryGetComponent<BuffDuration>(out var dur))
+                if (existing.TryGetComponent<Duration>(out var dur))
                 {
-                    dur.Refresh();
+                    dur.remaining = existing.GetComponent<BuffDuration>().duration;
                     existing.AddComponent(dur);
                 }
                 break;
 
             case BuffRefreshBehavior.RefreshAndStack:
                 // 刷新时间
-                if (existing.TryGetComponent<BuffDuration>(out var duration2))
+                if (existing.TryGetComponent<Duration>(out var duration2))
                 {
-                    duration2.Refresh();
+                    duration2.remaining = existing.GetComponent<BuffDuration>().duration;
                     existing.AddComponent(duration2);
                 }
                 // 叠加层数

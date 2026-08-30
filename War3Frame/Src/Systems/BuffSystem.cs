@@ -6,7 +6,7 @@ using War3Frame.Systems;
 namespace War3Frame.Src.Systems;
 
 [SystemRegister(SystemKind.Interval, 40)]
-public class BuffDurationSystem : QuerySystem<BuffDuration>, ITimedSystem
+public class BuffDurationSystem : QuerySystem<BuffDuration, Duration>, ITimedSystem
 {
     public float Interval => 0.1f;
 
@@ -17,36 +17,17 @@ public class BuffDurationSystem : QuerySystem<BuffDuration>, ITimedSystem
 
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref BuffDuration duration, Entity entity) =>
+        Query.ForEachEntity((ref BuffDuration duration, ref Duration runtime, Entity entity) =>
         {
-            if (duration.isPermanent)
-                return;
-
-            if (entity.Tags.Has<BuffExpired>())
+            if (runtime.remaining < 0f)
             {
-                duration.remaining = 0;
-                entity.AddComponent(duration);
-                return;
+                return; // 永久 Buff
             }
 
-            if (!entity.TryGetComponent<TimerTask>(out var timer) || timer.kind != TimerTaskKind.BuffExpire)
+            if (entity.Tags.Has<DurationExpired>())
             {
-                entity.AddComponent(new TimerTask
-                {
-                    mode = TimerTaskMode.Once,
-                    interval = duration.remaining,
-                    remaining = duration.remaining,
-                    paused = false,
-                    owner = entity,
-                    kind = TimerTaskKind.BuffExpire,
-                    triggerCount = 0,
-                    maxTriggerCount = 1
-                });
-                return;
+                entity.AddTag<BuffExpired>();
             }
-
-            duration.remaining = Math.Max(0, timer.remaining);
-            entity.AddComponent(duration);
         });
     }
 }

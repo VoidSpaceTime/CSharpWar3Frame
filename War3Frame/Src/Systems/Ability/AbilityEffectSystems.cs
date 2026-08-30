@@ -668,9 +668,9 @@ public class GroundAreaCreateSystem : QuerySystem<GroundAreaCreateData, EffectSo
             create.duration);
 
         var area = effectEntity.Store.CreateEntity(
-            new GroundAreaData { tags = create.tags, radius = radius, radiusValue = create.radiusValue },
+new GroundAreaData { tags = create.tags, radius = radius, radiusValue = create.radiusValue },
             new GroundAreaSource { caster = source.caster, ability = source.ability, sourceEffect = effectEntity },
-            new GroundAreaLifetime { duration = duration, remaining = duration },
+            Duration.Create(duration),
             new Position { x = target.targetX, y = target.targetY, z = 0f });
 
         if (effectEntity.TryGetComponent<ItemEffectOrigin>(out var itemOrigin))
@@ -985,20 +985,23 @@ public class BuffApplyResolveSystem : QuerySystem<BuffApplyRequest>
 
 /// <summary>
 /// 地面区域生命周期系统。
-/// 到期时删除区域实体，并清理由该区域创建的 Buff。
+/// 监听统一 DurationExpired 到期标记：删除区域实体，并清理由该区域创建的 Buff。
 /// </summary>
 [SystemRegister(SystemKind.Interval, 128)]
-public class GroundAreaLifetimeSystem : QuerySystem<GroundAreaLifetime>
+public class GroundAreaLifetimeSystem : QuerySystem<GroundAreaData>
 {
+    public GroundAreaLifetimeSystem()
+    {
+        Filter.AnyTags(Tags.Get<DurationExpired>());
+    }
+
     protected override void OnUpdate()
     {
         var expired = new List<Entity>();
 
-        Query.ForEachEntity((ref GroundAreaLifetime lifetime, Entity areaEntity) =>
+        Query.ForEachEntity((ref GroundAreaData area, Entity areaEntity) =>
         {
-            lifetime.remaining -= Tick.deltaTime;
-            if (lifetime.remaining <= 0f)
-                expired.Add(areaEntity);
+            expired.Add(areaEntity);
         });
 
         foreach (var areaEntity in expired)
@@ -1180,7 +1183,7 @@ public class GroundAreaReactionSystem : QuerySystem<GroundAreaReactionRequest>
         var burning = store.CreateEntity(
             new GroundAreaData { tags = reaction.resultTags, radius = area.radius, radiusValue = area.radiusValue },
             source,
-            new GroundAreaLifetime { duration = duration, remaining = duration },
+            Duration.Create(duration),
             position);
         if (hasItemOrigin)
             burning.AddComponent(itemOrigin);

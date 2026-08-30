@@ -194,13 +194,6 @@ public struct GroundAreaSource : IComponent
     public Entity sourceEffect;
 }
 
-/// <summary>地面区域生命周期；到期后由系统清理相关 Buff 和区域实体。</summary>
-public struct GroundAreaLifetime : IComponent
-{
-    public float duration;
-    public float remaining;
-}
-
 /// <summary>地面区域创建 payload；效果结算时会生成独立的 ground area entity。</summary>
 public struct GroundAreaCreateData : IComponent
 {

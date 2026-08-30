@@ -11,33 +11,20 @@ namespace War3Frame;
 public struct Buff : ITag;
 
 /// <summary>
-///     Buff 持续时间
+///     Buff 持续时间元数据（原始值，供刷新计算）。
+///     剩余时间推进已移交统一 Duration 组件；永久 Buff 挂 Duration.remaining = -1。
 /// </summary>
 public struct BuffDuration : IComponent
 {
     /// <summary>总持续时间</summary>
     public float duration;
 
-    /// <summary>剩余时间</summary>
-    public float remaining;
-
-    /// <summary>是否永久（remaining 不减少）</summary>
-    public bool isPermanent;
-
-    public static BuffDuration Create(float duration, bool permanent = false)
+    public static BuffDuration Create(float duration)
     {
         return new BuffDuration
         {
-            duration = duration,
-            remaining = duration,
-            isPermanent = permanent
+            duration = duration
         };
-    }
-
-    /// <summary>刷新持续时间</summary>
-    public void Refresh()
-    {
-        remaining = duration;
     }
 }
 

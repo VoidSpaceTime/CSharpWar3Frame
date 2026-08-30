@@ -5,7 +5,9 @@ namespace War3Frame.Systems;
 
 /// <summary>
 /// 持续特效运行时系统。
-/// 负责 0.02s cadence 下的寿命推进与附着跟随。
+/// 负责 0.02s cadence 下的附着跟随与到期销毁：
+/// - Attach 特效：跟随目标单位位置（与 Duration 无关）
+/// - DurationExpired 标记：销毁特效（隐藏后销毁）
 /// </summary>
 [SystemRegister(SystemKind.Interval, 0)]
 public class EffectRuntimeSystem : QuerySystem<EffectBase>, ITimedSystem
@@ -18,16 +20,10 @@ public class EffectRuntimeSystem : QuerySystem<EffectBase>, ITimedSystem
 
         Query.ForEachEntity((ref EffectBase effect, Entity entity) =>
         {
-            if (effect.duration > 0f)
+            if (entity.Tags.Has<DurationExpired>())
             {
-                effect.duration -= Tick.deltaTime;
-                entity.AddComponent(effect);
-
-                if (effect.duration <= 0f)
-                {
-                    toDelete.Add(entity);
-                    return;
-                }
+                toDelete.Add(entity);
+                return;
             }
 
             if (effect.effectType == EffectType.Attach &&

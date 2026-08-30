@@ -18,7 +18,7 @@ public static class EffectHelper
     /// <param name="z">Z坐标（默认使用地形高度）</param>
     /// <param name="duration">持续时间。0=立即销毁，-1=永久，>0=持续指定秒数</param>
     /// <returns>特效 Entity，如果 duration=0 则返回 null</returns>
-    public static Entity? CreatePosition(string model, float x, float y, float z = 0, float duration = -1)
+    public static Entity? CreatePosition(string model, float x, float y, float z = 0, float duration = 0)
     {
         if (duration == 0)
         {
@@ -37,14 +37,11 @@ public static class EffectHelper
                 red = 255,
                 green = 255,
                 blue = 255,
-                duration = duration,
                 effectType = EffectType.Position
             },
-            new Position { x = x, y = y, z = z }
+            new Position { x = x, y = y, z = z },
+            Duration.Create(duration)
         );
-
-        // 如果有持续时间，添加定时销毁逻辑（需要 TimerSystem 支持）
-        // if (duration > 0) { ... }
 
         return entity;
     }
@@ -76,7 +73,6 @@ public static class EffectHelper
                 red = 255,
                 green = 255,
                 blue = 255,
-                duration = duration,
                 effectType = EffectType.Attach,
                 effectAttachType = attachPoint
             },
@@ -84,11 +80,9 @@ public static class EffectHelper
             {
                 target = unit,
                 attachType = attachPoint
-            }
+            },
+            Duration.Create(duration)
         );
-
-        // 建立 Unit -> Effect 关系（可选）
-        // unit.AddRelation(new HasEffect(entity));
 
         return entity;
     }
