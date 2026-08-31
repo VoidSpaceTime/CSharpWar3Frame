@@ -24,6 +24,10 @@ public class AttrCalculationSystem : QuerySystem<AttrValue>
 
     protected override void OnUpdate()
     {
+        // Friflo 禁止在 Query 循环内做结构变更（RemoveTag 亦属结构变更），
+        // 先收集需要重算的属性实体，循环外统一移除脏标记。
+        var recalculated = new List<Entity>();
+
         Query.ForEachEntity((ref AttrValue attr, Entity attrEntity) =>
         {
             // 1. 收集所有指向此属性的修改器
@@ -62,8 +66,13 @@ public class AttrCalculationSystem : QuerySystem<AttrValue>
                               * (1 + percentAddSum)
                               * percentMulProduct;
 
-            // 4. 移除脏标记
-            attrEntity.RemoveTag<AttrDirty>();
+            recalculated.Add(attrEntity);
         });
+
+        // 4. 循环外移除脏标记
+        foreach (var attrEntity in recalculated)
+        {
+            attrEntity.RemoveTag<AttrDirty>();
+        }
     }
 }

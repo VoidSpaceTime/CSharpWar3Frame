@@ -50,10 +50,13 @@ public static partial class AttributeHelper
     public static readonly int RootImmunity = Register("RootImmunity");
     public static readonly int KnockbackImmunity = Register("KnockbackImmunity");
 
-    /// <summary>项目层注册新属性类型</summary>
+/// <summary>项目层注册新属性类型</summary>
     // 运行时注册入口：只负责建立可读名称，不做去重，调用方需保证注册顺序稳定。
     public static int Register(string name)
     {
+        // partial 类静态字段初始化顺序跨文件未定义（Combat.cs 的字段注册可能先于本文件字段初始化器执行），
+        // 此处懒初始化避免 .cctor 阶段 NRE。
+        _types ??= new SortedDictionary<int, string>();
         var id = _nextId++;
         _types.Add(id, name);
         return id;
@@ -63,7 +66,7 @@ public static partial class AttributeHelper
     // 返回名称用于调试和面板展示；找不到时返回 null，调用方自行兜底。
     public static string? GetName(int attrId)
     {
-        return _types.TryGetValue(attrId, out var name) ? name : null;
+        return _types != null && _types.TryGetValue(attrId, out var name) ? name : null;
     }
 
     #endregion
