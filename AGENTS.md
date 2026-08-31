@@ -418,6 +418,17 @@ Native 层（执行）   ← 消费 Dirty/Request，调用 War3 API，不承担�
 - 已有代码迁移按领域分批（先 Effect，再 Player/Item），每批核对全部写入点后改造，不做机械全局替换。
 - 高频数值（血量/蓝量）保持 Compare-Sync，不为形式统一改成 Dirty。
 
+## 原生句柄引用配对规则（检查提醒）
+
+创建原生对象后必须 `HandleHelper.HandleAdd` 登记（对应 lik 的 `HandleRef`），销毁前必须 `HandleHelper.HandleRemove` 注销（对应 `HandleUnRef`），配对在同一 Native 系统内相邻完成。
+
+代码审查时逐项核对：
+
+- [ ] 创建原生对象（`CreateUnit` / `AddSpecialEffect` / `CreateItem` / `CreateTrigger` 等）后，下一行是否立即 `HandleAdd`？
+- [ ] 销毁原生对象（`RemoveUnit` / `DestroyEffect` 等）前，是否相邻调用 `HandleRemove`？
+- [ ] 同一对象类型是否只有唯一销毁执行点（同一 Native 系统 / 同一函数）？销毁路径分散 = 必然有一条漏注销。
+- [ ] 新增原生对象类型时，创建系统与销毁系统是否成对添加、配对登记/注销？
+
 ## 执行要求
 
 ### 1. Design

@@ -109,6 +109,7 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
                 }
 
                 JassApi.DestroyEffect(native.effect);
+                HandleHelper.HandleRemove(native.effect);
                 entity.DeleteEntity();
             }
         });
@@ -116,22 +117,31 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
 
     private static JEffect CreateNativeEffect(Entity entity, EffectBase effect)
     {
+        JEffect handle;
         if (effect.effectType == EffectType.Attach &&
             entity.TryGetComponent<EffectAttachment>(out var attachment) &&
             attachment.target.TryGetComponent<UnitNative>(out var unitNative))
         {
-            return JassApi.AddSpecialEffectTarget(effect.model, unitNative.unit,
+            handle = JassApi.AddSpecialEffectTarget(effect.model, unitNative.unit,
                 GetAttachPointString(attachment.attachType));
         }
-
-        if (entity.TryGetComponent<Position>(out var position))
+        else if (entity.TryGetComponent<Position>(out var position))
         {
-            var handle = JassApi.AddSpecialEffect(effect.model, position.x, position.y);
+            handle = JassApi.AddSpecialEffect(effect.model, position.x, position.y);
             YDApi.EXSetEffectZ(handle, position.z);
-            return handle;
+        }
+        else
+        {
+            handle = JassApi.AddSpecialEffect(effect.model, 0, 0);
         }
 
-        return JassApi.AddSpecialEffect(effect.model, 0, 0);
+        // 创建原生对象后立即登记句柄引用（配对规则：销毁前 HandleRemove，见 AGENTS.md）。
+        if (handle.Handle > 0)
+        {
+            HandleHelper.HandleAdd(handle);
+        }
+
+        return handle;
     }
 
     private static string GetAttachPointString(EffectAttachType attachType)
