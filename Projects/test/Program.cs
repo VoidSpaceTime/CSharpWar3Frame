@@ -48,6 +48,7 @@ public static partial class Game
 
         ItemCompanionAbilityValidationScenario.Initialize(JassApi.Player(0));
         ControlStateValidationScenario.Initialize(JassApi.Player(0));
+        CostValidationScenario.Initialize(JassApi.Player(0));
 
         var timer = War3.CallNative<int>(War3.GetNativeFunction("CreateTimer"));
         War3.CallNative<int>(War3.GetNativeFunction("TimerStart"), timer, TickInterval, true, () =>

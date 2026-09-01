@@ -39,8 +39,8 @@ public struct AttributeCost : IComponent
 /// </summary>
 public struct ItemCost : IComponent
 {
-    /// <summary>物品类型 ID</summary>
-    public int itemTypeId;
+    /// <summary>物品类型模板名（对应 ItemBase.templateName）</summary>
+    public string templateName;
     
     /// <summary>消耗数量</summary>
     public int count;

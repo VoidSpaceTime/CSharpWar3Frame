@@ -13,6 +13,9 @@ public static partial class AbilityHelper
     /// </summary>
     public static float GetManaCost(Entity ability)
     {
+        // 双读：ManaCost 组件优先（组件化蓝耗），无组件回退 AbilityStat 统计值。
+        if (ability.TryGetComponent<ManaCost>(out var cost))
+            return cost.value;
         return GetFinalValue(ability, ManaCost);
     }
 
