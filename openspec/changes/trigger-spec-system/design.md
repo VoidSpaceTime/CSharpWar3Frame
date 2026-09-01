@@ -1,163 +1,202 @@
 # 设计：触发器体系 TriggerSpec
 
-## 1. 组件设计（`War3Frame/Src/Components/Trigger/TriggerSpec.cs`）
+## 1. 设计总览
 
-### 1.1 TriggerEventTag（ITag）
-- 挂载位置：**事件实体**（DamageEvent/HealEvent/BuffAppliedEvent 等）。
-- 作用：标识"该实体是可由触发器匹配的领域事件"。由事件创建方（结算系统）创建实体时一并挂载；TriggerSystem 以此查询事件流。
-- 命名遵守 Tag 规则：零数据分类标记，不带 Request/Event 后缀。
-
-### 1.2 TriggerSpec（IComponent）
-挂载位置：**触发器实体**（独立规则实体，与事件实体分离）。字段：
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `eventTypeId` | int | 匹配的事件类型（`TriggerEventType` 注册表键值） |
-| `conditions` | TriggerCondition[] | 组合条件（All/Any/Not，见 1.3） |
-| `policy` | TriggerPolicy | 触发策略（见 1.4） |
-| `actions` | TriggerAction[] | 命中后动作（见 1.5） |
-| `priority` | int | 同事件多规则时执行优先级（大者先，默认 0） |
-
-### 1.3 TriggerCondition（struct）
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `kind` | TriggerConditionKind | All / Any / Not（Not 为单条件取反） |
-| `conditionId` | int | `TriggerConditionRegistry` 键值 |
-| `parameters` | Dictionary<string, float>? | 条件参数（阈值、单位 id 等） |
-
-### 1.4 TriggerPolicy（struct）
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `kind` | TriggerPolicyKind | Once（一次性）/ Cooldown（冷却）/ Count（次数上限） |
-| `cooldown` | float | 冷却秒数（Cooldown 用） |
-| `maxCount` | int | 最大触发次数（Count/Once 用，Once=1） |
-
-### 1.5 TriggerAction（struct）
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `actionId` | int | `TriggerActionRegistry` 键值 |
-| `parameters` | Dictionary<string, float>? | 动作参数（伤害值、buffId、目标选择等） |
-
-### 1.6 TriggerRuntime（IComponent）
-挂载位置：**触发器实体**。系统维护的运行态：
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `remainingCooldown` | float | 冷却剩余秒数（每 tick 递减，>0 时规则跳过） |
-| `triggeredCount` | int | 已触发次数（Count/Once 策略达上限后规则失效并移除实体） |
-
-### 1.7 TriggerEventType（静态注册表）
-- 形态同 `EffectFormulaRegistry`：`Register(string name) -> int`、`TryResolve`。
-- 内置事件类型与现有事件组件一一对应：`Damage`、`Heal`、`BuffApplied`（首批）；后续领域事件扩展时注册即可。
-- **注册表键 vs 组件类型**：注册表提供稳定 int 键避免字符串运行时主键；匹配时由 TriggerSystem 用 `entity.Has<T>()` 校验对应组件存在（事件类型 ↔ 组件类型的映射表随注册一起登记）。
-
-## 2. 系统设计（`War3Frame/Src/Systems/Trigger/TriggerSystem.cs`）
-
-### 2.1 注册与顺序
 ```
-[SystemRegister(SystemKind.Interval, 128)]
-```
-- order 128：晚于事件结算（Damage/Heal/Buff 结算为 125/126/127），早于生命周期清理（EffectLifecycleSystem 130）——保证事件实体在触发窗口内存活。
-- 后续若出现"事件先于 TriggerSystem 被领域清理"的需求，再按域拆分 order；当前统一一个系统。
-
-### 2.2 每 tick 流程
-```
-1. TriggerRuntime 递减 remainingCooldown（全量触发器实体，Once/Count 达上限的移除）
-2. 收集本 tick 事件实体（Query<TriggerEventTag>，快照）
-3. 对每个事件实体：
-   a. 解析实体上事件组件类型 → eventTypeId
-   b. 查该 eventTypeId 的规则组（按 eventTypeId 分组的 SortedDictionary<int, List<Entity>> 索引，注册/移除时维护）
-   c. 按 priority 降序逐个规则：
-      - TriggerRuntime 冷却中 → 跳过
-      - Conditions 判定（All：全部成立；Any：任一成立；Not：取反）→ 不通过跳过
-      - 通过 → 执行 actions（按序），更新 TriggerRuntime（Once：count+1 达上限移除实体；Cooldown：置 remainingCooldown；Count：count+1）
-4. 事件实体不动（由统一清理系统删除）
+事件实体（事实）         规则实体（配置）            动作（意图）
+DamageEvent        ×    TriggerSpec              → DamageRequest
+HealEvent               TriggerRuntime           → HealRequest
+BuffAppliedEvent        (规则索引: eventTypeId)   → BuffApplyRequest
+ControlStateChangedEvent                         → CastRequest(挂主体)
+        ↓ 创建处挂 TriggerEventMarker                     ↓
+TriggerSystem(131) 匹配/条件/策略 → TriggerActionRegistry
+EventCleanupSystem(132) 清理消费窗口后的事件实体
 ```
 
-### 2.3 条件判定上下文
-```csharp
-public struct TriggerConditionContext
-{
-    public Entity eventEntity;   // 事件实体
-    public Entity source;        // 事件语义源（从事件组件读取）
-    public Entity target;
-    public TriggerCondition condition;
-}
-```
+- 事件侧保持现有"独立事件实体"模式不变；唯一新增是创建处挂 `TriggerEventMarker`。
+- 规则侧为独立"触发器实体"（方案 A），挂 `TriggerSpec`（配置）+ `TriggerRuntime`（状态）。
+- 动作侧经注册表转换为已有 `XxxRequest`，复用现有 Resolve 系统。
 
-### 2.4 动作执行上下文
-```csharp
-public struct TriggerActionContext
-{
-    public Entity eventEntity;
-    public Entity source;
-    public Entity target;
-    public TriggerAction action;
-    public EntityStore Store;    // 生成 Request 用
-}
-```
-
-## 3. 注册表设计
-
-### 3.1 TriggerConditionRegistry
-- 签名：`delegate bool TriggerConditionFunc(TriggerConditionContext ctx);`
-- API：`Register(int conditionId, TriggerConditionFunc func)` / `TryResolve`。
-- 内置条件（首批）：
-  - `unit.is`：source/target 为指定单位（参数：entityId）
-  - `attr.threshold`：目标属性 ≥ 阈值（参数：attrId、min；可选 max）
-  - `damage.min`：事件伤害 ≥ 阈值（参数：min）
-  - `odds`：概率命中（参数：percent，配合 `Random.Shared`，同步环境下用框架统一随机源）
-  - `source.isUnit` / `target.isUnit`：来源/目标存在性
-
-### 3.2 TriggerActionRegistry
-- 签名：`delegate void TriggerActionFunc(TriggerActionContext ctx);`
-- API：`Register(int actionId, TriggerActionFunc func)` / `TryResolve`。
-- 内置动作（首批，全部只生成 Request）：
-  - `request.damage`：向 target 生成 `DamageRequest`（参数：damage、damageSrc、damageType）
-  - `request.buff`：向 target 生成 `BuffApplyRequest`（参数：buffId、duration、attrTypeId、modifyType、value）
-  - `request.heal`：向 source/target 生成 `HealRequest`（参数：amount、target 选择）
-  - `request.cast`：向 source 生成 `CastRequest`（参数：abilityTemplateName、target）——依赖施法域已有 CastRequest 语义
-- 扩展约束：动作内不得出现 `JassApi`/`DzApi` 等原生调用；需要原生副作用的动作必须改写 Request 交给对应 Resolve/Native 系统。
-
-## 4. Helper / Builder API
+## 2. 组件定义
 
 ```csharp
-// 触发器规则 Builder（链式，同 EffectChainBuilder 族）
-public sealed class TriggerSpecBuilder
+// 事件类型注册表：typeId ↔ 组件类型（静态注册，同 EffectFormulaRegistry 形态）
+public static class EventTypeRegistry
 {
-    public static TriggerSpecBuilder OnEvent(TriggerEventType eventType);  // 或 string 重载
-    public TriggerSpecBuilder When(TriggerConditionKind kind, int conditionId, params (string key, float value)[] parameters);
-    public TriggerSpecBuilder Once();
-    public TriggerSpecBuilder Cooldown(float seconds);
-    public TriggerSpecBuilder Count(int max);
-    public TriggerSpecBuilder Then(int actionId, params (string key, float value)[] parameters);
-    public TriggerSpec Build();
+    // 内置登记：DamageEvent / HealEvent / BuffAppliedEvent / ControlStateChangedEvent
+    public static int Register<T>() where T : struct, IComponent;   // 返回 typeId
+    public static int Get<T>() where T : struct, IComponent;
 }
 
-// 快捷注册入口（写 ECS 意图）
-public static class TriggerHelper
+// 事件标记：挂事件实体（创建点挂载，TriggerSystem 单查询发现）
+public struct TriggerEventMarker : IComponent
 {
-    public static Entity Register(EntityStore store, TriggerSpec spec);   // 创建触发器实体（TriggerSpec + TriggerRuntime）
-    public static void Unregister(Entity triggerEntity);
+    public int eventTypeId;
+}
+
+// 条件（叶子）：注册表键 + not 标志 + 三通道参数
+public struct TriggerCondition
+{
+    public int conditionId;     // TriggerConditionRegistry 键（0 = 恒真）
+    public bool not;            // 取反
+    public float[] paramF;      // 数值参数（如伤害阈值）
+    public string[] paramS;     // 字符串参数（如 buffId/技能名）
+    public Entity[] paramE;     // 实体参数（如目标单位）
+}
+
+// 动作：注册表键 + 三通道参数
+public struct TriggerAction
+{
+    public int actionId;        // TriggerActionRegistry 键
+    public float[] paramF;
+    public string[] paramS;
+    public Entity[] paramE;
+}
+
+// 策略
+public enum TriggerPolicyKind { Once, Cooldown, Count }
+
+public struct TriggerPolicy
+{
+    public TriggerPolicyKind kind;
+    public float cooldown;      // Cooldown：秒
+    public int maxCount;        // Count：允许次数
+}
+
+// 规则配置组件（挂触发器实体）
+public struct TriggerSpec : IComponent
+{
+    public int eventTypeId;             // 匹配的事件类型（0 = 匹配全部）
+    public ConditionCombine combine;    // All / Any（单根组合）
+    public TriggerCondition[] conditions; // 空 = 无条件
+    public TriggerPolicy policy;
+    public TriggerAction[] actions;
+}
+
+// 规则状态组件（挂触发器实体）
+public struct TriggerRuntime : IComponent
+{
+    public float cooldownRemain;   // Cooldown 剩余秒
+    public int triggerCount;       // 已触发次数
+}
+
+// 条件/动作上下文
+public readonly struct TriggerContext
+{
+    public readonly EntityStore Store;
+    public readonly Entity EventEntity;    // 触发的事件实体
+    public readonly Entity TriggerEntity;  // 规则实体
 }
 ```
 
-## 5. 命名与边界约定
+**命名规则核对**（AGENTS.md）：`TriggerSpec`/`TriggerRuntime` 数据组件 ✓；`TriggerEventMarker` 组件（带数据，非 ITag）✓；`TriggerCondition`/`TriggerAction`/`TriggerPolicy` 配置结构 ✓；无 Tag 名带 Event/Request ✓。
 
-- 触发器实体：独立实体，不挂在单位/技能上（全局规则）；若需"单位私有规则"，design 阶段预留 `owner` 可选字段，首期不做。
-- 事件类型注册与事件组件一一对应，命名 `Damage`/`Heal`/`BuffApplied`，与现有组件名一致。
-- 与 `AbilityBehaviorTrigger` 边界：技能生命周期触发仍在技能域（`AbilityBehaviorSpec`）；本体系只管跨领域规则。
-- 触发器回调路径零原生调用；原生副作用一律经 Request → Resolve → Native 链路。
+## 3. 事件发现（TriggerEventMarker）
 
-## 6. 性能与容量
+- 事件创建点（4 处）创建事件实体后附加 `TriggerEventMarker { eventTypeId = EventTypeRegistry.Get<DamageEvent>() }`。
+- TriggerSystem 与 EventCleanupSystem 均 `Query<TriggerEventMarker>` 单查询发现全部事件实体，无需组合查询或反射。
+- **新事件类型接入成本**：定义组件 → `EventTypeRegistry.Register<T>()` → 创建点挂 marker——TriggerSystem 无需修改（验收 6）。
+- 为什么不是 ITag：需要携带 eventTypeId（零数据 Tag 无法区分类型）；为什么不是注册表组合查询：Friflo 动态 AnyOf 依赖版本 API，标记组件更简单可靠。
 
-- 规则索引：按 eventTypeId 分组（Dictionary<int, List<Entity>>），事件到达时只遍历同组规则，避免全量规则 × 事件。
-- 事件实体快照：每 tick 复用 List 缓冲，避免分配。
-- 规模预期：规则数 ≤ 数百、事件实体 ≤ 数千/帧时无压力；超标再升级为帧缓冲 + 事件队列。
-- `TriggerRuntime` 递减全量扫描触发器实体（数百规模，0.01s tick 可接受；后续可改为冷却桶）。
+## 4. 注册表
 
-## 7. 验证场景（`Projects/test/Scripts/Process/TriggerValidationScenario.cs`）
+```csharp
+public delegate bool TriggerConditionHandler(TriggerContext ctx, TriggerCondition c);
+public delegate void TriggerActionHandler(TriggerContext ctx, TriggerAction a);
 
-1. 规则 A：事件 `Damage`，条件 `damage.min ≥ 50`，动作 `request.buff`（标记被击单位）——验证条件过滤。
-2. 规则 B：事件 `Dead`（首期若无 Dead 事件则用 `Damage` + `attr.threshold` 模拟），策略 `Once`——验证一次性。
-3. 规则 C：事件 `Damage`，策略 `Cooldown(1.0)`——验证冷却内不重复触发。
-4. 断言：`Require` 校验触发次数、冷却窗口、条件命中，不命中时零副作用。
+public static class TriggerConditionRegistry   // 同 EffectFormulaRegistry：SortedDictionary + Register/TryGet
+public static class TriggerActionRegistry
+```
+
+**内置条件**（注册表初始登记）：
+| conditionId | 语义 | 参数 |
+|---|---|---|
+| 0 | AlwaysTrue（恒真，未登记也可用） | - |
+| 1 | DamageGreater：事件为 DamageEvent 且 amount > paramF[0] | paramF[0]=阈值 |
+| 2 | TargetIs：事件 target 为 paramE[0] | paramE[0]=单位 |
+| 3 | SourceIs：事件 source 为 paramE[0] | paramE[0]=单位 |
+
+**内置动作**（初始登记）：
+| actionId | 语义 | 参数 |
+|---|---|---|
+| 1 | Damage：创建 DamageRequest 独立实体（source=事件 source/target=事件 target） | paramF[0]=amount |
+| 2 | Heal：创建 HealRequest | paramF[0]=amount |
+| 3 | BuffApply：创建 BuffApplyRequest（target=事件 target） | paramS[0]=buffId、paramF[0..3]=attrTypeId/modifyType/value/duration |
+
+**扩展示例**（首期不内置，用户可按需注册）：Cast 动作——向事件 target 挂 `CastRequest`（`target.AddComponent<CastRequest>`，挂主体；ability 实体经 paramE 传入），与 `CastRequestSystem`（QuerySystem<CastRequest, Position>）消费形态对齐。
+
+动作 handler 内**只允许**创建/附加 Request 组件，禁止调用 War3 原生 API（分层规则）。
+
+## 5. TriggerSystem（Interval 131）
+
+```
+OnUpdate:
+  1. 规则索引：Query<TriggerSpec> 收集全部规则实体，按 eventTypeId 分组
+     （Dictionary<int, List<Entity>>，每 tick 重建——规则数小，先简单）
+  2. 事件扫描：Query<TriggerEventMarker> 遍历事件实体
+     对每个事件：
+       eventTypeId → 规则组（eventTypeId=0 的通用规则附加匹配）
+       对每条规则（按注册顺序）：
+         a. TriggerRuntime 检查：cooldownRemain <= 0 且 (kind != Count || triggerCount < maxCount)
+         b. 条件判定：combine=All 全真 / Any 任一真（叶子 not 取反）
+         c. 命中 → 执行全部 actions（经注册表）
+         d. 策略消耗：Once → 标记待删除（收集后删触发器实体）；Cooldown → cooldownRemain = policy.cooldown；
+            Count → triggerCount++（达到 maxCount 后不再触发）
+  3. 收集的结构变更（删触发器实体）统一在迭代外执行
+```
+
+- order 131：严格晚于事件创建（46/125/126/127/129）与 GroundArea（128/129/130）与 EffectLifecycle（130）；事件"滞后一拍"语义（129 的 DamageRequest 下一轮 125 才变事件）符合同步确定性。
+- 每 tick 重建规则索引的代价：规则数通常 < 100，可接受；后续可改为增量维护。
+- 多规则命中同一事件：按规则实体创建顺序（规则索引 List 顺序）；首期不做 priority（TriggerPolicy 不包含）。
+
+## 6. EventCleanupSystem（Interval 132）
+
+```
+OnUpdate:
+  Query<TriggerEventMarker> 遍历事件实体 → 直接删除（消费窗口 = 1 tick）
+```
+
+- 首期消费窗口 = 1 tick（事件创建帧 N，TriggerSystem 帧 N 消费，EventCleanupSystem 帧 N 清理）。
+- 若未来需要跨帧事件窗口（如"3 秒内被攻击 3 次"），扩展 `TriggerEventMarker` 增加 `bornTick` + 存活阈值；首期不做。
+- **影响**：现有事件实体（DamageEvent 等）此前永不清除；本系统落地后生命周期收敛为 1 tick。需核对现有监听系统 order 均 < 132（验收 5 覆盖）。
+
+## 7. Builder API 草案
+
+```csharp
+// 链式配置（写 ECS 意图）
+TriggerHelper.Register(store, builder =>
+    builder.OnEvent<DamageEvent>()
+           .When(c => c.DamageGreater(100f))
+           .Count(3)
+           .Then(a => a.Damage(50f))
+           .Then(a => a.BuffApply("frost")));
+
+// 内部实现：TriggerSpecBuilder 累积配置 → Build() → 创建触发器实体（TriggerSpec + TriggerRuntime）
+```
+
+- `TriggerHelper.Register` 返回触发器实体，供后续注销（`entity.DeleteEntity()`）。
+- Builder 提供类型安全入口：`OnEvent<T>()` 直接绑定组件类型（编译期校验），避免手写 typeId。
+
+## 8. 顺序与 order 布局
+
+| order | 系统 | 职责 |
+|---|---|---|
+| 45 | AttrCalculationSystem | 属性重算 |
+| 46 | ControlStateTransitionSystem | 控制跳变 → ControlStateChangedEvent（挂 marker） |
+| 125-127 | 结算系统 | Damage/Heal/BuffApplied 事件创建（挂 marker） |
+| 128-130 | GroundArea / EffectLifecycle | 地面区域 / 特效生命周期 |
+| **131** | **TriggerSystem** | 匹配/条件/策略/动作 |
+| **132** | **EventCleanupSystem** | 清理事件实体 |
+| 133+ | （预留） | 未来事件窗口系统 |
+
+## 9. 确定性约束
+
+- 条件/动作注册表禁止使用 `Random.Shared`、`DateTime` 等非确定性源。
+- 规则评估顺序 = 规则实体注册顺序（索引 List 保持创建序），保证锁步一致。
+- 事件清理固定 1 tick 窗口，跨端一致。
+
+## 10. 与现有能力边界
+
+- `AbilityBehaviorTrigger`（技能内部生命周期）：不动，与 TriggerSpec 同族不同域。
+- `EffectChainBuilder`（动作 DSL）：TriggerActionRegistry 的动作是"生成 Request"原语；复杂组合仍用 EffectChainBuilder（技能模板内），触发器不做 DSL 嵌套。
+- `TimerTask`/`TimerExpired`：内部计时不动；触发器不消费计时事件（首期）。

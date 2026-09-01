@@ -878,7 +878,7 @@ public class DamageResolveSystem : QuerySystem<DamageRequest>
             var finalDamage = MathF.Max(0f, request.damage.damage);
             var remaining = AttributeHelper.ModifyCurrent(request.target, AttributeHelper.Health, -finalDamage);
 
-            Game.Store.CreateEntity(new DamageEvent
+            var damageEvent = Game.Store.CreateEntity(new DamageEvent
             {
                 source = request.source,
                 target = request.target,
@@ -886,6 +886,7 @@ public class DamageResolveSystem : QuerySystem<DamageRequest>
                 finalDamage = finalDamage,
                 remainingHealth = remaining
             });
+            damageEvent.AddComponent(new TriggerEventMarker { eventTypeId = EventTypeRegistry.Get<DamageEvent>() });
 
             if (remaining <= 0f)
                 UnitHelper.KillUnit(request.target);
@@ -920,7 +921,7 @@ public class HealResolveSystem : QuerySystem<HealRequest>
             var finalHeal = MathF.Max(0f, request.amount);
             var remaining = AttributeHelper.ModifyCurrent(request.target, AttributeHelper.Health, finalHeal);
 
-            Game.Store.CreateEntity(new HealEvent
+            var healEvent = Game.Store.CreateEntity(new HealEvent
             {
                 source = request.source,
                 target = request.target,
@@ -928,6 +929,7 @@ public class HealResolveSystem : QuerySystem<HealRequest>
                 finalHeal = finalHeal,
                 remainingHealth = remaining
             });
+            healEvent.AddComponent(new TriggerEventMarker { eventTypeId = EventTypeRegistry.Get<HealEvent>() });
 
             resolved.Add(requestEntity);
         });
@@ -967,13 +969,14 @@ public class BuffApplyResolveSystem : QuerySystem<BuffApplyRequest>
                 request.duration,
                 request.refreshBehavior);
 
-            Game.Store.CreateEntity(new BuffAppliedEvent
+            var buffAppliedEvent = Game.Store.CreateEntity(new BuffAppliedEvent
             {
                 source = request.source,
                 target = request.target,
                 buff = buff,
                 buffId = request.buffId
             });
+            buffAppliedEvent.AddComponent(new TriggerEventMarker { eventTypeId = EventTypeRegistry.Get<BuffAppliedEvent>() });
 
             resolved.Add(requestEntity);
         });

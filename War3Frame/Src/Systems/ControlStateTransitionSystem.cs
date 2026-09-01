@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using War3Frame.Components;
+using War3Frame.Src.Components;
 using War3Frame.Systems;
 
 namespace War3Frame.Src.Systems;
@@ -88,6 +89,9 @@ public class ControlStateTransitionSystem : QuerySystem<AttrTypeId, AttrOwner>
                     unit = unit,
                     controlType = controlType,
                     entered = active,
+                }).AddComponent(new TriggerEventMarker
+                {
+                    eventTypeId = EventTypeRegistry.Get<ControlStateChangedEvent>()
                 });
                 _store.CreateEntity(new ControlStateNativeRequest
                 {
@@ -135,6 +139,9 @@ public class ControlStateTransitionSystem : QuerySystem<AttrTypeId, AttrOwner>
                         unit = unit,
                         controlType = (ControlType)i,
                         entered = false,
+                    }).AddComponent(new TriggerEventMarker
+                    {
+                        eventTypeId = EventTypeRegistry.Get<ControlStateChangedEvent>()
                     });
                     _store.CreateEntity(new ControlStateNativeRequest
                     {
