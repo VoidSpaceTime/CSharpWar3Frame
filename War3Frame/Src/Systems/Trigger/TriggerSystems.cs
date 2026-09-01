@@ -90,7 +90,7 @@ public class TriggerSystem : QuerySystem<TriggerEventMarker>
         }
     }
 
-    /// <summary>对一组规则执行匹配：条件判定 → 策略消耗 → 动作执行。</summary>
+    /// <summary>对一组规则执行匹配：策略门禁 → 条件判定 → 动作执行 → 策略消耗。</summary>
     private void EvaluateRules(Entity eventEntity, int eventTypeId, List<Entity> rules)
     {
         foreach (var ruleEntity in rules)
@@ -104,6 +104,7 @@ public class TriggerSystem : QuerySystem<TriggerEventMarker>
                 ruleEntity.AddComponent(runtime);
             }
 
+            // 优化：策略门禁前移（冷却中/次数耗尽直接跳过，避免白判定条件）
             if (!CanTrigger(spec.policy, ref runtime))
                 continue;
 
@@ -130,24 +131,33 @@ public class TriggerSystem : QuerySystem<TriggerEventMarker>
         };
     }
 
-    /// <summary>条件判定：combine=All 全真 / Any 任一真；叶子 not 取反；空条件恒真。</summary>
+    /// <summary>条件判定：单根 All/Any + 叶子 not（短路优化）。</summary>
     private static bool EvaluateConditions(TriggerSpec spec, Entity eventEntity, Entity ruleEntity)
     {
         if (spec.conditions == null || spec.conditions.Length == 0)
             return true;
 
         var ctx = new TriggerContext(eventEntity.Store, eventEntity, ruleEntity);
-        var matched = false;
-        foreach (var condition in spec.conditions)
-        {
-            var result = EvaluateCondition(ctx, condition);
-            if (spec.combine == ConditionCombine.All && !result)
-                return false;
-            if (spec.combine == ConditionCombine.Any && result)
-                matched = true;
-        }
 
-        return spec.combine == ConditionCombine.All || matched;
+        // 优化：短路判定（All 遇 false 立即返回 / Any 遇 true 立即返回）
+        if (spec.combine == ConditionCombine.All)
+        {
+            foreach (var condition in spec.conditions)
+            {
+                if (!EvaluateCondition(ctx, condition))
+                    return false; // 短路
+            }
+            return true;
+        }
+        else // Any
+        {
+            foreach (var condition in spec.conditions)
+            {
+                if (EvaluateCondition(ctx, condition))
+                    return true; // 短路
+            }
+            return false;
+        }
     }
 
     /// <summary>单个条件评估：0=恒真，其余走注册表。</summary>
