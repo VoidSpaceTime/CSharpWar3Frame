@@ -369,6 +369,11 @@ XxxRequest / XxxCommand
 3. 谁消费、能否多次、要不要多监听？ → 多次或多监听 = 独立 `XxxEvent` 实体
 4. 只是给本实体分类或标阶段、且零数据？ → `ITag`，名字不得带 `Request`/`Event`
 
+### 系统 Order 契约
+
+- 事件监听系统 order 必须小于 132：`EventCleanupSystem`（order 132）是全仓事件清理边界，删除所有带 `TriggerEventMarker` 的事件实体；order ≥ 132 的监听系统在清理后读不到事件实体。
+- 新增事件类型创建点必须挂 `TriggerEventMarker`，否则事件实体不会被清理，造成泄漏。
+
 ### 历史命名，新代码不要复制
 
 内部阶段继续用 `ProjectileArrived` / `ProjectileExpired`；若剧情或其他系统要监听命中，另发独立 `ProjectileHitEvent`。零数据意图必须是 `IComponent` 的 `XxxRequest`，不得再把 `Request` 做成 `ITag`。

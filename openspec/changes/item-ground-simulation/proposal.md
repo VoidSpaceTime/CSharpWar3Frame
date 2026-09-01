@@ -1,5 +1,22 @@
 # 提案：地面物品特效模拟（Item Ground Simulation）
 
+## 修订说明
+
+**日期**: 2026-09-01  
+**原因**: 根据 opus5 审查反馈修订，澄清独立特效实体引用、同帧创建+拾取边界、Attach/Detach/Destroy 视觉清理、空槽算法、ItemCreateNativeRequest 生命周期、Duration(-1) 约束、句柄配对、Native 分层、事件标记与文件路径。
+
+**主要变更**:
+1. ItemGroundVisual.effect 明确为独立特效实体引用，物品实体不挂 EffectBase。
+2. 同帧 Create+Pickup 边界：允许拾取，跳过特效销毁，额外删除未消费的 ItemCreateNativeRequest。
+3. Attach / EquipToUnit / BeginDestroy / ItemDestroy 路径补充：若带 ItemGroundTag 且 visual 有效，必须先销毁视觉。
+4. 空槽算法：复用现有 Attach 逻辑（container.currentCount < maxSlots 或现有空槽扫描）。
+5. ItemCreateNativeSystem 不调用 JassApi，改为调用 EffectHelper.CreatePosition；请求挂载方式调整为独立请求实体或 RemoveComponent，避免删请求时误删物品。
+6. Duration(-1) 约束：明确 EffectHelper.CreatePosition 的 duration 参数语义。
+7. 保持 Native 分层：Helper 与 Workflow 不调 War3 原生 API。
+8. TriggerEventMarker：本 change 不引入新 XxxEvent 实体，不涉及此标记。
+9. 文件路径：匹配现有 Components/Item、Systems/Native、Helpers 约定。
+10. SystemGenerator 注册：澄清 Immediate 与非 Immediate 系统统一进入 Root，通过 Order 排序，不存在 ImmediateRoot vs Root 分裂。
+
 ## 0. 基本信息
 
 - Change ID: `item-ground-simulation`
@@ -76,11 +93,13 @@ War3 原生物品（`CreateItem`）带攻击、死亡、拾取触发、物品栏
 
 ### 3.1 目标
 
-- 地面物品 = 同一物品 ECS 实体 + `ItemGroundTag` + `Position` + 特效表现（复用 Effect 体系或物品实体上的视觉组件，由 Native 创建 `AddSpecialEffect`）。
-- 将 `ItemCreateNativeRequest` 语义改为“创建地面物品表现”，由改造后的 `ItemCreateNativeSystem`（或拆出的地面视觉 Native 系统）消费。
-- 拾取：距离内选中地面物品实体 → 销毁/隐藏特效并注销句柄 → 去掉 `ItemGroundTag` → 走现有 `ItemAttachRequest` 转入背包。
-- 丢弃：现有 `DropToGround` / `Detach(..., dropToGround: true)` 补写视觉创建请求。
-- 句柄：创建后立即 `HandleAdd`，销毁前相邻 `HandleRemove`，唯一销毁执行点在 Native 层。
+- 地面物品 = 同一物品 ECS 实体 + `ItemGroundTag` + `Position` + `ItemGroundVisual`（模型路径与独立特效实体引用）。
+- 特效表现：独立特效实体（带 `EffectBase` + `Position` + `Duration(-1)`），由 `EffectHelper.CreatePosition` 创建，`EffectNativeSystem` 负责句柄配对。物品实体**不挂** `EffectBase`。
+- 将 `ItemCreateNativeRequest` 语义改为"创建地面物品表现"，由 `ItemCreateNativeSystem` 消费并调用 `EffectHelper.CreatePosition`，写回 `ItemGroundVisual.effect`，不直接调 JassApi。
+- 拾取：距离内 `RequestPickup` → `ItemPickupWorkflowSystem` 校验 → 成功则销毁特效（`EffectHelper.Destroy`）+ 清引用 + `ItemAttachRequest` 转背包；同帧 Create+Pickup 边界：若 `visual.effect.IsNull`，跳过特效销毁，**额外删除未消费的 ItemCreateNativeRequest**。
+- 丢弃：`Detach(..., dropToGround: true)` 补 `ItemGroundVisual` + `ItemCreateNativeRequest`。
+- 地面物品直接 Attach / EquipToUnit / BeginDestroy / ItemDestroy：若仍带 `ItemGroundTag` 且 `visual.effect` 有效，**先销毁视觉**。
+- 句柄配对：创建后立即 `HandleAdd`（§12 行 140-142），销毁前相邻 `HandleRemove`（§12 行 112），唯一销毁执行点在 `EffectNativeSystem`。
 
 ### 3.2 非目标
 
@@ -93,13 +112,13 @@ War3 原生物品（`CreateItem`）带攻击、死亡、拾取触发、物品栏
 
 ### 3.3 影响文件（实施阶段，本提案只写文档）
 
-- `War3Frame/Src/Components/Item/Items.cs`：请求字段改为模型路径、拾取半径等
-- `War3Frame/Src/Components/Item.cs`：地面视觉/拾取范围组件（若新增）
-- `War3Frame/Src/Systems/Native/ItemCreateNativeSystem.cs`：落地或改为委托 Effect Native
-- 可能新增：地面视觉销毁 Native、拾取工作流系统
-- `War3Frame/Src/Helpers/ItemHelper.cs`：`CreateOnGround` / `TryPickup`
-- `War3Frame/Src/Systems/Item/ItemSystem.cs`：Detach 后补视觉请求
-- 复用：`EffectHelper`、`EffectNativeSystem`（优先复用，避免第二套特效句柄路径）
+- `War3Frame/Src/Components/Item/Items.cs`：`ItemCreateNativeRequest` 字段改为 `item` / `x` / `y` / `z` / `model`，删除 `itemTypeId` / `facing`
+- `War3Frame/Src/Components/Item/Items.cs` 或新增文件：`ItemGroundVisual` / `ItemGroundPickRange` / `ItemPickupRequest`
+- `War3Frame/Src/Systems/Native/ItemCreateNativeSystem.cs`：落地实现，调用 `EffectHelper.CreatePosition`，不调 JassApi
+- 新增：`War3Frame/Src/Systems/Item/ItemPickupWorkflowSystem.cs`（拾取工作流）
+- `War3Frame/Src/Helpers/ItemHelper.cs`：新增 `CreateOnGround` / `RequestPickup`；修改 `EquipToUnit`（补地面视觉销毁）
+- `War3Frame/Src/Systems/Item/ItemSystem.cs`：`ItemLifecycleOperations.Detach` 补视觉请求；`Attach` / `BeginDestroy` / `ItemCompanionDeferredDeleteSystem` 补地面视觉销毁路径
+- 复用：`War3Frame/Src/Helpers/EffectHelper.cs`（`CreatePosition` / `Destroy`）、`War3Frame/Src/Systems/Native/EffectNativeSystem.cs`（句柄配对）
 
 ---
 
@@ -116,44 +135,62 @@ War3 原生物品（`CreateItem`）带攻击、死亡、拾取触发、物品栏
 
 ## 5. 方案摘要
 
-优先复用特效实体或在物品实体上挂 `EffectBase` + `Position`，让现有 `EffectNativeSystem` 创建/同步/销毁特效，避免 `ItemCreateNativeSystem` 再开一条 `AddSpecialEffect` 路径。
+强制复用独立特效实体。`ItemGroundVisual.effect` 为独立特效实体引用，物品实体**不挂** `EffectBase`（避免 `EffectDestroyRequest` 删物品）。
 
-若物品实体不能同时作为 Effect 查询主体（生命周期、Duration、Destroy 会误删物品），则：物品实体只持有 `ItemGroundVisual`（模型、特效实体引用或 pending 标记），由 Item Native 写 `EffectHelper.CreatePosition(..., duration: -1)`，拾取时 `EffectHelper.Destroy`。`ItemCreateNativeSystem` 不再 throw，改为消费“确保地面视觉存在”的请求，或降为薄转发。
+`ItemCreateNativeSystem` 消费 `ItemCreateNativeRequest` 后调用 `EffectHelper.CreatePosition(model, x, y, z, duration: -1)`（**-1 表示永久，见 §13 行 19**），将返回的特效实体写回物品的 `ItemGroundVisual.effect`，然后删除请求（独立实体用 `DeleteEntity(requestEntity)`，挂物品用 `RemoveComponent`）。**禁止**直接调 `JassApi.AddSpecialEffect`。
 
-拾取不走 `ItemUseSystem`（那是 companion 施法）。新增 `ItemPickupRequest` + 工作流：校验 `ItemGroundTag`、距离、背包空槽，再 `ItemAttachRequest`。
+拾取工作流 `ItemPickupWorkflowSystem` 校验 `ItemGroundTag`、距离（≤ `pickRange.radius`）、背包空槽（复用 Attach 现有逻辑：`container.currentCount < maxSlots` 或 `GetItemAtSlot` 空槽扫描，§10 行 194-228）、非 `DestroyPending`。成功则：
 
-P0：创建、显示、丢弃、拾取转背包、句柄配对。P1：靠近时 UI 按键提示。
+1. **同帧边界检查**：若 `visual.effect.IsNull`（同帧 Create+Pickup，Native 未完成），跳过 `EffectHelper.Destroy`，**额外删除未消费的 ItemCreateNativeRequest**。
+2. 否则 `EffectHelper.Destroy(visual.effect)` + 清 `visual.effect` 引用。
+3. 写 `ItemAttachRequest` 转入背包。
+
+失败则删请求，不改物品状态。
+
+丢弃时 `Detach(..., dropToGround: true)` 补 `ItemGroundVisual` + `ItemCreateNativeRequest`。
+
+**新增强制路径**：`Attach` / `EquipToUnit` / `BeginDestroy` / `ItemCompanionDeferredDeleteSystem` 若物品仍带 `ItemGroundTag` 且 `visual.effect` 有效，**先销毁视觉**（避免从地面直接装备或销毁时句柄泄漏）。
+
+P0：创建、显示、丢弃、拾取转背包、多路径视觉清理、句柄配对。P1：靠近时 UI 按键提示（独立 change）。
 
 ---
 
 ## 6. 风险、兼容性、迁移
 
-- 句柄泄漏：特效创建/销毁必须走现有 Effect Native 配对，或 Item Native 内相邻成对。审查清单见 design.md。
-- 误删物品：禁止对物品实体直接 `EffectDestroyRequest` 导致 `entity.DeleteEntity()`。视觉必须是独立特效实体，或销毁路径只拆特效不删物品。
-- 与 `ItemUseSystem` 混淆：地面物品无 `ItemOwner`，使用请求应失败；拾取用独立 Request。
-- `ItemCreateNativeRequest.itemTypeId` 语义废弃：无调用方（仅占位系统），可直接改字段；若保留兼容字段须在 design 标明且默认不走 CreateItem。
-- 回滚：恢复占位 throw；去掉新组件/系统；Detach 仍只写 Tag+Position。
+- 句柄泄漏：特效创建/销毁必须走现有 `EffectNativeSystem` 配对（§12 行 118-144 创建，104-114 销毁）。`ItemCreateNativeSystem` / `ItemHelper` / 工作流**禁止**直接调 JassApi。审查清单见 design.md 第 8 节。
+- 误删物品：强制要求 `ItemGroundVisual.effect` 为独立特效实体引用，禁止物品实体挂 `EffectBase`。`EffectDestroyRequest` 只删特效实体，不删物品。
+- 与 `ItemUseSystem` 混淆：地面物品无 `ItemOwner`，Use 校验失败；拾取用独立 `ItemPickupRequest`。
+- 同帧 Create+Pickup：若 `visual.effect.IsNull`（Native 未完成特效创建），拾取工作流跳过 `EffectHelper.Destroy`，**额外删除未消费的 ItemCreateNativeRequest**，避免后续 Native 消费产生孤儿特效。
+- 多路径视觉清理遗漏：`Attach` / `EquipToUnit` / `BeginDestroy` / `ItemCompanionDeferredDeleteSystem` 若物品仍在地面且 `visual.effect` 有效，必须先拆视觉。审查清单见 tasks.md P0 工作流。
+- `ItemCreateNativeRequest` 挂载方式：实施时二选一（独立请求实体或挂物品组件），确保删除请求不误删物品，并在 summary 中说明实际路径。
+- `ItemCreateNativeRequest` 字段语义废弃：现有 `itemTypeId` / `facing`（§9）无调用方（仅占位系统），可直接替换。
+- 回滚：恢复占位 throw；去掉新组件/系统；Detach 仍只写 Tag+Position；恢复 `ItemCreateNativeRequest` 旧字段（若有外部依赖）。
 
 ---
 
 ## 7. 验证计划
 
-- 文档：四件套字段完整，状态 `待审核`。
+- 文档：四件套字段完整，状态 `待审核`，修订说明已补充。
 - 实施后：`dotnet build War3Frame/War3Frame.csproj` 0 错误。
-- 代码审查：创建后 `HandleAdd`、销毁前 `HandleRemove`；无 `CreateItem`。
-- 逻辑：创建地面 → 有 `ItemGroundTag` + 视觉 → 拾取成功转 `ItemInventoryTag`/`ItemEquippedTag` 且特效销毁；超距拾取失败。
-- 真实 War3 客户端看模型：默认**非阻塞**（本提案审核即声明）。阻塞项为构建与句柄审查。若后续用户要求客户端验证，另开验证记录。
+- 句柄审查（AGENTS.md 强制清单，design.md 第 8 节）：`ItemCreateNativeSystem` / `ItemHelper` / 工作流无直接 JassApi / DzApi / YDApi；创建 `HandleAdd`（§12 行 140-142）与销毁 `HandleRemove`（§12 行 112）相邻成对；销毁点唯一（只在 `EffectNativeSystem`）。
+- 代码审查（静态）：grep 地面路径无 `CreateItem` / `JassApi.AddSpecialEffect`（Item 层）；组件注释禁止物品挂 `EffectBase`；`ItemCreateNativeRequest` 字段为 `item`/`x`/`y`/`z`/`model`，无 `itemTypeId` / `facing`。
+- 逻辑走查或单元测试：创建地面 → `ItemGroundTag` + `ItemCreateNativeRequest` → Native 消费 → `visual.effect` 非空 → 拾取成功 → `ItemInventoryTag`/`ItemEquippedTag` + 特效删除 + 引用清空；超距拾取失败物品状态不变；同帧 Create+Pickup 不崩溃，未消费请求被删除；从地面直接 Attach / EquipToUnit / BeginDestroy 无句柄泄漏。
+- 真实 War3 客户端看模型：默认**非阻塞**（本 proposal 审核即声明为非阻塞）。阻塞项为构建、句柄审查与代码审查。若后续用户要求真实客户端验证，另开验证记录提案。
 
 ---
 
 ## 8. 验收标准
 
-- 地面物品创建后 ECS 为 `ItemGroundTag` + `Position`，并有特效表现意图（独立 Effect 实体或等价 Native 创建）。
-- 拾取距离内成功：视觉消失、句柄注销、物品进入背包槽位。
-- 不出现 `CreateItem` / 原生物品句柄。
+- 地面物品创建后 ECS 为 `ItemGroundTag` + `Position` + `ItemGroundVisual`，`ItemCreateNativeRequest` 被 Native 消费后 `visual.effect` 为独立特效实体（`EffectBase` + `Position` + `Duration`）。
+- 拾取距离内成功：特效实体删除、`visual.effect` 引用清空（`IsNull` 或 `default`）、物品进入背包槽位（`ItemInventoryTag` + `ItemEquippedTag` + `ItemOwner` + `ItemSlotIndex`）、无句柄泄漏。
+- 同帧 Create+Pickup：允许拾取，不崩溃，未消费的 `ItemCreateNativeRequest` 被删除，无孤儿特效。
+- 拾取失败（超距/无空槽/非地面/DestroyPending）：请求删除，物品状态不变（仍为 `ItemGroundTag`，`visual.effect` 仍在）。
+- 从地面直接 Attach / EquipToUnit / BeginDestroy / ItemDestroy：视觉先销毁，无句柄泄漏。
+- 不出现 `CreateItem` / 原生物品句柄。`ItemCreateNativeSystem` 不直接调 `JassApi.AddSpecialEffect`，只调 `EffectHelper.CreatePosition`。
 - `ItemCreateNativeSystem` 不再 `NotImplementedException`。
 - `dotnet build War3Frame/War3Frame.csproj` 0 错误。
-- 句柄配对审查通过。
+- 句柄审查清单（design.md 第 8 节）全通过。
+- 组件注释禁止物品实体挂 `EffectBase`。
 
 ---
 

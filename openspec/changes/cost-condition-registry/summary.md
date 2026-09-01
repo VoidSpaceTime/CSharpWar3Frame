@@ -31,3 +31,4 @@
 - 有 companion 的消耗物品建议走 `ItemDestroyRequest` 受控流程（本提案物品扣除为简化解除，不处理 companion）。
 - 消耗不足文案接 UI 不在本提案范围。
 - 真实 War3 客户端物品扣除未验证（本地场景无原生物品句柄），非阻塞。
+- 消耗物品的 `RemoveItems` 为简化解除（跳过 `ItemDestroyRequest`，不处理 companion、不发移除事件）；有 companion 的消耗物品应预先走 `ItemDestroyRequest` 受控流程（后续修正候选）。

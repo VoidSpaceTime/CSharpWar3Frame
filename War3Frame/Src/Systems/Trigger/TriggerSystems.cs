@@ -199,7 +199,7 @@ public class TriggerSystem : QuerySystem<TriggerEventMarker>
 /// 解决全仓事件实体永不清理的泄漏问题。TriggerSystem 只读事件实体，本系统负责生命周期。
 /// </summary>
 /// <remarks>
-/// order 132：严格晚于 TriggerSystem 与全部事件监听系统；新增事件监听系统必须 order &lt; 132。
+/// order 132：严格晚于 TriggerSystem 与全部事件监听系统；新增事件监听系统必须 order &lt; 132，否则在清理后读不到事件实体。
 /// </remarks>
 [SystemRegister(SystemKind.Interval, 132)]
 public class EventCleanupSystem : QuerySystem<TriggerEventMarker>
