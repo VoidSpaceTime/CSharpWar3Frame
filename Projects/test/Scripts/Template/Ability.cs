@@ -274,7 +274,7 @@ public class FrostNovaTemplate : IAbilityTemplate
 
 /// <summary>
 /// 示例技能模板：奥术飞弹。
-/// 展示单体追踪弹道命中后结算伤害。
+/// 展示单体追踪弹道命中后结算伤害，并附加眩晕控制 Buff。
 /// </summary>
 [AbilityTemplate("arcane_missile")]
 public class ArcaneMissileTemplate : IAbilityTemplate
@@ -284,7 +284,7 @@ public class ArcaneMissileTemplate : IAbilityTemplate
         AbilitySpecBuilder
             .Create("arcane_missile")
             .Name("奥术飞弹")
-            .Description("发射追踪飞弹，命中目标后造成魔法伤害。")
+            .Description("发射追踪飞弹，命中目标后造成魔法伤害并眩晕 3 秒。")
             .TargetType(AbilityTargetType.Unit)
             .BaseValue(AbilityHelper.ManaCost, 45)
             .BaseValue(AbilityHelper.CooldownDuration, 3.5f)
@@ -298,7 +298,14 @@ public class ArcaneMissileTemplate : IAbilityTemplate
                     AbilityValue.AbilityStat(AbilityHelper.ProjectileSpeed),
                     arrivalThreshold: AbilityValue.AbilityStat(AbilityHelper.ArrivalThreshold),
                     hitFilter: TargetFilter.EnemyAlive)
-                .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill))
+                .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill)
+                .Buff(
+                    "arcane_missile_stun",
+                    AbilityValue.Constant(3f),
+                    AttributeHelper.Stun,
+                    ModifyType.Flat,
+                    AbilityValue.Constant(1f),
+                    BuffRefreshBehavior.RefreshDuration))
             .BuildTo(ability, level);
     }
 }
