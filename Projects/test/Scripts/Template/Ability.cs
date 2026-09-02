@@ -52,66 +52,6 @@ public sealed class ScrollFireballCastTemplate : IAbilityTemplate
 }
 
 /// <summary>
-/// ItemUse Unit 目标兼容性验证技能。
-/// </summary>
-[AbilityTemplate("item_test_unit_cast")]
-public sealed class ItemTestUnitCastTemplate : IAbilityTemplate
-{
-    public void Configure(Entity ability, int level)
-    {
-        AbilitySpecBuilder.Create("item_test_unit_cast")
-            .TargetType(AbilityTargetType.Unit)
-            .BaseValue(AbilityHelper.CooldownDuration, 0f)
-            .BaseValue(AbilityHelper.Range, 99999f)
-            .OnEffect(effect => effect.Heal(AbilityValue.Constant(1f)))
-            .BuildTo(ability, level);
-    }
-}
-
-/// <summary>
-/// ItemUse Area 目标兼容性与 ground-area 来源验证技能。
-/// </summary>
-[AbilityTemplate("item_test_area_cast")]
-public sealed class ItemTestAreaCastTemplate : IAbilityTemplate
-{
-    public void Configure(Entity ability, int level)
-    {
-        AbilitySpecBuilder.Create("item_test_area_cast")
-            .TargetType(AbilityTargetType.Area)
-            .BaseValue(AbilityHelper.CooldownDuration, 0f)
-            .BaseValue(AbilityHelper.Range, 99999f)
-            .OnEffect(effect => effect.GroundArea(
-                GroundAreaTag.Oil,
-                AbilityValue.Constant(120f),
-                duration: AbilityValue.Constant(2f)))
-            .BuildTo(ability, level);
-    }
-}
-
-/// <summary>
-/// Item companion 阶段清理验证技能。
-/// </summary>
-[AbilityTemplate("item_test_phased_cast")]
-public sealed class ItemTestPhasedCastTemplate : IAbilityTemplate
-{
-    public void Configure(Entity ability, int level)
-    {
-        AbilitySpecBuilder.Create("item_test_phased_cast")
-            .TargetType(AbilityTargetType.None)
-            .CastPoint(1f)
-            .Channel(2f, 0.25f)
-            .Backswing(1f)
-            .BaseValue(AbilityHelper.CooldownDuration, 3f)
-            .BaseValue(AbilityHelper.Range, 0f)
-            .OnEffect(effect => effect.Heal(AbilityValue.Constant(1f)))
-            .OnChannelTick(effect => effect.Heal(AbilityValue.Constant(1f)))
-            .OnInterrupted(effect => effect.Heal(AbilityValue.Constant(999f)))
-            .OnFinished(effect => effect.Heal(AbilityValue.Constant(999f)))
-            .BuildTo(ability, level);
-    }
-}
-
-/// <summary>
 /// 示例技能模板：火焰冲击。
 /// </summary>
 [AbilityTemplate("fire_blast")]
