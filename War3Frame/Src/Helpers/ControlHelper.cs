@@ -1,4 +1,4 @@
-using Friflo.Engine.ECS;
+﻿using Friflo.Engine.ECS;
 
 namespace War3Frame;
 
@@ -14,7 +14,7 @@ public static class ControlHelper
     public static bool IsIncapacitated(Entity unit)
     {
         return GetEffectiveValue(unit, AttributeHelper.Stun) > 0
-               || GetEffectiveValue(unit, AttributeHelper.Knockback) > 0;
+               || GetEffectiveValue(unit, AttributeHelper.CrackFly) > 0;
     }
 
     /// <summary>
@@ -24,7 +24,7 @@ public static class ControlHelper
     {
         return GetEffectiveValue(unit, AttributeHelper.Stun) > 0
                || GetEffectiveValue(unit, AttributeHelper.Root) > 0
-               || GetEffectiveValue(unit, AttributeHelper.Knockback) > 0;
+               || GetEffectiveValue(unit, AttributeHelper.CrackFly) > 0;
     }
 
     /// <summary>
@@ -34,17 +34,17 @@ public static class ControlHelper
     {
         return GetEffectiveValue(unit, AttributeHelper.Stun) > 0
                || GetEffectiveValue(unit, AttributeHelper.Silence) > 0
-               || GetEffectiveValue(unit, AttributeHelper.Knockback) > 0;
+               || GetEffectiveValue(unit, AttributeHelper.CrackFly) > 0;
     }
 
     /// <summary>
     /// 检查单位是否无法攻击（眩晕/缴械/击飞）
     /// </summary>
-    public static bool IsDisarmed(Entity unit)
+    public static bool IsNoAttack(Entity unit)
     {
         return GetEffectiveValue(unit, AttributeHelper.Stun) > 0
-               || GetEffectiveValue(unit, AttributeHelper.Disarm) > 0
-               || GetEffectiveValue(unit, AttributeHelper.Knockback) > 0;
+               || GetEffectiveValue(unit, AttributeHelper.NoAttack) > 0
+               || GetEffectiveValue(unit, AttributeHelper.CrackFly) > 0;
     }
 
     /// <summary>
@@ -82,9 +82,9 @@ public static class ControlHelper
     {
         if (controlAttrId == AttributeHelper.Stun) return AttributeHelper.StunImmunity;
         if (controlAttrId == AttributeHelper.Silence) return AttributeHelper.SilenceImmunity;
-        if (controlAttrId == AttributeHelper.Disarm) return AttributeHelper.DisarmImmunity;
+        if (controlAttrId == AttributeHelper.NoAttack) return AttributeHelper.NoAttackImmunity;
         if (controlAttrId == AttributeHelper.Root) return AttributeHelper.RootImmunity;
-        if (controlAttrId == AttributeHelper.Knockback) return AttributeHelper.KnockbackImmunity;
+        if (controlAttrId == AttributeHelper.CrackFly) return AttributeHelper.CrackFlyImmunity;
         return null;
     }
 }

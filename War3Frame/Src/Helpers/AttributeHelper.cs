@@ -29,16 +29,15 @@ public static partial class AttributeHelper
     public static readonly int Mana = Register("Mana");
     public static readonly int ManaRegen = Register("ManaRegen");
     public static readonly int ManaRegenPercent = Register("ManaRegenPercent");
-    public static readonly int Damage = Register("Damage");
 
     // ============================================================================
     // 控制效果属性（值 > 0 表示效果生效）
     // ============================================================================
     public static readonly int Stun = Register("Stun"); // 眩晕（禁止一切）
     public static readonly int Silence = Register("Silence"); // 沉默（禁止施法）
-    public static readonly int Disarm = Register("Disarm"); // 缴械（禁止攻击）
+    public static readonly int NoAttack = Register("NoAttack"); // 缴械（禁止攻击）
     public static readonly int Root = Register("Root"); // 定身（禁止移动）
-    public static readonly int Knockback = Register("Knockback"); // 击飞/击退
+    public static readonly int CrackFly = Register("CrackFly"); // 击飞/击退
 
     // ============================================================================
     // 免疫属性（值 > 0 可以免疫对应控制）
@@ -46,9 +45,9 @@ public static partial class AttributeHelper
     // 免疫类属性按同样的 ID 体系登记，便于效果系统统一判断。
     public static readonly int StunImmunity = Register("StunImmunity");
     public static readonly int SilenceImmunity = Register("SilenceImmunity");
-    public static readonly int DisarmImmunity = Register("DisarmImmunity");
+    public static readonly int NoAttackImmunity = Register("NoAttackImmunity");
     public static readonly int RootImmunity = Register("RootImmunity");
-    public static readonly int KnockbackImmunity = Register("KnockbackImmunity");
+    public static readonly int CrackFlyImmunity = Register("CrackFlyImmunity");
 
 /// <summary>项目层注册新属性类型</summary>
     // 运行时注册入口：只负责建立可读名称，不做去重，调用方需保证注册顺序稳定。
@@ -117,6 +116,18 @@ public static partial class AttributeHelper
 
         attr = default;
         return false;
+    }
+
+    /// <summary>获取实体的指定属性实体；不存在时自动创建（baseValue 默认 0）。</summary>
+    // 供修改器/buff 贡献路径使用：单位模板未声明某属性时，运行时首个贡献会自动建一个 base=0 的属性实体，
+    // 避免“加了个寂寞”的静默丢弃。base=0 语义：本框架不预设底子，纯由修改器贡献（Flat 加法正确；
+    // Percent 系需要作者先在模板声明 base，否则按 0 计算是作者责任）。
+    public static Entity GetOrCreateAttr(Entity unit, int typeId, float baseValue = 0f)
+    {
+        if (TryGetAttr(unit, typeId, out var attr))
+            return attr;
+
+        return CreateAttr(unit, typeId, baseValue);
     }
 
     /// <summary>获取 entity 某属性的最终值</summary>

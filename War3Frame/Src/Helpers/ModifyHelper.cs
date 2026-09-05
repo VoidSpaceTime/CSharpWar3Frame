@@ -26,7 +26,7 @@ public class ModifyHelper
     }
 
     /// <summary>为 Unit 的某属性添加修改器</summary>
-    // 对单位添加 modifier 的便利入口：找不到属性时不创建悬挂 modifier。
+    // 对单位添加 modifier 的便利入口：属性实体不存在时自动创建 base=0 的属性实体，消除静默丢弃。
     public static Entity? AddModifierToUnit(
         Entity unit,
         int attrTypeId,
@@ -34,10 +34,10 @@ public class ModifyHelper
         ModifyType type,
         float value)
     {
-        var attr = AttributeHelper.GetAttr(unit, attrTypeId);
-        if (attr == null) return null;
+        var attr = AttributeHelper.GetOrCreateAttr(unit, attrTypeId);
+        if (attr.IsNull) return null;
 
-        return AddModifier(attr.Value, source, type, value);
+        return AddModifier(attr, source, type, value);
     }
 
     /// <summary>移除来源的所有修改器</summary>

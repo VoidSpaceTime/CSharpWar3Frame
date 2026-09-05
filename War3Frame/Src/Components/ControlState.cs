@@ -14,13 +14,43 @@ public enum ControlType
     Silence,
 
     /// <summary>缴械：禁止攻击</summary>
-    Disarm,
+    NoAttack,
 
     /// <summary>定身：禁止移动</summary>
     Root,
 
     /// <summary>击飞/击退：位移类控制</summary>
-    Knockback,
+    CrackFly,
+
+    /// <summary>显示单位</summary>
+    Hide,
+
+    /// <summary>
+    /// 无碰撞
+    /// </summary>
+    NoPath,
+
+    /// <summary>
+    /// 蝗虫
+    /// </summary>
+    Locust,
+
+    /// <summary>
+    /// 无敌
+    /// </summary>
+    Invulnerable,
+    /// <summary>
+    /// 隐身
+    /// </summary>
+    Invisible,
+    /// <summary>
+    /// 暂停
+    /// </summary>
+    Pause,
+    /// <summary>
+    /// 巫术
+    /// </summary>
+    Sorcery
 }
 
 /// <summary>

@@ -20,24 +20,17 @@ namespace War3Frame.Src.Systems;
 [SystemRegister(SystemKind.Interval, 46)]
 public class ControlStateTransitionSystem : QuerySystem<AttrTypeId, AttrOwner>
 {
-    /// <summary>控制属性 ID 表（与 ControlType 枚举顺序一致）。</summary>
-    private static readonly int[] ControlAttrIds =
-    {
-        AttributeHelper.Stun,
-        AttributeHelper.Silence,
-        AttributeHelper.Disarm,
-        AttributeHelper.Root,
-        AttributeHelper.Knockback,
-    };
+    /// <summary>单个控制属性的映射：属性 ID + 免疫属性 ID + 对应 ControlType（显式关联，不再依赖数组下标与枚举序号对齐）。</summary>
+    private readonly record struct ControlAttrEntry(int AttrId, int ImmunityAttrId, ControlType ControlType);
 
-    /// <summary>免疫属性 ID 表（与 ControlType 枚举顺序一致）。</summary>
-    private static readonly int[] ImmunityAttrIds =
+    /// <summary>控制属性映射表（与免疫一一对应）。新增控制类型时在此追加一条，无需关心枚举序号。</summary>
+    private static readonly ControlAttrEntry[] ControlAttrs =
     {
-        AttributeHelper.StunImmunity,
-        AttributeHelper.SilenceImmunity,
-        AttributeHelper.DisarmImmunity,
-        AttributeHelper.RootImmunity,
-        AttributeHelper.KnockbackImmunity,
+        new(AttributeHelper.Stun,        AttributeHelper.StunImmunity,        ControlType.Stun),
+        new(AttributeHelper.Silence,     AttributeHelper.SilenceImmunity,     ControlType.Silence),
+        new(AttributeHelper.NoAttack,    AttributeHelper.NoAttackImmunity,    ControlType.NoAttack),
+        new(AttributeHelper.Root,        AttributeHelper.RootImmunity,        ControlType.Root),
+        new(AttributeHelper.CrackFly,    AttributeHelper.CrackFlyImmunity,    ControlType.CrackFly),
     };
 
     /// <summary>本 tick 需要检测的单位集合（复用避免分配）。</summary>
@@ -74,10 +67,10 @@ public class ControlStateTransitionSystem : QuerySystem<AttrTypeId, AttrOwner>
                 unit.AddComponent(snapshot);
             }
 
-            for (var i = 0; i < ControlAttrIds.Length; i++)
+            foreach (var entry in ControlAttrs)
             {
-                var controlType = (ControlType)i;
-                var active = ControlHelper.GetEffectiveValue(unit, ControlAttrIds[i]) > 0f;
+                var controlType = entry.ControlType;
+                var active = ControlHelper.GetEffectiveValue(unit, entry.AttrId) > 0f;
                 if (snapshot.IsActive(controlType) == active)
                     continue;
 
@@ -129,15 +122,15 @@ public class ControlStateTransitionSystem : QuerySystem<AttrTypeId, AttrOwner>
         {
             foreach (var (unit, bits) in toRelease)
             {
-                for (var i = 0; i < ControlAttrIds.Length; i++)
+                foreach (var entry in ControlAttrs)
                 {
-                    if ((bits & (1 << i)) == 0)
+                    if ((bits & (1 << (int)entry.ControlType)) == 0)
                         continue;
 
                     _store.CreateEntity(new ControlStateChangedEvent
                     {
                         unit = unit,
-                        controlType = (ControlType)i,
+                        controlType = entry.ControlType,
                         entered = false,
                     }).AddComponent(new TriggerEventMarker
                     {
@@ -146,7 +139,7 @@ public class ControlStateTransitionSystem : QuerySystem<AttrTypeId, AttrOwner>
                     _store.CreateEntity(new ControlStateNativeRequest
                     {
                         unit = unit,
-                        controlType = (ControlType)i,
+                        controlType = entry.ControlType,
                         entered = false,
                     });
                 }
@@ -165,15 +158,9 @@ public class ControlStateTransitionSystem : QuerySystem<AttrTypeId, AttrOwner>
     /// <summary>判断属性类型是否属于控制或免疫体系。</summary>
     private static bool IsControlOrImmunity(int typeId)
     {
-        foreach (var controlId in ControlAttrIds)
+        foreach (var entry in ControlAttrs)
         {
-            if (typeId == controlId)
-                return true;
-        }
-
-        foreach (var immunityId in ImmunityAttrIds)
-        {
-            if (typeId == immunityId)
+            if (typeId == entry.AttrId || typeId == entry.ImmunityAttrId)
                 return true;
         }
 

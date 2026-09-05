@@ -25,18 +25,82 @@ public class UnitControlNativeSystem : QuerySystem<ControlStateNativeRequest>
 
             switch (request.controlType)
             {
-                case ControlType.Stun:
-                    // 眩晕 = 暂停单位一切行动；解除时恢复。
+                case ControlType.NoAttack:
+                    DzApi.DzUnitDisableAttack(native.unit, request.entered);
+                    break;
+                case ControlType.Hide:
+                    JassApi.ShowUnit(native.unit, request.entered);
+                    break;
+                case ControlType.Root:
+                case ControlType.NoPath:
+                    JassApi.SetUnitPathing(native.unit, request.entered);
+                    break;
+                case ControlType.Pause:
                     JassApi.PauseUnit(native.unit, request.entered);
                     break;
+                case ControlType.Locust:
+                    /*
+                     /// TODO 需要默认map有蝗虫的模板
+                    if (request.entered)
+                    {
+                        if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_locust"]) < 1)
+                            JassApi.UnitAddAbility(native.unit, FRAMEWORK_ID["ability_locust"]);
+                    }
+                    else
+                    {
+                        if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_locust"]) >= 1)
+                            JassApi.UnitRemoveAbility(native.unit, FRAMEWORK_ID["ability_locust"]);
+                    }
+                    */
 
-                case ControlType.Silence:
-                case ControlType.Disarm:
-                case ControlType.Root:
-                case ControlType.Knockback:
-                    // TODO(控制状态): 沉默/缴械/定身/击飞的 War3 原生能力映射待定
-                    // （1.27 无原生沉默/缴械函数，需按可用扩展 API 或物编虚拟技能实现）。
-                    // 事件已照常发出，业务可先监听 ControlStateChangedEvent 自定义响应。
+                    break;
+                case ControlType.Invulnerable:
+                    /*
+                     /// TODO 需要默认map有无敌的模板
+                    if (request.entered)
+                    {
+                        if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_invulnerable"]) < 1)
+                            JassApi.UnitAddAbility(native.unit, FRAMEWORK_ID["ability_invulnerable"]);
+                    }
+                    else
+                    {
+                        if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_invulnerable"]) >= 1)
+                            JassApi.UnitRemoveAbility(native.unit, FRAMEWORK_ID["ability_invulnerable"]);
+                    }
+                    */
+
+                    break;
+                case ControlType.Invisible:
+                    /*
+                     /// TODO 需要默认map有无敌的模板
+                    if (request.entered)
+                    {
+                        if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_invisible"]) < 1)
+                            JassApi.UnitAddAbility(native.unit, FRAMEWORK_ID["ability_invisible"]);
+                    }
+                    else
+                    {
+                        if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_invisible"]) >= 1)
+                            JassApi.UnitRemoveAbility(native.unit, FRAMEWORK_ID["ability_invisible"]);
+                    }
+                    */
+
+                    break;
+                case ControlType.Sorcery:
+                    /*
+                /// TODO 需要默认map有巫术的模板
+               if (request.entered)
+               {
+                   if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_invisible"]) < 1)
+                       JassApi.UnitAddAbility(native.unit, FRAMEWORK_ID["ability_invisible"]);
+               }
+               else
+               {
+                   if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_invisible"]) >= 1)
+                       JassApi.UnitRemoveAbility(native.unit, FRAMEWORK_ID["ability_invisible"]);
+               }
+               */
+
                     break;
             }
 
