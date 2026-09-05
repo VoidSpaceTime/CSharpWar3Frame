@@ -15,6 +15,7 @@ public class AbilityCooldownSystem : QuerySystem<AbilityBase, AbilityCooldownSta
     protected override void OnUpdate()
     {
         var deltaTime = Tick.deltaTime;
+        var finished = new List<Entity>();
 
         Query.ForEachEntity((ref AbilityBase ability, ref AbilityCooldownState cooldown, Entity entity) =>
         {
@@ -23,13 +24,19 @@ public class AbilityCooldownSystem : QuerySystem<AbilityBase, AbilityCooldownSta
             {
                 cooldown.remaining -= deltaTime;
 
-                // 冷却完成，切换到就绪状态
+                // 冷却完成，切换到就绪状态；组件移除移出查询循环（结构变更）
                 if (cooldown.remaining <= 0)
                 {
                     cooldown.remaining = 0;
                     ability.state = AbilityState.Ready;
+                    finished.Add(entity);
                 }
             }
         });
+
+        foreach (var entity in finished)
+        {
+            entity.RemoveComponent<AbilityCooldownState>();
+        }
     }
 }

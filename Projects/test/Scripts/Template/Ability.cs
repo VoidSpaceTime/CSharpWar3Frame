@@ -181,7 +181,7 @@ public class HealingWaveTemplate : IAbilityTemplate
 
 /// <summary>
 /// 示例技能模板：冰霜新星。
-/// 展示一个范围技能同时产生伤害与控制类 Buff 请求。
+/// 展示一个范围技能同时产生伤害与独占控制 Buff（Root 便捷步骤：control:root + ReplaceIfLonger）。
 /// </summary>
 [AbilityTemplate("frost_nova")]
 public class FrostNovaTemplate : IAbilityTemplate
@@ -201,13 +201,7 @@ public class FrostNovaTemplate : IAbilityTemplate
             .OnEffect(e => e
                 .Area(TargetFilter.EnemyAlive, radius: AbilityValue.AbilityStat(AbilityHelper.Radius))
                 .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill)
-                .Buff(
-                    "frost_nova_root",
-                    AbilityValue.Constant(1.2f + 0.2f * level),
-                    AttributeHelper.Root,
-                    ModifyType.Flat,
-                    AbilityValue.Constant(1f),
-                    BuffRefreshBehavior.RefreshDuration))
+                .Root(AbilityValue.Constant(1.2f + 0.2f * level)))
             .BuildTo(ability, level);
     }
 }
@@ -215,6 +209,7 @@ public class FrostNovaTemplate : IAbilityTemplate
 /// <summary>
 /// 示例技能模板：奥术飞弹。
 /// 展示单体追踪弹道命中后结算伤害，并附加眩晕控制 Buff。
+/// 眩晕使用独占控制便捷步骤 Stun：buffId="control:stun" + ReplaceIfLonger（重复眩晕取最晚结束）。
 /// </summary>
 [AbilityTemplate("arcane_missile")]
 public class ArcaneMissileTemplate : IAbilityTemplate
@@ -239,13 +234,7 @@ public class ArcaneMissileTemplate : IAbilityTemplate
                     arrivalThreshold: AbilityValue.AbilityStat(AbilityHelper.ArrivalThreshold),
                     hitFilter: TargetFilter.EnemyAlive)
                 .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill)
-                .Buff(
-                    "arcane_missile_stun",
-                    AbilityValue.Constant(3f),
-                    AttributeHelper.Stun,
-                    ModifyType.Flat,
-                    AbilityValue.Constant(1f),
-                    BuffRefreshBehavior.RefreshDuration))
+                .Stun(AbilityValue.Constant(3f)))
             .BuildTo(ability, level);
     }
 }
@@ -273,7 +262,7 @@ public class BattleShoutTemplate : IAbilityTemplate
                 .Buff(
                     "battle_shout_damage",
                     AbilityValue.Constant(8f),
-                    AttributeHelper.Damage,
+                    AttributeHelper.AttackDamage,
                     ModifyType.Flat,
                     AbilityValue.Constant(15f + 5f * level),
                     BuffRefreshBehavior.RefreshDuration))
@@ -456,6 +445,43 @@ public class FlamethrowerTemplate : IAbilityTemplate
                     fallbackWidth: 140f,
                     reactionTag: GroundAreaTag.Fire)
                 .Damage(AbilityValue.AbilityStat(AbilityHelper.DamageAmount), DamageType.Magical, DamageSrc.Skill))
+            .BuildTo(ability, level);
+    }
+}
+
+/// <summary>
+/// 示例技能模板：剧毒之咬。
+/// 展示 DoT debuff 效果链便捷步骤：减速贡献 Buff + 每 1s 一次 tick 伤害，共享来源 buffId 前缀。
+/// DoT 通过 tickActionId="DealDamage" 由 BuffTickSystem 驱动发 DamageRequest。
+/// </summary>
+[AbilityTemplate("poison_bite")]
+public class PoisonBiteTemplate : IAbilityTemplate
+{
+    public void Configure(Entity ability, int level)
+    {
+        AbilitySpecBuilder
+            .Create("poison_bite")
+            .Name("剧毒之咬")
+            .Description("撕咬目标，使其减速并持续中毒，每秒受到毒液伤害。")
+            .TargetType(AbilityTargetType.Unit)
+            .BaseValue(AbilityHelper.ManaCost, 60)
+            .BaseValue(AbilityHelper.CooldownDuration, 6f)
+            .BaseValue(AbilityHelper.Range, 250f)
+            .BaseValue(AbilityHelper.DamageAmount, LevelValue.PerLevel(12f, 6f))
+            .OnEffect(e => e
+                .Buff(
+                    "poison_bite_slow",
+                    AbilityValue.Constant(4f),
+                    AttributeHelper.MoveSpeed,
+                    ModifyType.PercentAdd,
+                    AbilityValue.Constant(-0.3f),
+                    icon: "ReplaceableTextures\\CommandButtons\\BTNPoisons.tga")
+                .DoT(
+                    "poison_bite_dot",
+                    AbilityValue.Constant(4f),
+                    tickValue: 8f + 4f * level,
+                    tickInterval: 1f,
+                    icon: "ReplaceableTextures\\CommandButtons\\BTNPoisons.tga"))
             .BuildTo(ability, level);
     }
 }

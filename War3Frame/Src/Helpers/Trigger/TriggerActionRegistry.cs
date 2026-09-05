@@ -16,13 +16,17 @@ public delegate void TriggerActionHandler(TriggerContext ctx, TriggerAction acti
 public static class TriggerActionRegistry
 {
     private static readonly SortedDictionary<int, TriggerActionHandler> _handlers = new();
+    private static readonly SortedDictionary<int, string> _names = new();
     private static int _nextId = 100;
 
     static TriggerActionRegistry()
     {
         _handlers.Add(1, Damage);
+        _names.Add(1, nameof(Damage));
         _handlers.Add(2, Heal);
+        _names.Add(2, nameof(Heal));
         _handlers.Add(3, BuffApply);
+        _names.Add(3, nameof(BuffApply));
     }
 
     /// <summary>注册自定义动作，返回分配的动作 id。</summary>
@@ -30,6 +34,7 @@ public static class TriggerActionRegistry
     {
         var id = _nextId++;
         _handlers.Add(id, handler);
+        _names.Add(id, handler.Method.Name);
         return id;
     }
 
@@ -37,6 +42,12 @@ public static class TriggerActionRegistry
     public static bool TryGet(int id, out TriggerActionHandler handler)
     {
         return _handlers.TryGetValue(id, out handler);
+    }
+
+    /// <summary>按 id 获取动作名（调试/日志可观测性；未注册返回 #id）。</summary>
+    public static string GetName(int id)
+    {
+        return _names.TryGetValue(id, out var name) ? name : $"#{id}";
     }
 
     /// <summary>内置：追加伤害（paramF[0]=amount），创建 DamageRequest 独立实体。</summary>

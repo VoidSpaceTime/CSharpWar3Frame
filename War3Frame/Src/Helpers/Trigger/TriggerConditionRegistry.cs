@@ -15,13 +15,17 @@ public delegate bool TriggerConditionHandler(TriggerContext ctx, TriggerConditio
 public static class TriggerConditionRegistry
 {
     private static readonly SortedDictionary<int, TriggerConditionHandler> _handlers = new();
+    private static readonly SortedDictionary<int, string> _names = new();
     private static int _nextId = 100;
 
     static TriggerConditionRegistry()
     {
         _handlers.Add(1, DamageGreater);
+        _names.Add(1, nameof(DamageGreater));
         _handlers.Add(2, TargetIs);
+        _names.Add(2, nameof(TargetIs));
         _handlers.Add(3, SourceIs);
+        _names.Add(3, nameof(SourceIs));
     }
 
     /// <summary>注册自定义条件，返回分配的条件 id。</summary>
@@ -29,6 +33,7 @@ public static class TriggerConditionRegistry
     {
         var id = _nextId++;
         _handlers.Add(id, handler);
+        _names.Add(id, handler.Method.Name);
         return id;
     }
 
@@ -36,6 +41,12 @@ public static class TriggerConditionRegistry
     public static bool TryGet(int id, out TriggerConditionHandler handler)
     {
         return _handlers.TryGetValue(id, out handler);
+    }
+
+    /// <summary>按 id 获取条件名（调试/日志可观测性；未注册返回 #id）。</summary>
+    public static string GetName(int id)
+    {
+        return _names.TryGetValue(id, out var name) ? name : $"#{id}";
     }
 
     /// <summary>内置：事件为伤害事件且 finalDamage 大于阈值。</summary>

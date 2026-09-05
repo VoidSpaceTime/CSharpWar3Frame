@@ -17,7 +17,7 @@ public partial class FootmanTemplate : IUnitTemplate
             .Name("步兵")
             .Attr(AttributeHelper.Health, 420)
             .Attr(AttributeHelper.Mana, 0)
-            .Attr(AttributeHelper.Damage, 24)
+            .Attr(AttributeHelper.AttackDamage, 24)
             .BuildTo(e);
     }
 }

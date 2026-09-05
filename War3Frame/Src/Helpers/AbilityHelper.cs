@@ -59,25 +59,6 @@ public static partial class AbilityHelper
         return AbilitySlotHelper.AddAbility(unit, templateName, level, configure);
     }
 
-    public static Entity AddAbilityToSlot(
-        Entity unit,
-        string templateName,
-        int slotIndex,
-        int level = 1,
-        Action<Entity>? configure = null)
-    {
-        return GrantAbilityToSlot(unit, templateName, slotIndex, level, configure);
-    }
-
-    public static Entity AddAbility(
-        Entity unit,
-        string templateName,
-        int level = 1,
-        Action<Entity>? configure = null)
-    {
-        return GrantAbility(unit, templateName, level, configure);
-    }
-
     #endregion
 
     #region 状态控制

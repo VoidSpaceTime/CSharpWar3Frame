@@ -289,17 +289,18 @@ internal static class ItemLifecycleOperations
 }
 
 /// <summary>
-/// 物品属性应用系统。
-/// 仅在装备态下，将物品定义的统一属性贡献条目映射为单位属性修改器。
+/// 物品属性贡献统一应用系统。
+/// 仅在装备态下，将物品定义的单条/多条属性贡献映射为单位属性修改器。
+/// 统一消费 ItemAttrApplyRequest，按物品携带的载荷（AttributeContributionEntry 或
+/// ItemAttributeContributionListData）分支应用；两分支都完成才移除请求，
+/// 避免旧双系统“先到者 Remove 请求、后到者静默跳过”的竞态。
 /// </summary>
 [SystemRegister(SystemKind.Interval, 0)]
-public class ItemAttributeApplySystem : QuerySystem<ItemOwner, AttributeContributionEntry, ItemAttrApplyRequest>
+public class ItemAttributeContributionApplySystem : QuerySystem<ItemOwner, ItemAttrApplyRequest>
 {
-    // 将装备物品的 AttributeContributionEntry 映射为单位属性 modifier。
-
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref ItemOwner owner, ref AttributeContributionEntry contribution, ref ItemAttrApplyRequest request, Entity item) =>
+        Query.ForEachEntity((ref ItemOwner owner, ref ItemAttrApplyRequest request, Entity item) =>
         {
             if (!item.Tags.Has<ItemEquippedTag>())
             {
@@ -314,7 +315,20 @@ public class ItemAttributeApplySystem : QuerySystem<ItemOwner, AttributeContribu
             }
 
             ModifyHelper.RemoveModifiersFromSource(item);
-            ModifyHelper.AddModifierToUnit(owner.unit, contribution.attrTypeId, item, contribution.modifyType, contribution.value);
+
+            if (item.TryGetComponent<ItemAttributeContributionListData>(out var contributions))
+            {
+                foreach (var contribution in contributions.attributes)
+                {
+                    ModifyHelper.AddModifierToUnit(owner.unit, contribution.attrTypeId, item, contribution.modifyType,
+                        contribution.value.Resolve(1));
+                }
+            }
+            else if (item.TryGetComponent<AttributeContributionEntry>(out var contribution))
+            {
+                ModifyHelper.AddModifierToUnit(owner.unit, contribution.attrTypeId, item, contribution.modifyType, contribution.value);
+            }
+
             item.RemoveComponent<ItemAttrApplyRequest>();
         });
     }
