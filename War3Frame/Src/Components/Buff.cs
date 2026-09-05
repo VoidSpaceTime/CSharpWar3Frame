@@ -6,26 +6,67 @@ namespace War3Frame;
 #region Buff 组件
 
 /// <summary>
-///     Buff 标记 - 表示这是一个 Buff 实体
+///     Buff 分类标签（位组合，供净化/免疫判定）。
+///     替代早期的字符串标签：位运算 O(1)、编译期检查、避免每次创建分配 List。
 /// </summary>
-public struct Buff : ITag;
+[Flags]
+public enum BuffTag
+{
+    None = 0,
+    Debuff = 1 << 0,
+    Control = 1 << 1,
+    Stun = 1 << 2,        // 便捷方法细分
+    Root = 1 << 3,
+    Silence = 1 << 4,
+    DoT = 1 << 5,
+    Fire = 1 << 6,        // 元素预留
+    Frost = 1 << 7,
+    Poison = 1 << 8,
+    // 后续元素/词缀按需扩展
+}
 
 /// <summary>
-///     Buff 持续时间元数据（原始值，供刷新计算）。
-///     剩余时间推进已移交统一 Duration 组件；永久 Buff 挂 Duration.remaining = -1。
+///     Buff 实体类型。
+///     Attribute = 属性贡献（挂 ModifyValue）；Tick = 周期行为（DoT，不挂 ModifyValue）；PureTag = 纯标记。
 /// </summary>
-public struct BuffDuration : IComponent
+public enum BuffKind
 {
-    /// <summary>总持续时间</summary>
-    public float duration;
+    Attribute,
+    Tick,
+    PureTag
+}
 
-    public static BuffDuration Create(float duration)
-    {
-        return new BuffDuration
-        {
-            duration = duration
-        };
-    }
+/// <summary>
+///     Buff 标记 - 表示这是一个 Buff 实体
+/// </summary>
+public struct Buff : IComponent
+{
+    /// <summary>Buff 类型 ID</summary>
+    public string buffId;
+
+    /// <summary>实例 ID（全局唯一，用于级联清理）</summary>
+    public long buffInstanceId;
+
+    /// <summary>实体类型（Attribute/Tick/PureTag）</summary>
+    public BuffKind kind;
+
+    /// <summary>分类标签（位组合，净化/免疫用）</summary>
+    public BuffTag tags;
+
+    /// <summary>造成效果的施法者单位（DoT 伤害来源；无单位来源时为 default）</summary>
+    public Entity caster;
+
+    /// <summary>周期 tick 间隔（秒，0 = 不 tick）</summary>
+    public float tickInterval;
+
+    /// <summary>Tick 行为 ID（指向注册表）</summary>
+    public string? tickActionId;
+
+    /// <summary>上次 tick 时间（内部字段）</summary>
+    public float lastTick;
+
+    /// <summary>每跳数值（DoT 模式用，不参与属性贡献；非 tick 型忽略）</summary>
+    public float tickValue;
 }
 
 /// <summary>
@@ -46,7 +87,7 @@ public struct BuffStacks : IComponent
     {
         return new BuffStacks
         {
-            current = 1,
+            current = 1, // 初始即为 1 层（首个 Buff 即占一层）
             max = maxStacks,
             valuePerStack = valuePerStack
         };
@@ -86,22 +127,23 @@ public enum BuffRefreshBehavior
     RefreshAndStack,
 
     /// <summary>不做任何事（独立存在）</summary>
-    Independent
+    Independent,
+
+    /// <summary>删旧建新（完整替换）</summary>
+    Replace,
+
+    /// <summary>仅当新 duration 更长时替换</summary>
+    ReplaceIfLonger
 }
 
 /// <summary>
-///     Buff 行为配置
+///     Buff 行为配置。
+///     每个 buff 实体经 CreateBuffInternal 必挂，作清理/到期系统的 Query 锚点；仅承载表现配置。
 /// </summary>
 public struct BuffBehavior : IComponent
 {
-    /// <summary>Buff 模板 ID（用于判断同类 Buff）</summary>
-    public string buffId;
-
-    /// <summary>刷新行为</summary>
-    public BuffRefreshBehavior refreshBehavior;
-
-    /// <summary>移除时是否移除所有层数</summary>
-    public bool removeAllStacksOnExpire;
+    /// <summary>UI 图标路径</summary>
+    public string? icon;
 }
 
 /// <summary>

@@ -41,6 +41,18 @@ public struct BuffApplyRequest : IComponent
     public ModifyType modifyType;
     public float value;
     public BuffRefreshBehavior refreshBehavior;
+    /// <summary>UI 图标路径（供 buff 图标显示）。</summary>
+    public string? icon;
+    /// <summary>周期 tick 间隔（秒，0 = 不 tick）。</summary>
+    public float tickInterval;
+    /// <summary>Tick 行为 ID（DoT 用 "DealDamage"）。</summary>
+    public string? tickActionId;
+    /// <summary>每跳数值；>0 表示 DoT 型（不产生属性贡献）。</summary>
+    public float tickValue;
+    /// <summary>分类标签（位组合：Debuff/Control/DoT 等）。</summary>
+    public BuffTag tags;
+    /// <summary>Buff 实体类型（Attribute/Tick/PureTag）。</summary>
+    public BuffKind kind;
 }
 
 /// <summary>

@@ -848,7 +848,13 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
                 modifyType = buffData.modifyType,
                 value = value,
                 duration = duration,
-                refreshBehavior = buffData.refreshBehavior
+                refreshBehavior = buffData.refreshBehavior,
+                icon = buffData.icon,
+                tickInterval = buffData.tickInterval,
+                tickActionId = buffData.tickActionId,
+                tickValue = buffData.tickValue,
+                tags = buffData.tags,
+                kind = buffData.kind
             });
 
             EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(ApplyBuffData));
@@ -958,16 +964,33 @@ public class BuffApplyResolveSystem : QuerySystem<BuffApplyRequest>
                 return;
             }
 
-            var buff = BuffHelper.AddTimedBuff(
+            // kind 显式判定：request.kind 优先；旧触发器路径（无 kind 时）按 tick 参数推断。
+            // DoT 型不贡献属性，attrTypeId 作为载体属性；非 DoT 型 attrTypeId 是目标属性
+            var isDot = request.kind == BuffKind.Tick ||
+                        (request.kind == BuffKind.Attribute && request.tickValue > 0f &&
+                         !string.IsNullOrEmpty(request.tickActionId));
+            var effectiveKind = isDot ? BuffKind.Tick : request.kind;
+
+            var spec = new BuffSpec(
+                buffId: request.buffId,
+                icon: request.icon,
+                attrTypeId: request.attrTypeId,
+                modifyType: request.modifyType,
+                value: isDot ? 0f : request.value,
+                duration: request.duration,
+                maxStacks: 1,
+                onDuplicate: request.refreshBehavior,
+                tickInterval: request.tickInterval,
+                tickActionId: request.tickActionId,
+                tags: request.tags,
+                tickValue: isDot ? request.tickValue : 0f,
+                kind: effectiveKind);
+
+            var buff = BuffHelper.ApplyBuff(
                 Game.Store,
                 request.target,
                 request.source,
-                request.buffId,
-                request.attrTypeId,
-                request.modifyType,
-                request.value,
-                request.duration,
-                request.refreshBehavior);
+                spec);
 
             var buffAppliedEvent = Game.Store.CreateEntity(new BuffAppliedEvent
             {

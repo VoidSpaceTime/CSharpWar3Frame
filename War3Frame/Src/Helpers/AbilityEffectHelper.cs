@@ -233,7 +233,13 @@ public static class AbilityEffectHelper
                         attrTypeId = step.buff.attrTypeId,
                         modifyType = step.buff.modifyType,
                         modifyValue = step.buff.value,
-                        refreshBehavior = step.buff.refreshBehavior
+                        refreshBehavior = step.buff.refreshBehavior,
+                        icon = step.buff.icon,
+                        tickInterval = step.buff.tickInterval,
+                        tickActionId = step.buff.tickActionId,
+                        tickValue = step.buff.tickValue,
+                        tags = step.buff.tags,
+                        kind = step.buff.kind
                     });
                     break;
                 case EffectStepKind.AreaSearch:

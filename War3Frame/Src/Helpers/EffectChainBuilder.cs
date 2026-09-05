@@ -1,4 +1,4 @@
-using Friflo.Engine.ECS;
+﻿using Friflo.Engine.ECS;
 using War3Frame.Components;
 using War3Frame.Src.Components;
 
@@ -90,7 +90,9 @@ public sealed class EffectChainBuilder
     }
 
     public EffectChainBuilder Buff(string buffId, EffectValueSpec duration, int attrTypeId, ModifyType modifyType,
-        EffectValueSpec value, BuffRefreshBehavior refreshBehavior = BuffRefreshBehavior.RefreshDuration)
+        EffectValueSpec value, BuffRefreshBehavior refreshBehavior = BuffRefreshBehavior.RefreshDuration,
+        string? icon = null, float tickInterval = 0f, string? tickActionId = null,
+        float tickValue = 0f, BuffTag tags = BuffTag.None, BuffKind kind = BuffKind.Attribute)
     {
         // buff step 只描述长期属性贡献，真正挂载/刷新由效果执行系统处理。
         _spec.steps.Add(EffectStepSpec.Buff(new BuffEffectStepSpec
@@ -100,18 +102,109 @@ public sealed class EffectChainBuilder
             attrTypeId = attrTypeId,
             modifyType = modifyType,
             value = value,
-            refreshBehavior = refreshBehavior
+            refreshBehavior = refreshBehavior,
+            icon = icon,
+            tickInterval = tickInterval,
+            tickActionId = tickActionId,
+            tickValue = tickValue,
+            tags = tags,
+            kind = kind
         }));
         return this;
     }
 
-    /// <summary>
-    /// 添加作者友好数值写法的 Buff 应用步骤，属性修改通过 Buff/属性系统落地。
-    /// </summary>
+   /// <summary>
+   /// 添加作者友好数值写法的 Buff 应用步骤，属性修改通过 Buff/属性系统落地。
+   /// </summary>
+   /// <param name="buffId">buff 唯一ID</param>
+   /// <param name="duration">持续时间</param>
+   /// <param name="attrTypeId">属性类型</param>
+   /// <param name="modifyType">修改类型</param>
+   /// <param name="value">值</param>
+   /// <param name="refreshBehavior">刷新方式</param>
+   /// <param name="icon"></param>
+   /// <param name="tickInterval"></param>
+   /// <param name="tickActionId"></param>
+   /// <param name="tickValue"></param>
+   /// <param name="tags"></param>
+   /// <returns></returns>
     public EffectChainBuilder Buff(string buffId, AbilityValue duration, int attrTypeId, ModifyType modifyType,
-        AbilityValue value, BuffRefreshBehavior refreshBehavior = BuffRefreshBehavior.RefreshDuration)
+        AbilityValue value, BuffRefreshBehavior refreshBehavior = BuffRefreshBehavior.RefreshDuration,
+        string? icon = null, float tickInterval = 0f, string? tickActionId = null,
+        float tickValue = 0f, BuffTag tags = BuffTag.None, BuffKind kind = BuffKind.Attribute)
     {
-        return Buff(buffId, duration.EffectValue, attrTypeId, modifyType, value.EffectValue, refreshBehavior);
+        return Buff(buffId, duration.EffectValue, attrTypeId, modifyType, value.EffectValue, refreshBehavior,
+            icon, tickInterval, tickActionId, tickValue, tags, kind);
+    }
+
+    /// <summary>
+    /// 独占控制便捷步骤：眩晕目标 duration 秒。
+    /// 映射 buffId="control:stun"、Attr=Stun、Flat +1、ReplaceIfLonger（重复命中取最晚结束）。
+    /// </summary>
+    public EffectChainBuilder Stun(EffectValueSpec duration, string? icon = null)
+    {
+        return Buff("control:stun", duration, AttributeHelper.Stun, ModifyType.Flat,
+            EffectValueSpec.Constant(1f), BuffRefreshBehavior.ReplaceIfLonger, icon,
+            tags: BuffTag.Debuff | BuffTag.Control | BuffTag.Stun);
+    }
+
+    /// <summary>
+    /// 独占控制便捷步骤：眩晕目标 duration 秒（AbilityValue 写法）。
+    /// </summary>
+    public EffectChainBuilder Stun(AbilityValue duration, string? icon = null)
+    {
+        return Stun(duration.EffectValue, icon);
+    }
+
+    /// <summary>
+    /// 独占控制便捷步骤：定身目标 duration 秒。
+    /// 映射 buffId="control:root"、Attr=Root、Flat +1、ReplaceIfLonger。
+    /// </summary>
+    public EffectChainBuilder Root(EffectValueSpec duration, string? icon = null)
+    {
+        return Buff("control:root", duration, AttributeHelper.Root, ModifyType.Flat,
+            EffectValueSpec.Constant(1f), BuffRefreshBehavior.ReplaceIfLonger, icon,
+            tags: BuffTag.Debuff | BuffTag.Control | BuffTag.Root);
+    }
+
+    /// <summary>
+    /// 独占控制便捷步骤：定身目标 duration 秒（AbilityValue 写法）。
+    /// </summary>
+    public EffectChainBuilder Root(AbilityValue duration, string? icon = null)
+    {
+        return Root(duration.EffectValue, icon);
+    }
+
+    /// <summary>
+    /// 独占控制便捷步骤：沉默目标 duration 秒。
+    /// 映射 buffId="control:silence"、Attr=Silence、Flat +1、ReplaceIfLonger。
+    /// </summary>
+    public EffectChainBuilder Silence(EffectValueSpec duration, string? icon = null)
+    {
+        return Buff("control:silence", duration, AttributeHelper.Silence, ModifyType.Flat,
+            EffectValueSpec.Constant(1f), BuffRefreshBehavior.ReplaceIfLonger, icon,
+            tags: BuffTag.Debuff | BuffTag.Control | BuffTag.Silence);
+    }
+
+    /// <summary>
+    /// 独占控制便捷步骤：沉默目标 duration 秒（AbilityValue 写法）。
+    /// </summary>
+    public EffectChainBuilder Silence(AbilityValue duration, string? icon = null)
+    {
+        return Silence(duration.EffectValue, icon);
+    }
+
+    /// <summary>
+    /// 持续伤害便捷步骤：每 tickInterval 秒造成 tickValue 点伤害，持续 duration 秒。
+    /// buffId 由调用方给来源命名（如 "poison_bite"）；以 Health 为 ModifyTarget 载体，不污染属性贡献。
+    /// </summary>
+    public EffectChainBuilder DoT(string buffId, AbilityValue duration, float tickValue, float tickInterval,
+        string? icon = null, BuffTag tags = BuffTag.None)
+    {
+        return Buff(buffId, duration.EffectValue, AttributeHelper.Health, ModifyType.Flat,
+            EffectValueSpec.Constant(0f), BuffRefreshBehavior.RefreshDuration, icon,
+            tickInterval, "DealDamage", tickValue,
+            tags | BuffTag.Debuff | BuffTag.DoT);
     }
 
     public EffectChainBuilder Area(TargetFilter filter, int maxTargets = 0, EffectValueSpec radius = default,
