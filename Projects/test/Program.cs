@@ -6,7 +6,7 @@ using Friflo.Engine.ECS.Systems;
 
 namespace War3Frame;
 
-public static partial class Game
+public static class Bootstrap
 {
     public const float TICK_RATE = 0.01f; // War3 中心计时器频率
     public static float TimeSpan;

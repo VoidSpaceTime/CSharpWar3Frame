@@ -2,7 +2,7 @@
 
 namespace War3Frame;
 
-public static class Game
+public static class Bootstrap
 {
     // Native AOT 入口
     [UnmanagedCallersOnly(EntryPoint = "main")]
