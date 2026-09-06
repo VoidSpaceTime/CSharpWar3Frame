@@ -49,35 +49,42 @@ public static class Bootstrap
         Console.WriteLine($"玩家 = {p0.Handle}");
         Console.WriteLine($"hfoo = {JassApi.C2I("hfoo")}");
 
-
-        // 中心计时器
-        var t = War3.CallNative<int>(func);
-        Console.WriteLine($"timer = {t}");
-        func = War3.GetNativeFunction("TimerStart");
-
-
+        var p1 = JassApi.Player(1);
         var unit = JassApi.CreateUnit(p0, JassApi.C2I("hfoo"), 0, 0, 270);
+        var unit1 = JassApi.CreateUnit(p1, JassApi.C2I("hfoo"), 0, 0, 270);
+
         Console.WriteLine($"创建单位 = {unit.Handle}");
-        // var entity = world.CreateEntity(new Position(0, 0, 0),
-        //     new Velocity { value = new Vector3(0, 0, 0), unit = unit });
+        RegisterPlayerChart();
+        RedisterPlayerUnitAttack();
 
-        //
-        // War3.CallNative<int>(func, t, TICK_RATE, true, () =>
-        // {
-        //     root.Update(new UpdateTick(TICK_RATE, TimeSpan));
-        //     TimeSpan += TICK_RATE;
-        // });
-
-        /*var playerSelectEvent = JassApi.Condition(() =>
+        void RegisterPlayerChart()
         {
-            var triggerUnit = JassApi.GetTriggerUnit();
-            var triggerPlayer = JassApi.GetTriggerPlayer();
-            Console.WriteLine("选择单位");
-        });
-        var getHandleId = JassApi.GetHandleId(playerSelectEvent);
-       var tgr = JassApi.CreateTrigger();
-       HandleHelper.HandleAdd(tgr);
-       JassApi.TriggerAddCondition(tgr, playerSelectEvent);*/
+            Console.WriteLine(" 注册玩家对话");
+            var trigger = JassApi.CreateTrigger();
+            var condition = JassApi.Condition(() =>
+            {
+                var message = JassApi.GetEventPlayerChatString();
+                JassApi.DisplayTimedTextToPlayer(p0, 0, 0, 180, "玩家消息:" + message);
+                Console.WriteLine("玩家消息:" + message);
+            });
+            JassApi.TriggerAddCondition(trigger, condition);
+            JassApi.TriggerRegisterPlayerChatEvent(trigger, p0, "", false);
+        }
+
+        void RedisterPlayerUnitAttack()
+        {
+            Console.WriteLine(" 注册单位攻击");
+            var trigger = JassApi.CreateTrigger();
+            var condition = JassApi.Condition(() =>
+            {
+                var attacker = JassApi.GetAttacker();
+                var target = JassApi.GetTriggerUnit();
+                JassApi.DisplayTimedTextToPlayer(p0, 0, 0, 180, "触发攻击事件:");
+                Console.WriteLine("触发攻击事件:");
+            });
+            JassApi.TriggerAddCondition(trigger, condition);
+            JassApi.TriggerRegisterPlayerUnitEvent(trigger, p0, Blizzard.EVENT_PLAYER_UNIT_ATTACKED, null);
+        }
     }
 
     public struct Velocity : IComponent

@@ -27,7 +27,7 @@ public static partial class Game
         }
 
         // 默认所有玩家全部相互敌对
-        PlayerHelper.InitializePlayers(ref players);
+        PlayerHelper.InitializePlayers();
 
         #region 计时器
 

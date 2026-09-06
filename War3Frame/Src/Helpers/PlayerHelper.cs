@@ -26,17 +26,22 @@ public static class PlayerHelper
     }
 
 
-    public static void InitializePlayers(ref PlayerNative[] players)
+    public static void InitializePlayers()
     {
-        _players = players;
+        _players = PlayerHelper._players;
 
         // 默认全敌对
         foreach (var sourcePlayer in _players)
-        foreach (var targetPlayer in _players)
-            if (sourcePlayer.index == targetPlayer.index)
-                _relations[sourcePlayer.index, targetPlayer.index] = PlayerTeamState.Allie;
-            else
-                _relations[sourcePlayer.index, targetPlayer.index] = PlayerTeamState.Enemy;
+        {
+            foreach (var targetPlayer in _players)
+            {
+                if (sourcePlayer.index == targetPlayer.index)
+                    _relations[sourcePlayer.index, targetPlayer.index] = PlayerTeamState.Allie;
+                else
+                    _relations[sourcePlayer.index, targetPlayer.index] = PlayerTeamState.Enemy;
+                SetAlliance(sourcePlayer, targetPlayer, false);
+            }
+        }
     }
 
     public static void SetName(ref PlayerNative player, string name)
@@ -60,15 +65,15 @@ public static class PlayerHelper
         _relations[playerA.index, playerB.index] = state;
         _relations[playerB.index, playerA.index] = state;
         // 设置不主动攻击
-        JassApi.SetPlayerAlliance(playerA.player, playerB.player, new JAllianceType(Blizzard.ALLIANCE_PASSIVE), allied);
+        JassApi.SetPlayerAlliance(playerA.player, playerB.player, Blizzard.ALLIANCE_PASSIVE, allied);
         // 设置请求援助
-        JassApi.SetPlayerAlliance(playerA.player, playerB.player, new JAllianceType(Blizzard.ALLIANCE_HELP_REQUEST),
+        JassApi.SetPlayerAlliance(playerA.player, playerB.player, Blizzard.ALLIANCE_HELP_REQUEST,
             allied);
         // 设置援助响应
-        JassApi.SetPlayerAlliance(playerA.player, playerB.player, new JAllianceType(Blizzard.ALLIANCE_HELP_RESPONSE),
+        JassApi.SetPlayerAlliance(playerA.player, playerB.player, Blizzard.ALLIANCE_HELP_RESPONSE,
             allied);
         // 设置共享法术
-        JassApi.SetPlayerAlliance(playerA.player, playerB.player, new JAllianceType(Blizzard.ALLIANCE_SHARED_SPELLS),
+        JassApi.SetPlayerAlliance(playerA.player, playerB.player, Blizzard.ALLIANCE_SHARED_SPELLS,
             allied);
     }
 
@@ -80,7 +85,7 @@ public static class PlayerHelper
     /// <param name="flag"></param>
     public static void SetVision(PlayerNative playerA, PlayerNative playerB, bool flag)
     {
-        JassApi.SetPlayerAlliance(playerA.player, playerB.player, new JAllianceType(Blizzard.ALLIANCE_SHARED_VISION),
+        JassApi.SetPlayerAlliance(playerA.player, playerB.player, Blizzard.ALLIANCE_SHARED_VISION,
             flag);
     }
 
@@ -92,7 +97,7 @@ public static class PlayerHelper
     /// <param name="flag"></param>
     public static void SetControl(PlayerNative playerA, PlayerNative playerB, bool flag)
     {
-        JassApi.SetPlayerAlliance(playerA.player, playerB.player, new JAllianceType(Blizzard.ALLIANCE_SHARED_CONTROL),
+        JassApi.SetPlayerAlliance(playerA.player, playerB.player, Blizzard.ALLIANCE_SHARED_CONTROL,
             flag);
     }
 
@@ -105,7 +110,7 @@ public static class PlayerHelper
     public static void SetFullControl(PlayerNative playerA, PlayerNative playerB, bool flag)
     {
         JassApi.SetPlayerAlliance(playerA.player, playerB.player,
-            new JAllianceType(Blizzard.ALLIANCE_SHARED_ADVANCED_CONTROL), flag);
+            Blizzard.ALLIANCE_SHARED_ADVANCED_CONTROL, flag);
     }
 
     /// <summary>
@@ -117,7 +122,7 @@ public static class PlayerHelper
     public static void SetNeutral(PlayerNative playerA, PlayerNative playerB, bool flag)
     {
         _relations[playerA.index, playerB.index] = PlayerTeamState.Neutral;
-        JassApi.SetPlayerAlliance(playerA.player, playerB.player, new JAllianceType(Blizzard.ALLIANCE_PASSIVE), flag);
+        JassApi.SetPlayerAlliance(playerA.player, playerB.player, Blizzard.ALLIANCE_PASSIVE, flag);
     }
 
     /// <summary>
