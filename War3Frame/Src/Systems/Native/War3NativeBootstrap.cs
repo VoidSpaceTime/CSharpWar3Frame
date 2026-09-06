@@ -47,5 +47,7 @@ public static class War3NativeBootstrap
         var timerStart = War3.GetNativeFunction("TimerStart");
         War3.CallNative<int>(timerStart, timer, tickRate, true,
             () => { onTick(new UpdateTick(tickRate, Game.TimeSpan)); });
+
+      
     }
 }

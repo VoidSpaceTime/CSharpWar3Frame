@@ -1,17 +1,17 @@
 extern alias War3FrameRuntime;
-
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using War3Frame.Scripts.Process;
-using RuntimeGame = War3FrameRuntime::War3Frame.Game;
+using War3Frame;
 
 namespace War3Frame;
 
 /// <summary>
 /// War3 测试客户端入口，负责初始化框架并驱动统一 ECS 时钟。
 /// </summary>
-public static partial class Game
+public static partial class Bootstrap
 {
     public const float TickInterval = 0.01f;
     private static float _elapsed;
@@ -43,8 +43,7 @@ public static partial class Game
         War3.EnableConsole();
         Console.WriteLine($"War3 test client started. isAot: {isAot}");
 
-        RuntimeGame.ECSInit();
-        RuntimeGame.Root.SetMonitorPerf(true);
+        Game.ECSInit();
 
         ItemCompanionAbilityValidationScenario.Initialize(JassApi.Player(0));
         ControlStateValidationScenario.Initialize(JassApi.Player(0));
@@ -53,15 +52,10 @@ public static partial class Game
         var timer = War3.CallNative<int>(War3.GetNativeFunction("CreateTimer"));
         War3.CallNative<int>(War3.GetNativeFunction("TimerStart"), timer, TickInterval, true, () =>
         {
-            RuntimeGame.Root.Update(new UpdateTick(TickInterval, _elapsed));
+            Game.Root.Update(new UpdateTick(TickInterval, _elapsed));
             ItemCompanionAbilityValidationScenario.Update();
             _elapsed += TickInterval;
         });
-        root.SetMonitorPerf(true);
-
-        // 添加 System 并指定间隔：MoveSystem 每 1 秒更新一次
-        root.Add(new MoveSystem(), 1.0f);
-
 
         var func = War3.GetNativeFunction("CreateTimer");
         var p0 = JassApi.Player(0);
@@ -80,6 +74,7 @@ public static partial class Game
         {
             Console.WriteLine(" 注册玩家对话");
             var trigger = JassApi.CreateTrigger();
+            HandleHelper.HandleAdd(trigger);
             var condition = JassApi.Condition(() =>
             {
                 var message = JassApi.GetEventPlayerChatString();
@@ -94,6 +89,7 @@ public static partial class Game
         {
             Console.WriteLine(" 注册单位攻击");
             var trigger = JassApi.CreateTrigger();
+            HandleHelper.HandleAdd(trigger);
             var condition = JassApi.Condition(() =>
             {
                 var attacker = JassApi.GetAttacker();

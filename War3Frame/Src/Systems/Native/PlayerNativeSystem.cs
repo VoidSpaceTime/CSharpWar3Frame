@@ -79,18 +79,18 @@ public class PlayerNativeSyncSystem : QuerySystem<PlayerNative, PlayerDirty>
 
         // PASSIVE：Basic 同盟与 Neutral 共用，但按互斥优先级取值，同一原生位只写一次语义。
         JassApi.SetPlayerAlliance(source, target,
-            new JAllianceType(Blizzard.ALLIANCE_PASSIVE), isNeutral || isBasic);
+            Blizzard.ALLIANCE_PASSIVE, isNeutral || isBasic);
         JassApi.SetPlayerAlliance(source, target,
-            new JAllianceType(Blizzard.ALLIANCE_HELP_REQUEST), isBasic);
+            Blizzard.ALLIANCE_HELP_REQUEST, isBasic);
         JassApi.SetPlayerAlliance(source, target,
-            new JAllianceType(Blizzard.ALLIANCE_HELP_RESPONSE), isBasic);
+            Blizzard.ALLIANCE_HELP_RESPONSE, isBasic);
         JassApi.SetPlayerAlliance(source, target,
-            new JAllianceType(Blizzard.ALLIANCE_SHARED_SPELLS), isBasic);
+            Blizzard.ALLIANCE_SHARED_SPELLS, isBasic);
         JassApi.SetPlayerAlliance(source, target,
-            new JAllianceType(Blizzard.ALLIANCE_SHARED_VISION), isVision);
+            Blizzard.ALLIANCE_SHARED_VISION, isVision);
         JassApi.SetPlayerAlliance(source, target,
-            new JAllianceType(Blizzard.ALLIANCE_SHARED_CONTROL), isControl);
+            Blizzard.ALLIANCE_SHARED_CONTROL, isControl);
         JassApi.SetPlayerAlliance(source, target,
-            new JAllianceType(Blizzard.ALLIANCE_SHARED_ADVANCED_CONTROL), isFullControl);
+            Blizzard.ALLIANCE_SHARED_ADVANCED_CONTROL, isFullControl);
     }
 }

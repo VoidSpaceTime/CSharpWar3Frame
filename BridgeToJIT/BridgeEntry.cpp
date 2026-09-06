@@ -102,7 +102,7 @@ extern "C" __declspec(dllexport) int main()
 
         auto loadContext = gcnew PayloadLoadContext(payloadPath);
         Assembly^ payloadAssembly = loadContext->LoadFromAssemblyPath(payloadPath);
-        Type^ entryType = payloadAssembly->GetType("War3Frame.Game", false);
+        Type^ entryType = payloadAssembly->GetType("War3Frame.Bootstrap", false);
         if (entryType == nullptr)
         {
             return -12;
