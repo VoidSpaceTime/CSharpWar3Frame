@@ -1385,7 +1385,7 @@ public static partial class JassApi
         return new JIGameState(handle);
     }
 
-    public static JFGameState ConvertFGameState(int i)
+    public static JFGameState ConvertGameState(int i)
     {
         var handle = War3.CallNative<int>(_convertFGameStatePtr, i);
         return new JFGameState(handle);

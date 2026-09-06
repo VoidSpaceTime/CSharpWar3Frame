@@ -43,10 +43,10 @@ public partial class CommandManager
             return;
         }
 
-        w2l.WaitForExitAsync();
+        w2l.WaitForExit();
         if (w2l.ExitCode != 0)
         {
-            var errorOutput = w2l.StandardError.ReadToEndAsync();
+            var errorOutput = w2l.StandardError.ReadToEnd();
             Log.Warning($"w2l 打包失败,警告 (ExitCode={w2l.ExitCode}): {errorOutput}");
         }
     }
