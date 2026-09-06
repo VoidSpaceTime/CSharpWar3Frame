@@ -366,3 +366,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /.build
 /.omo
+/openspec

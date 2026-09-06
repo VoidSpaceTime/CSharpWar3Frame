@@ -25,13 +25,13 @@ public static class UnitNativeSyncRegistry
     private static void ApplyHealth(UnitNative native, float current, float final)
     {
         var value = ToNativeStateValue(current, final);
-        JassApi.SetUnitState(native.unit, new JUnitState(Blizzard.UNIT_STATE_LIFE), value);
+        JassApi.SetUnitState(native.unit, Blizzard.UNIT_STATE_LIFE, value);
     }
 
     private static void ApplyMana(UnitNative native, float current, float final)
     {
         var value = ToNativeStateValue(current, final);
-        JassApi.SetUnitState(native.unit, new JUnitState(Blizzard.UNIT_STATE_MANA), value);
+        JassApi.SetUnitState(native.unit, Blizzard.UNIT_STATE_MANA, value);
     }
 
     private static float ToNativeStateValue(float current, float final)
