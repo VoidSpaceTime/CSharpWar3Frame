@@ -53,6 +53,15 @@ public sealed class UnitSpecBuilder
     /// <summary>
     /// 设置单位经验曲线和最高等级。
     /// </summary>
+    /// <summary>
+    /// 设置单位攻击形态（缺省 Melee 近战）。
+    /// </summary>
+    public UnitSpecBuilder AttackType(AttackType type)
+    {
+        _spec.attackType = type;
+        return this;
+    }
+
     public UnitSpecBuilder Experience(ExperienceCurve curve, int maxLevel = 0, float currentExp = 0f)
     {
         _spec.experience = new ExperienceData
@@ -101,6 +110,12 @@ public sealed class UnitSpecBuilder
             templateName = spec.templateName,
             name = spec.name
         });
+
+        // 仅非近战时挂 AttackTypeState（无组件即 Melee，近战单位零组件开销）。
+        if (spec.attackType != War3Frame.AttackType.Melee)
+        {
+            unit.AddComponent(new AttackTypeState { value = spec.attackType });
+        }
 
         if (!unit.TryGetComponent<UnitLevel>(out var level))
         {

@@ -1,6 +1,7 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using War3Frame.Systems;
+using War3Frame.Systems.Native;
 
 namespace War3Frame.Src.Systems;
 
@@ -24,6 +25,7 @@ public class UnitCreateNativeSystem : QuerySystem<UnitCreateNativeRequest>
 
             var junit = JassApi.CreateUnit(request.player, request.unitTypeId, request.x, request.y, request.facing);
             HandleHelper.HandleAdd(junit);
+            NativeEntityIndex.Register(entity, junit);
 
             entity.AddComponent(new UnitNative
             {

@@ -39,13 +39,14 @@ public static class EventTypeRegistry
         return _idsByType.TryGetValue(typeof(T), out var id) ? id : 0;
     }
 
-    /// <summary>内置事件登记：结算事件与控制状态事件。</summary>
+    /// <summary>内置事件登记：结算事件、控制状态事件与原生桥接事件。</summary>
     private static void RegisterBuiltIn()
     {
         Register<DamageEvent>();
         Register<HealEvent>();
         Register<BuffAppliedEvent>();
         Register<ControlStateChangedEvent>();
+        Register<UnitAttackedEvent>();
     }
 }
 

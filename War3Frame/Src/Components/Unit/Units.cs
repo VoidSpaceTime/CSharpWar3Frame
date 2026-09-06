@@ -17,6 +17,32 @@ public struct UnitOwner : ILinkComponent
     public Entity player;
 }
 
+/// <summary>
+/// 单位攻击形态。区分攻击方式的离散分类，与数值属性（AttackRange 等）分离：
+/// 攻击类型是"形态切换"语义（近战单位装备弓可临时变远程），需运行时改写，故为状态组件而非 UnitBase 静态字段。
+/// </summary>
+public enum AttackType
+{
+    /// <summary>近战：攻击命中直接结算伤害。</summary>
+    Melee,
+
+    /// <summary>远程：攻击命中生成投射物，命中后再结算伤害（投射物模拟为后续增量）。</summary>
+    Ranged,
+
+    /// <summary>闪电链攻击（实现细节待后续增量）。</summary>
+    Chain,
+}
+
+/// <summary>
+/// 单位攻击形态状态。缺省 Melee（无此组件 = 近战）。
+/// 运行时通过 AttackHelper.SetAttackType 改写（装备/技能/buff 临时变更），
+/// 不进入 Attr 数值模型——形态切换是覆盖语义，非数值加减。
+/// </summary>
+public struct AttackTypeState : IComponent
+{
+    public AttackType value;
+}
+
 public struct UnitBase : IComponent
 {
     public string templateName;

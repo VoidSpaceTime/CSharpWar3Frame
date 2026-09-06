@@ -29,6 +29,7 @@ public class UnitRemoveNativeSystem : QuerySystem<UnitLifeState>
             {
                 if (entity.TryGetComponent<UnitNative>(out var native))
                 {
+                    NativeEntityIndex.Unregister(native.unit);
                     JassApi.RemoveUnit(native.unit);
                     HandleHelper.HandleRemove(native.unit);
                 }

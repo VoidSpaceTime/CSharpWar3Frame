@@ -23,9 +23,10 @@ public readonly struct UnitAttributeSpec
 /// </summary>
 public sealed class UnitSpec
 {
-    public string templateName = string.Empty;
-    public string name = string.Empty;
-    public readonly List<UnitAttributeSpec> attributes = new();
+public string templateName = string.Empty;
+public string name = string.Empty;
+public AttackType attackType = AttackType.Melee;
+public readonly List<UnitAttributeSpec> attributes = new();
     public readonly List<string> abilityTemplateNames = new();
     public int? itemSlotCount;
     public int? abilitySlotCount;
