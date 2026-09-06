@@ -32,7 +32,7 @@ public static class PlayerHelper
     /// </summary>
     public static void InitializePlayers(ref PlayerNative[] players)
     {
-        _players = players;
+        _players = PlayerHelper._players;
 
         // 初始化默认敌对关系，同一玩家视为友方，后续通过 SetAlliance/SetNeutral 覆盖。
         foreach (var sourcePlayer in _players)
