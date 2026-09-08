@@ -12,13 +12,17 @@ public static partial class AttributeHelper
     /// 已注册的属性类型名称表。
     /// </summary>
     // 属性 ID -> 名称 的注册表只用于调试、UI 和序列化可读性，不参与运行时计算。
-    private static SortedDictionary<int, string> _types = new();
+    // 注意：不在此处显式初始化（去掉 "= new()"），避免 partial 类跨文件静态字段初始化顺序未定义时，
+    // 该初始化器晚于 Combat.cs 等其它 partial 文件的 Register(...) 字段执行而覆盖已注册内容/重置 _nextId，
+    // 造成属性 ID 撞号（如 Armor 与 Stun 同为 6）。改为在 Register 内惰性初始化。
+    private static SortedDictionary<int, string>? _types;
 
     /// <summary>
     /// 下一个属性类型 ID。
     /// </summary>
     // 递增 ID 便于稳定比较，避免把字符串当作运行时主键。
-    private static int _nextId = 0;
+    // 同 _types：不在此处显式初始化，避免跨文件字段初始化顺序导致计数被重置产生重复 ID。
+    private static int _nextId;
 
 
     // 框架内置 - 基础属性
@@ -38,6 +42,11 @@ public static partial class AttributeHelper
     public static readonly int NoAttack = Register("NoAttack"); // 缴械（禁止攻击）
     public static readonly int Root = Register("Root"); // 定身（禁止移动）
     public static readonly int CrackFly = Register("CrackFly"); // 击飞/击退
+
+    // ============================================================================
+    // 状态属性（值 > 0 表示状态生效；不参与 ControlStateTransitionSystem 跳变检测，仅作为叠加态供伤害/控制读取侧压制判断）
+    // ============================================================================
+    public static readonly int Invulnerable = Register("Invulnerable"); // 无敌（叠加态；>0 时免疫伤害与五类控制读取压制）
 
     // ============================================================================
     // 免疫属性（值 > 0 可以免疫对应控制）

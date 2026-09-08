@@ -863,71 +863,130 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
 }
 
 /// <summary>
-/// 伤害结算系统。
-/// 这里是扣减生命值、发出 DamageEvent、触发死亡语义的统一结算点。
+/// 伤害结算系统（结算管线入口）。
+/// 统一结算点：PreCheck（空目标/无敌免疫拦截）→ 伤害计算器（暴击+减免）→ 扣血 → DamageEvent → 死亡判定 → PostProcess 钩子位。
+/// 分层：除 War3Random（Native 同步随机例外，见 Helpers/War3Random.cs）外不直接调原生 API。
+/// Friflo 约束：Query 迭代内禁止结构变更（AddComponent/CreateEntity/DeleteEntity 均会触发 StructuralChangeException），
+/// 故本系统先收集 request 快照，循环结束后统一执行结算与删除。
 /// </summary>
 [SystemRegister(SystemKind.Interval, 125)]
 public class DamageResolveSystem : QuerySystem<DamageRequest>
 {
     protected override void OnUpdate()
     {
-        var resolved = new List<Entity>();
-
+        // 1. 收集待结算请求（含快照），避免在 Query 迭代内做任何结构变更。
+        var pending = new List<(DamageRequest request, Entity requestEntity)>();
         Query.ForEachEntity((ref DamageRequest request, Entity requestEntity) =>
+        {
+            pending.Add((request, requestEntity));
+        });
+
+        // 2. 统一结算（循环外：ModifyCurrent 的 AddComponent、CreateEntity、DeleteEntity 均为结构变更）。
+        foreach (var (request, requestEntity) in pending)
         {
             if (request.target.IsNull)
             {
-                resolved.Add(requestEntity);
-                return;
+                requestEntity.DeleteEntity();
+                continue;
             }
 
-            var finalDamage = MathF.Max(0f, request.damage.damage);
+            // ---------- 1. PreCheck ----------
+            var ctx = new DamageContext
+            {
+                source = request.source,
+                target = request.target,
+                damageType = request.damage.damageType,
+                damageSrc = request.damage.damageSrc,
+                baseDamage = request.damage.damage,
+                preMitigation = request.damage.damage,
+            };
+
+            // 无敌拦截（Invulnerable 叠加态 >0）：伤害为 0、不扣血、仍发事件，供 UI/触发器感知"免疫"。
+            var invulnerable = AttributeHelper.GetFinalValue(request.target, AttributeHelper.Invulnerable);
+            if (invulnerable > 0f)
+            {
+                ctx.isImmune = true;
+                ctx.finalDamage = 0f;
+                ctx.preMitigation = 0f;
+            }
+            else
+            {
+                // ---------- 2. Calculator（ExecCalc）：暴击 + 减免内聚 ----------
+                var calcKey = request.damage.calcKey > 0
+                    ? request.damage.calcKey
+                    : DamageCalculatorRegistry.GetDefaultKey(request.damage.damageType);
+                var calculator = DamageCalculatorRegistry.TryGet(calcKey);
+                if (calculator != null)
+                {
+                    calculator(ref ctx, request.target.Store);
+                }
+                else
+                {
+                    // 未注册计算器：兜底为历史裸扣语义（无减免），保证不因缺注册而异常。
+                    ctx.mitigation = 0f;
+                    ctx.finalDamage = MathF.Max(0f, ctx.preMitigation);
+                }
+            }
+
+            // ---------- 3. Apply ----------
+            var finalDamage = ctx.isImmune ? 0f : ctx.finalDamage;
             var remaining = AttributeHelper.ModifyCurrent(request.target, AttributeHelper.Health, -finalDamage);
 
-            var damageEvent = Game.Store.CreateEntity(new DamageEvent
+            // ---------- 4. DamageEvent ----------
+            var damageEvent = request.target.Store.CreateEntity(new DamageEvent
             {
                 source = request.source,
                 target = request.target,
                 damage = request.damage,
                 finalDamage = finalDamage,
-                remainingHealth = remaining
+                remainingHealth = remaining,
+                isCrit = ctx.isCrit,
+                mitigatedAmount = ctx.isImmune ? ctx.preMitigation : ctx.mitigation,
+                isImmune = ctx.isImmune,
             });
             damageEvent.AddComponent(new TriggerEventMarker { eventTypeId = EventTypeRegistry.Get<DamageEvent>() });
 
-            if (remaining <= 0f)
+            // ---------- 5. PostProcess 钩子位（吸血/反射等扩展位，本提案不注册内置实现） ----------
+            // DamageEvent 创建后调用；语义约束见 Helpers/DamagePostProcessRegistry.cs（只读 ctx / 发新 Request / 禁原生 API）。
+            DamagePostProcessRegistry.Run(ref ctx, request.target.Store);
+
+            // ---------- 6. 死亡判定 ----------
+            if (!ctx.isImmune && remaining <= 0f)
                 UnitHelper.KillUnit(request.target);
 
-            resolved.Add(requestEntity);
-        });
-
-        foreach (var entity in resolved)
-            entity.DeleteEntity();
+            requestEntity.DeleteEntity();
+        }
     }
 }
 
 /// <summary>
 /// 治疗结算系统。
 /// 统一修改 Health，并发出 HealEvent 供 UI、日志或后续系统监听。
+/// Friflo 约束：Query 迭代内禁止结构变更，故先收集后统一结算。
 /// </summary>
 [SystemRegister(SystemKind.Interval, 126)]
 public class HealResolveSystem : QuerySystem<HealRequest>
 {
     protected override void OnUpdate()
     {
-        var resolved = new List<Entity>();
-
+        var pending = new List<(HealRequest request, Entity requestEntity)>();
         Query.ForEachEntity((ref HealRequest request, Entity requestEntity) =>
+        {
+            pending.Add((request, requestEntity));
+        });
+
+        foreach (var (request, requestEntity) in pending)
         {
             if (request.target.IsNull)
             {
-                resolved.Add(requestEntity);
-                return;
+                requestEntity.DeleteEntity();
+                continue;
             }
 
             var finalHeal = MathF.Max(0f, request.amount);
             var remaining = AttributeHelper.ModifyCurrent(request.target, AttributeHelper.Health, finalHeal);
 
-            var healEvent = Game.Store.CreateEntity(new HealEvent
+            var healEvent = request.target.Store.CreateEntity(new HealEvent
             {
                 source = request.source,
                 target = request.target,
@@ -937,11 +996,8 @@ public class HealResolveSystem : QuerySystem<HealRequest>
             });
             healEvent.AddComponent(new TriggerEventMarker { eventTypeId = EventTypeRegistry.Get<HealEvent>() });
 
-            resolved.Add(requestEntity);
-        });
-
-        foreach (var entity in resolved)
-            entity.DeleteEntity();
+            requestEntity.DeleteEntity();
+        }
     }
 }
 

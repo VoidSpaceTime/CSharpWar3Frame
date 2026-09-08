@@ -48,10 +48,15 @@ public static class ControlHelper
     }
 
     /// <summary>
-    /// 获取单位某控制效果的有效值（考虑免疫）
+    /// 获取单位某控制效果的有效值（考虑无敌与免疫）
     /// </summary>
     public static float GetEffectiveValue(Entity unit, int controlAttrId)
     {
+        // 无敌压制（通用免疫）：Invulnerable 叠加态 >0 时五类控制全部读取为 0。
+        // 与 StunImmunity 等免疫同构，在读取出口统一压制，避免施加入口漏拦。
+        float invulnerable = GetAttrValue(unit, AttributeHelper.Invulnerable);
+        if (invulnerable > 0) return 0;
+
         float value = GetAttrValue(unit, controlAttrId);
         if (value <= 0) return 0;
 
