@@ -40,7 +40,8 @@ public class CastRequestSystem : QuerySystem<CastRequest, Position>, ITimedSyste
         if (ability.IsNull || !ability.TryGetComponent<AbilityBase>(out var abilityBase)
             || !IsValidItemCast(unit, request)
             || abilityBase.state != AbilityState.Ready
-            || !AbilityCostHelper.CheckCost(unit, ability))
+            || !AbilityCostHelper.CheckCost(unit, ability)
+            || !ControlHelper.CanCast(unit))
         {
             unit.RemoveComponent<CastRequest>();
             return;
@@ -314,6 +315,14 @@ public class CastingSystem : QuerySystem<CastState>, ITimedSystem
                 continue;
             }
 
+            // 受控打断：眩晕/击飞（禁止行动）期间前摇吟唱应被打断。
+            // 仅在 Casting 阶段打断；Backswing（后摇，效果已提交）保持现状推进完成。
+            if (cast.phase == CastPhase.Casting && ControlHelper.IsIncapacitated(unit))
+            {
+                InterruptCast(unit, cast);
+                continue;
+            }
+
             cast.timer -= Tick.deltaTime;
             if (cast.timer > 0)
             {
@@ -330,6 +339,14 @@ public class CastingSystem : QuerySystem<CastState>, ITimedSystem
 
     private static void CompleteCastPoint(Entity unit, CastState cast)
     {
+        // 目标合法性复查：单位目标技能在吟唱完成（生效点提交）前若目标已死亡，取消施法。
+        // 点目标/无目标技能（targetUnit 为空）不受影响。
+        if (!cast.targetUnit.IsNull && !UnitHelper.IsAlive(cast.targetUnit))
+        {
+            InterruptCast(unit, cast);
+            return;
+        }
+
         if (!TryCommitEffect(unit, cast))
         {
             ResetAbility(unit, cast);
@@ -458,6 +475,13 @@ public class ChannelingSystem : QuerySystem<ChannelState, CastState>, ITimedSyst
             if (cast.phase != CastPhase.Channeling) continue;
 
             if (unit.Tags.Has<CastInterruptedTag>())
+            {
+                InterruptChannel(unit, cast);
+                continue;
+            }
+
+            // 受控打断引导：眩晕/沉默/击飞期间持续引导应被打断（沉默可打断引导，语义区别于前摇吟唱）。
+            if (!ControlHelper.CanCast(unit))
             {
                 InterruptChannel(unit, cast);
                 continue;

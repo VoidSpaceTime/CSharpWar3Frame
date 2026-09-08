@@ -38,6 +38,15 @@ public static class ControlHelper
     }
 
     /// <summary>
+    /// 检查单位当前是否允许发起新施法。
+    /// 眩晕/沉默/击飞期间禁止发起新施法（不打断已开始的前摇吟唱——吟唱打断见 CastingSystem tick 语义）。
+    /// </summary>
+    public static bool CanCast(Entity unit)
+    {
+        return !IsSilenced(unit);
+    }
+
+    /// <summary>
     /// 检查单位是否无法攻击（眩晕/缴械/击飞）
     /// </summary>
     public static bool IsNoAttack(Entity unit)

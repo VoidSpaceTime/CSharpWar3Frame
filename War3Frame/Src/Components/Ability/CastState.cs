@@ -106,6 +106,8 @@ public struct ChannelState : IComponent
 public struct MovingForCastTag : ITag { }
 
 /// <summary>
-/// 施法被打断标记 - 用于标识施法被外部因素打断
+/// 施法被打断标记 - 用于标识施法被外部因素打断。
+/// 消费方：CastingSystem / ChannelingSystem / MoveToCastSystem（读到后执行 InterruptCast / InterruptChannel / CancelCastMovement）。
+/// 添加方：外部显式打断请求（如剧情/主动取消，由调用方 AddTag）；受控打断（眩晕/沉默/击飞）由施法/引导系统 tick 轮询 ControlHelper 直接调用打断，不依赖本 Tag。
 /// </summary>
 public struct CastInterruptedTag : ITag { }
