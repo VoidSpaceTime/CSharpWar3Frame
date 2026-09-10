@@ -79,10 +79,14 @@ public static partial class AttributeHelper
 
     #endregion
 
-    /// <summary>为 Entity 创建属性 Entity 并建立关系</summary>
-    // 创建属性实体并反向挂回单位关系，保证属性真相始终在 ECS 中可追踪。
-    public static Entity CreateAttr(Entity entity, int typeId, float baseValue)
+    /// <summary>为 Entity 创建属性 Entity 并建立关系（同程序集内部创建原语）</summary>
+    // INV-1 唯一性强制：先查后建，命中既有实体直接复用，避免同一 unit 同一 typeId 出现重复属性实体。
+    // 收窄为 internal：对外统一走 GetOrCreateAttr，杜绝绕过唯一性约束的裸创建。
+    internal static Entity CreateAttr(Entity entity, int typeId, float baseValue)
     {
+        if (TryGetAttr(entity, typeId, out var existing))
+            return existing;
+
         // 创建属性 Entity
         var attr = Game.Store.CreateEntity(
             new AttrTypeId { typeId = typeId },

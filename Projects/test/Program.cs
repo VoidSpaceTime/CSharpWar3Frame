@@ -47,6 +47,7 @@ public static partial class Bootstrap
 
         ItemCompanionAbilityValidationScenario.Initialize(JassApi.Player(0));
         ControlStateValidationScenario.Initialize(JassApi.Player(0));
+        AttributeLifecycleValidationScenario.Initialize(JassApi.Player(0));
         CostValidationScenario.Initialize(JassApi.Player(0));
         DamagePipelineValidationScenario.Initialize(JassApi.Player(0));
         CastValidationScenario.Initialize(JassApi.Player(0));

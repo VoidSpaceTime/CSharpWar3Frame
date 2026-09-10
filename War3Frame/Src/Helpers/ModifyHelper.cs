@@ -5,9 +5,10 @@ namespace War3Frame;
 
 public class ModifyHelper
 {
-    /// <summary>添加修改器到属性</summary>
+    /// <summary>添加修改器到属性（同程序集内部原语，要求调用方已解析出唯一属性实体）</summary>
     // 创建一个长期 modifier 实体，并通过 ModifyTarget / ModifySource 建立双向可查询关系。
-    public static Entity AddModifier(
+    // 收窄为 internal：对外统一走 AddModifierToUnit，避免传入重复或不属于该单位的裸 attrEntity。
+    internal static Entity AddModifier(
         Entity attrEntity,
         Entity source,
         ModifyType type,
