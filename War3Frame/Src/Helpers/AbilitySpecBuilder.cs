@@ -136,6 +136,15 @@ public sealed class AbilitySpecBuilder
     }
 
     /// <summary>
+    /// 设置技能点加点上限；&gt; 0 表示该技能可被技能点升级，且经验系统不对其做熟练度自动升级。
+    /// </summary>
+    public AbilitySpecBuilder MaxLevel(int maxLevel)
+    {
+        _spec.maxLevel = Math.Max(0, maxLevel);
+        return this;
+    }
+
+    /// <summary>
     /// 添加完整行为规格，适合需要显式控制触发时机和流程的技能。
     /// </summary>
     public AbilitySpecBuilder Behavior(AbilityBehaviorSpec behavior)

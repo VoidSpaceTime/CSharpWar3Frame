@@ -31,6 +31,15 @@ public readonly List<UnitAttributeSpec> attributes = new();
     public int? itemSlotCount;
     public int? abilitySlotCount;
     public ExperienceData? experience;
+
+    /// <summary>击杀本单位后发给击杀者的经验，按本单位自身等级解析。</summary>
+    public LevelValue expReward = LevelValue.Fixed(0f);
+
+    /// <summary>每升 1 级发放的技能点数；0 表示不启用发点。</summary>
+    public int skillPointsPerLevel;
+
+    /// <summary>创建时写入点池的初始技能点（计入 unspent 与 earned）。</summary>
+    public int initialSkillPoints;
 }
 
 /// <summary>
@@ -39,6 +48,14 @@ public readonly List<UnitAttributeSpec> attributes = new();
 public struct UnitSpecData : IComponent
 {
     public UnitSpec spec;
+}
+
+/// <summary>
+/// 击杀奖励运行时数据，挂在单位上，死亡时由击杀奖励入口读取。
+/// </summary>
+public struct UnitKillRewardData : IComponent
+{
+    public LevelValue expReward;
 }
 
 /// <summary>

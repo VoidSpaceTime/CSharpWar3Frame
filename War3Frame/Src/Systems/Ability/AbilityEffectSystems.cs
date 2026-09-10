@@ -951,8 +951,10 @@ public class DamageResolveSystem : QuerySystem<DamageRequest>
             DamagePostProcessRegistry.Run(ref ctx, request.target.Store);
 
             // ---------- 6. 死亡判定 ----------
+            // 仅致死当次（KillUnit 真正发生 Alive→Death）会广播 UnitDiedEvent，由 KillRewardSystem 等消费方处理；
+            // 同帧超杀与死后伤害不再触发。死亡分支自身不再内联任何死后业务。
             if (!ctx.isImmune && remaining <= 0f)
-                UnitHelper.KillUnit(request.target);
+                UnitHelper.KillUnit(request.target, request.source);
 
             requestEntity.DeleteEntity();
         }

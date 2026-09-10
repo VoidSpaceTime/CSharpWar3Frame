@@ -74,6 +74,26 @@ public sealed class UnitSpecBuilder
         return this;
     }
 
+    /// <summary>
+    /// 设置击杀本单位后发给击杀者的经验（按本单位等级解析）。
+    /// </summary>
+    public UnitSpecBuilder ExpReward(LevelValue reward)
+    {
+        _spec.expReward = reward;
+        return this;
+    }
+
+    /// <summary>
+    /// 启用单位技能点：每升 1 级发放 perLevel 点，可选 initial 初始点。
+    /// perLevel &gt; 0 才会在构建时挂点池。
+    /// </summary>
+    public UnitSpecBuilder SkillPoints(int perLevel, int initial = 0)
+    {
+        _spec.skillPointsPerLevel = Math.Max(0, perLevel);
+        _spec.initialSkillPoints = Math.Max(0, initial);
+        return this;
+    }
+
     public UnitSpecBuilder ItemSlots(int maxSlots)
     {
         _spec.itemSlotCount = maxSlots;
@@ -128,6 +148,21 @@ public sealed class UnitSpecBuilder
 
         if (spec.experience.HasValue)
             unit.AddComponent(spec.experience.Value);
+
+        if (spec.expReward.Resolve(1) > 0f || spec.expReward.kind != LevelValueKind.Fixed)
+        {
+            unit.AddComponent(new UnitKillRewardData { expReward = spec.expReward });
+        }
+
+        if (spec.skillPointsPerLevel > 0)
+        {
+            unit.AddComponent(new SkillPointPool
+            {
+                unspent = spec.initialSkillPoints,
+                earned = spec.initialSkillPoints,
+                perLevel = spec.skillPointsPerLevel
+            });
+        }
 
         if (spec.itemSlotCount.HasValue)
         {

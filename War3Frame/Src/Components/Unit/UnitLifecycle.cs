@@ -25,3 +25,14 @@ public struct UnitLifeState : IComponent
     public float rebornTime;
     public UnitLifecyclePhase lifePhase;
 }
+
+/// <summary>
+/// 单位死亡事实（对外广播）。由 KillUnit 在 Alive→Death 当次创建一条。
+/// source 为击杀者；空 = 非击杀死亡（环境/脚本无源），奖励等击杀语义不适用但死亡事实仍广播。
+/// 移除单位不产生本事件（移除 ≠ 死亡，用 RemoveUnit）。
+/// </summary>
+public struct UnitDiedEvent : IComponent
+{
+    public Entity unit;
+    public Entity source;
+}

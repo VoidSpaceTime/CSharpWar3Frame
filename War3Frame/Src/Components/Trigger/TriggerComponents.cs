@@ -47,6 +47,9 @@ public static class EventTypeRegistry
         Register<BuffAppliedEvent>();
         Register<ControlStateChangedEvent>();
         Register<UnitAttackedEvent>();
+        Register<UnitDiedEvent>();
+        Register<UnitLeveledEvent>();
+        Register<AbilityUpgradedEvent>();
     }
 }
 

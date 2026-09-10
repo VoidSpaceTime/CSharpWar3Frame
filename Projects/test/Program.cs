@@ -50,6 +50,7 @@ public static partial class Bootstrap
         CostValidationScenario.Initialize(JassApi.Player(0));
         DamagePipelineValidationScenario.Initialize(JassApi.Player(0));
         CastValidationScenario.Initialize(JassApi.Player(0));
+        SkillPointUpgradeScenario.Initialize(JassApi.Player(0));
 
         var timer = War3.CallNative<int>(War3.GetNativeFunction("CreateTimer"));
         War3.CallNative<int>(War3.GetNativeFunction("TimerStart"), timer, TickInterval, true, () =>

@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using War3Frame.Components;
 using War3Frame.Helpers;
+using War3Frame.Src.Components;
 
 namespace War3Frame.Systems;
 
@@ -114,9 +116,18 @@ public class AbilityLevelStatRebuildSystem : QuerySystem<AbilitySpecData, Abilit
         Filter.AnyTags(Tags.Get<LevelStatDirty>());
     }
 
+    // Friflo 约束：Query 迭代内禁止结构变更，先收集快照，循环外统一重算。
+    private readonly List<(AbilitySpecData specData, AbilityBase abilityBase, Entity ability)> _pending = new();
+
     protected override void OnUpdate()
     {
+        _pending.Clear();
         Query.ForEachEntity((ref AbilitySpecData specData, ref AbilityBase abilityBase, Entity ability) =>
+        {
+            _pending.Add((specData, abilityBase, ability));
+        });
+
+        foreach (var (specData, abilityBase, ability) in _pending)
         {
             foreach (var (statId, value) in specData.spec.baseValues)
             {
@@ -124,23 +135,34 @@ public class AbilityLevelStatRebuildSystem : QuerySystem<AbilitySpecData, Abilit
             }
 
             ability.RemoveTag<LevelStatDirty>();
-        });
+        }
     }
 }
 
 /// <summary>
 /// 经验系统，消费经验获得请求并在升级后添加 LevelStatDirty。
+/// Unit 升级时同步发放技能点并广播 UnitLeveledEvent。
 /// </summary>
 [SystemRegister(SystemKind.Interval, 0)]
 public class ExperienceSystem : QuerySystem<ExperienceGainRequest>
 {
+    // Friflo 约束：Query 迭代内禁止结构变更，先收集请求快照，循环外统一结算与删除。
+    private readonly List<(ExperienceGainRequest request, Entity requestEntity)> _pending = new();
+
     protected override void OnUpdate()
     {
+        _pending.Clear();
         Query.ForEachEntity((ref ExperienceGainRequest request, Entity requestEntity) =>
         {
-            ApplyExperience(request.target, request.amount * request.multiplier);
-            requestEntity.DeleteEntity();
+            _pending.Add((request, requestEntity));
         });
+
+        foreach (var (request, requestEntity) in _pending)
+        {
+            ApplyExperience(request.target, request.amount * request.multiplier);
+            if (!requestEntity.IsNull)
+                requestEntity.DeleteEntity();
+        }
     }
 
     private static void ApplyExperience(Entity target, float amount)
@@ -150,17 +172,37 @@ public class ExperienceSystem : QuerySystem<ExperienceGainRequest>
 
         experience.currentExp += amount;
         experience.totalExp += amount;
+        var before = TryGetLevel(target, out var beforeLevel) ? beforeLevel : 0;
         var leveled = TryLevelUp(target, ref experience);
         target.AddComponent(experience);
 
-        if (leveled)
-            target.AddTag<LevelStatDirty>();
+        if (!leveled)
+            return;
+
+        target.AddTag<LevelStatDirty>();
+
+        // 仅 Unit 升级：同步发点 + 对外广播一条升级事件（Item/Ability 不发）。
+        if (target.HasComponent<UnitLevel>() && TryGetLevel(target, out var afterLevel) && afterLevel > before)
+        {
+            SkillPointHelper.GrantLevels(target, afterLevel - before);
+
+            var leveledEvent = target.Store.CreateEntity(new UnitLeveledEvent
+            {
+                unit = target,
+                fromLevel = before,
+                toLevel = afterLevel
+            });
+            leveledEvent.AddComponent(new TriggerEventMarker
+            {
+                eventTypeId = EventTypeRegistry.Get<UnitLeveledEvent>()
+            });
+        }
     }
 
     private static bool TryLevelUp(Entity target, ref ExperienceData experience)
     {
         var leveled = false;
-        while (TryGetLevel(target, out var level) && CanLevelUp(experience, level))
+        while (TryGetLevel(target, out var level) && CanLevelUp(target, experience, level))
         {
             var required = experience.curve.RequiredForNextLevel(level);
             if (required <= 0f || experience.currentExp < required)
@@ -174,9 +216,20 @@ public class ExperienceSystem : QuerySystem<ExperienceGainRequest>
         return leveled;
     }
 
-    private static bool CanLevelUp(ExperienceData experience, int level)
+    private static bool CanLevelUp(Entity target, ExperienceData experience, int level)
     {
-        return experience.maxLevel <= 0 || level < experience.maxLevel;
+        if (experience.maxLevel > 0 && level >= experience.maxLevel)
+            return false;
+
+        // 加点成长技能（AbilitySpec.maxLevel > 0）由技能点驱动，经验系统不做熟练度自动升级。
+        if (target.HasComponent<AbilityBase>()
+            && target.TryGetComponent<AbilitySpecData>(out var specData)
+            && specData.spec.maxLevel > 0)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static bool TryGetLevel(Entity target, out int level)

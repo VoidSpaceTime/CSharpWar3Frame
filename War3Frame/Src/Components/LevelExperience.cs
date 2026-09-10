@@ -207,3 +207,53 @@ public struct ExperienceGainRequest : IComponent
     public Entity source;
     public string sourceType;
 }
+
+/// <summary>
+/// 单位技能点池，仅配置了发点的单位挂载。unspent 不得为负，earned 只增不减。
+/// </summary>
+public struct SkillPointPool : IComponent
+{
+    /// <summary>未分配技能点。</summary>
+    public int unspent;
+
+    /// <summary>累计获得技能点（含初始），无洗点时只增不减。</summary>
+    public int earned;
+
+    /// <summary>每升 1 英雄级发放的技能点数（>0 才挂池）。</summary>
+    public int perLevel;
+}
+
+/// <summary>
+/// 单位升级事实（对外广播），一次经验结算连升多级只发一条。
+/// 由经验系统在 Unit 升级后创建；发点逻辑已同步完成，本事件仅供监听。
+/// </summary>
+public struct UnitLeveledEvent : IComponent
+{
+    public Entity unit;
+    public int fromLevel;
+    public int toLevel;
+}
+
+/// <summary>
+/// 消耗技能点升级槽位技能的一次性请求。
+/// </summary>
+public struct AbilityUpgradeRequest : IComponent
+{
+    public Entity unit;
+    public Entity ability;
+    /// <summary>升级级数，必须 &gt; 0；本阶段 1 级 = 1 点。</summary>
+    public int levels;
+}
+
+/// <summary>
+/// 技能加点成功事实（对外广播），学习场景不使用（本阶段无 Learn）。
+/// </summary>
+public struct AbilityUpgradedEvent : IComponent
+{
+    public Entity unit;
+    public Entity ability;
+    public string templateName;
+    public int fromLevel;
+    public int toLevel;
+    public int pointsSpent;
+}

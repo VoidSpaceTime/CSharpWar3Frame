@@ -113,6 +113,12 @@ public sealed class AbilitySpec
     public readonly List<AbilityBehaviorSpec> behaviors = new();
     public ExperienceData? experience;
 
+    /// <summary>
+    /// 技能点加点上限。&lt;= 0：不可被技能点升级，保留熟练度经验成长；
+    /// &gt; 0：加点成长技能，经验系统对该技能禁用熟练度自动升级。
+    /// </summary>
+    public int maxLevel;
+
     /// <summary>释放前摇时长，完成后进入真正生效点。</summary>
     public LevelValue castPoint = LevelValue.Fixed(0f);
 
