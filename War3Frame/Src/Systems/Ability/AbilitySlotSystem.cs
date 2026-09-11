@@ -23,13 +23,30 @@ public class AbilitySlotSystem : QuerySystem<AbilitySlotContainer>
 [SystemRegister(SystemKind.Immediate)]
 public class AbilityAttachWorkflowSystem : QuerySystem<AbilityAttachRequest>
 {
+    // Friflo 约束：Query 迭代内禁止结构变更，先收集请求，循环外挂载。
+    private readonly List<(Entity requestEntity, AbilityAttachRequest request)> _pending = new();
+
     protected override void OnUpdate()
     {
+        _pending.Clear();
         Query.ForEachEntity((ref AbilityAttachRequest request, Entity requestEntity) =>
         {
-            AttachAbility(request.unit, request.ability, request.slotIndex);
-            requestEntity.DeleteEntity();
+            _pending.Add((requestEntity, request));
         });
+
+        foreach (var (requestEntity, request) in _pending)
+        {
+            try
+            {
+                if (!request.unit.IsNull && !request.ability.IsNull)
+                    AttachAbility(request.unit, request.ability, request.slotIndex);
+            }
+            finally
+            {
+                if (!requestEntity.IsNull)
+                    requestEntity.DeleteEntity();
+            }
+        }
     }
 
     private static void AttachAbility(Entity unit, Entity ability, int slotIndex)
@@ -79,13 +96,30 @@ public class AbilityAttachWorkflowSystem : QuerySystem<AbilityAttachRequest>
 [SystemRegister(SystemKind.Immediate)]
 public class AbilityRemoveWorkflowSystem : QuerySystem<AbilityRemoveRequest>
 {
+    // Friflo 约束：Query 迭代内禁止结构变更，先收集请求，循环外移除。
+    private readonly List<(Entity requestEntity, AbilityRemoveRequest request)> _pending = new();
+
     protected override void OnUpdate()
     {
+        _pending.Clear();
         Query.ForEachEntity((ref AbilityRemoveRequest request, Entity requestEntity) =>
         {
-            RemoveAbility(request.unit, request.slotIndex, request.destroyAbility);
-            requestEntity.DeleteEntity();
+            _pending.Add((requestEntity, request));
         });
+
+        foreach (var (requestEntity, request) in _pending)
+        {
+            try
+            {
+                if (!request.unit.IsNull)
+                    RemoveAbility(request.unit, request.slotIndex, request.destroyAbility);
+            }
+            finally
+            {
+                if (!requestEntity.IsNull)
+                    requestEntity.DeleteEntity();
+            }
+        }
     }
 
     private static void RemoveAbility(Entity unit, int slotIndex, bool destroyAbility)

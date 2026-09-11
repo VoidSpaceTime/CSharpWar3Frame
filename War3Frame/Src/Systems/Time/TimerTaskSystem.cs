@@ -17,6 +17,13 @@ public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
 
     protected override void OnUpdate()
     {
+        // Friflo 禁止在 Query 迭代内增删组件/Tag（结构变更）：先收集，循环外统一应用。
+        var toDelete = new List<Entity>();
+        var toMarkExpired = new List<Entity>();
+        var toMarkBuffExpired = new List<Entity>();
+        var toRemoveTimer = new List<Entity>();
+        var ownerStateUpdates = new List<(Entity owner, UnitLifeState state)>();
+
         Query.ForEachEntity((ref TimerTask timer, Entity entity) =>
         {
             if (timer.paused)
@@ -27,19 +34,18 @@ public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
             if (timer.owner.IsNull)
             {
                 // owner 已不存在时，计时任务没有继续推进的语义，直接回收。
-                entity.DeleteEntity();
+                toDelete.Add(entity);
                 return;
             }
 
             timer.remaining -= Tick.deltaTime;
             if (timer.remaining > 0)
             {
-                entity.AddComponent(timer);
-                return;
+                return; // ref 原地写已持久化
             }
 
             timer.triggerCount++;
-            entity.AddTag<TimerExpired>();
+            toMarkExpired.Add(entity);
 
             switch (timer.kind)
             {
@@ -49,25 +55,55 @@ public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
                         && state.lifePhase == UnitLifecyclePhase.Corpse)
                     {
                         state.lifePhase = UnitLifecyclePhase.ClearCorpse;
-                        timer.owner.AddComponent(state);
+                        ownerStateUpdates.Add((timer.owner, state));
                     }
                     break;
                 case TimerTaskKind.BuffExpire:
                     // Buff 到期用标签表达结果，实际移除逻辑由 Buff 系统消费。
-                    entity.AddTag<BuffExpired>();
+                    toMarkBuffExpired.Add(entity);
                     break;
             }
 
             var reachedMax = timer.maxTriggerCount > 0 && timer.triggerCount >= timer.maxTriggerCount;
             if (timer.mode == TimerTaskMode.Once || reachedMax)
             {
-                entity.RemoveComponent<TimerTask>();
+                toRemoveTimer.Add(entity);
                 return;
             }
 
             timer.remaining += timer.interval;
-            // 周期任务保留同一个实体并刷新剩余时间，便于外部通过 source/owner 继续追踪。
-            entity.AddComponent(timer);
+            // 周期任务保留同一个实体并刷新剩余时间，便于外部通过 source/owner 继续追踪（ref 已持久化）。
         });
+
+        // ---- 循环外应用结构变更 ----
+        foreach (var entity in toDelete)
+        {
+            if (!entity.IsNull)
+                entity.DeleteEntity();
+        }
+
+        foreach (var entity in toMarkExpired)
+        {
+            if (!entity.IsNull)
+                entity.AddTag<TimerExpired>();
+        }
+
+        foreach (var entity in toMarkBuffExpired)
+        {
+            if (!entity.IsNull)
+                entity.AddTag<BuffExpired>();
+        }
+
+        foreach (var (owner, state) in ownerStateUpdates)
+        {
+            if (!owner.IsNull)
+                owner.AddComponent(state);
+        }
+
+        foreach (var entity in toRemoveTimer)
+        {
+            if (!entity.IsNull)
+                entity.RemoveComponent<TimerTask>();
+        }
     }
 }

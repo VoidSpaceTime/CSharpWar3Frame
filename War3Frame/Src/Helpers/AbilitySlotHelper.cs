@@ -143,17 +143,24 @@ public static class AbilitySlotHelper
     }
 
     /// <summary>
-    ///     移除单位的所有技能
+    /// 移除单位拥有的所有技能（含无槽位的伴生技能）。
+    /// 带槽位者走槽位移除流程；无槽位者直接走 AbilityHelper.RemoveAbility，避免遗留悬挂 AbilityOwner。
     /// </summary>
-    /// <param name="unit">目标单位 Entity</param>
     public static void RemoveAllAbilities(Entity unit)
     {
         var abilities = GetAllAbilities(unit);
         foreach (var ability in abilities)
         {
+            if (ability.IsNull)
+                continue;
+
             if (ability.TryGetComponent<AbilitySlotIndex>(out var slotIndex))
             {
                 RemoveAbilityFromSlot(unit, slotIndex.slotIndex);
+            }
+            else
+            {
+                Helpers.AbilityHelper.RemoveAbility(ability);
             }
         }
     }

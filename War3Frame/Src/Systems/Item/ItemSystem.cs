@@ -300,18 +300,30 @@ public class ItemAttributeContributionApplySystem : QuerySystem<ItemOwner, ItemA
 {
     protected override void OnUpdate()
     {
+        // 属性应用涉及创建 modifier 实体/增删组件（结构变更）：先收集物品，循环外应用。
+        var pending = new List<Entity>();
         Query.ForEachEntity((ref ItemOwner owner, ref ItemAttrApplyRequest request, Entity item) =>
         {
+            pending.Add(item);
+        });
+
+        foreach (var item in pending)
+        {
+            if (item.IsNull)
+                continue;
+            if (!item.TryGetComponent<ItemOwner>(out var owner) || !item.HasComponent<ItemAttrApplyRequest>())
+                continue;
+
             if (!item.Tags.Has<ItemEquippedTag>())
             {
                 item.RemoveComponent<ItemAttrApplyRequest>();
-                return;
+                continue;
             }
 
             if (owner.unit.IsNull)
             {
                 item.RemoveComponent<ItemAttrApplyRequest>();
-                return;
+                continue;
             }
 
             ModifyHelper.RemoveModifiersFromSource(item);
@@ -330,7 +342,7 @@ public class ItemAttributeContributionApplySystem : QuerySystem<ItemOwner, ItemA
             }
 
             item.RemoveComponent<ItemAttrApplyRequest>();
-        });
+        }
     }
 }
 
@@ -345,11 +357,21 @@ public class ItemAttributeRemoveSystem : QuerySystem<ItemOwner, ItemAttrRemoveRe
 
     protected override void OnUpdate()
     {
+        // 移除 modifier 涉及删除实体/增删组件（结构变更）：先收集物品，循环外移除。
+        var pending = new List<Entity>();
         Query.ForEachEntity((ref ItemOwner owner, ref ItemAttrRemoveRequest request, Entity item) =>
         {
+            pending.Add(item);
+        });
+
+        foreach (var item in pending)
+        {
+            if (item.IsNull || !item.HasComponent<ItemAttrRemoveRequest>())
+                continue;
+
             ModifyHelper.RemoveModifiersFromSource(item);
             item.RemoveComponent<ItemAttrRemoveRequest>();
-        });
+        }
     }
 }
 
@@ -364,18 +386,32 @@ public class AbilityAttributeApplySystem : QuerySystem<AbilityOwner, AttributeCo
 
     protected override void OnUpdate()
     {
+        // 属性应用涉及创建 modifier 实体/增删组件（结构变更）：先收集技能，循环外应用。
+        var pending = new List<Entity>();
         Query.ForEachEntity((ref AbilityOwner owner, ref AttributeContributionEntry contribution, ref AbilityAttrApplyRequest request, Entity ability) =>
         {
+            pending.Add(ability);
+        });
+
+        foreach (var ability in pending)
+        {
+            if (ability.IsNull)
+                continue;
+            if (!ability.TryGetComponent<AbilityOwner>(out var owner)
+                || !ability.TryGetComponent<AttributeContributionEntry>(out var contribution)
+                || !ability.HasComponent<AbilityAttrApplyRequest>())
+                continue;
+
             if (owner.owner.IsNull)
             {
                 ability.RemoveComponent<AbilityAttrApplyRequest>();
-                return;
+                continue;
             }
 
             ModifyHelper.RemoveModifiersFromSource(ability);
             ModifyHelper.AddModifierToUnit(owner.owner, contribution.attrTypeId, ability, contribution.modifyType, contribution.value);
             ability.RemoveComponent<AbilityAttrApplyRequest>();
-        });
+        }
     }
 }
 
@@ -390,10 +426,20 @@ public class AbilityAttributeRemoveSystem : QuerySystem<AbilityOwner, AbilityAtt
 
     protected override void OnUpdate()
     {
+        // 移除 modifier 涉及删除实体/增删组件（结构变更）：先收集技能，循环外移除。
+        var pending = new List<Entity>();
         Query.ForEachEntity((ref AbilityOwner owner, ref AbilityAttrRemoveRequest request, Entity ability) =>
         {
+            pending.Add(ability);
+        });
+
+        foreach (var ability in pending)
+        {
+            if (ability.IsNull || !ability.HasComponent<AbilityAttrRemoveRequest>())
+                continue;
+
             ModifyHelper.RemoveModifiersFromSource(ability);
             ability.RemoveComponent<AbilityAttrRemoveRequest>();
-        });
+        }
     }
 }

@@ -3,17 +3,6 @@
 namespace War3Frame;
 
 /// <summary>
-/// 玩家在线状态。
-/// </summary>
-public enum PlayerState
-{
-    Playing,
-    Leave,
-    Empty,
-    Computer
-}
-
-/// <summary>
 /// 玩家阵营关系。
 /// </summary>
 public enum PlayerTeamState

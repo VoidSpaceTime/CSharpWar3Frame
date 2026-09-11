@@ -32,37 +32,3 @@ public static partial class AttributeHelper
     // 移动属性
     public static readonly int MoveSpeed = Register("MoveSpeed");               // 移动速度
 }
-
-// ============================================================================
-// 战斗相关的 Unit 组件（存储当前值，不通过修改器系统）
-// ============================================================================
-
-/// <summary>
-/// 攻击状态组件 - 存储攻击相关的运行时状态
-/// </summary>
-public struct AttackState : IComponent
-{
-    /// <summary>当前攻击冷却计时</summary>
-    public float cooldown;
-
-    /// <summary>是否远程攻击</summary>
-    public bool isRanged;
-}
-
-/// <summary>
-/// 暴击状态组件（可选，只有需要暴击的单位才添加）
-/// </summary>
-public struct CritState : IComponent
-{
-    /// <summary>是否需要计算暴击</summary>
-    public bool enabled;
-}
-
-/// <summary>
-/// 视野状态组件
-/// </summary>
-public struct SightState : IComponent
-{
-    /// <summary>当前是否为夜间</summary>
-    public bool isNight;
-}

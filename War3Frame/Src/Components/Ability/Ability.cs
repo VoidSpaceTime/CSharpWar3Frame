@@ -13,15 +13,6 @@ public enum AbilityState
 }
 
 /// <summary>
-/// 技能类型。
-/// </summary>
-public enum AbilityType
-{
-    Active, // 主动
-    Passive // 被动
-}
-
-/// <summary>
 /// 技能目标类型。
 /// </summary>
 public enum AbilityTargetType
@@ -66,19 +57,6 @@ public enum AbilityFlowNodeType
     Projectile,
     AreaSearch,
     Periodic,
-    Damage,
-    Heal,
-    Buff,
-    AttributeContribution,
-    Move,
-    Lifecycle
-}
-
-/// <summary>
-/// 能力结算类型。
-/// </summary>
-public enum AbilitySettlementType
-{
     Damage,
     Heal,
     Buff,
@@ -139,15 +117,6 @@ public struct AbilityFlowNodeInfo : IComponent
 }
 
 /// <summary>
-/// 能力结算元信息。
-/// 用于表达最终效果应落到哪类结算层。
-/// </summary>
-public struct AbilitySettlementInfo : IComponent
-{
-    public AbilitySettlementType settlementType;
-}
-
-/// <summary>
 /// 技能冷却运行时状态。
 /// </summary>
 public struct AbilityCooldownState : IComponent
@@ -178,19 +147,3 @@ public struct AbilityRemoveRequest : IComponent
     public bool destroyAbility;
 }
 
-// AbilityOwner 和 SkillItem 已移动到 AbilitySlotBinding.cs 中
-// 使用 AbilityOwnerRelation : IRelation<Entity> 替代
-public struct AbilityBan : IComponent
-{
-    /// <summary>禁用原因。</summary>
-    public string banReason;
-
-    /// <summary>禁用总时长。</summary>
-    public float banDurtion;
-
-    /// <summary>当前已禁用时长。</summary>
-    public float banCurrent;
-
-    /// <summary>当前是否处于禁用状态。</summary>
-    public bool isBan;
-}

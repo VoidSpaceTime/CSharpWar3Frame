@@ -14,6 +14,9 @@ public class BuffDurationSystem : QuerySystem<Buff, BuffBehavior, Duration>, ITi
 
     protected override void OnUpdate()
     {
+        // 循环内 AddTag 属结构变更，会抛异常：先收集，循环外打标。
+        var toMark = new List<Entity>();
+
         Query.ForEachEntity((ref Buff buff, ref BuffBehavior behavior, ref Duration runtime, Entity entity) =>
         {
             if (runtime.remaining < 0f)
@@ -23,9 +26,15 @@ public class BuffDurationSystem : QuerySystem<Buff, BuffBehavior, Duration>, ITi
 
             if (entity.Tags.Has<DurationExpired>())
             {
-                entity.AddTag<BuffExpired>();
+                toMark.Add(entity);
             }
         });
+
+        foreach (var entity in toMark)
+        {
+            if (!entity.IsNull)
+                entity.AddTag<BuffExpired>();
+        }
     }
 }
 

@@ -116,9 +116,6 @@ public struct EffectBase : IComponent
     /// <summary>特效类型。</summary>
     public EffectType effectType;
 
-    /// <summary>附着点类型。</summary>
-    public EffectAttachType effectAttachType;
-
 }
 
 /// <summary>

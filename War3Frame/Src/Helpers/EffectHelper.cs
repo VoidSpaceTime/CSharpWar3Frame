@@ -73,8 +73,7 @@ public static class EffectHelper
                 red = 255,
                 green = 255,
                 blue = 255,
-                effectType = EffectType.Attach,
-                effectAttachType = attachPoint
+                effectType = EffectType.Attach
             },
             new EffectAttachment
             {

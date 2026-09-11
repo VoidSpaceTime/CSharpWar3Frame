@@ -21,6 +21,9 @@ public class AbilityStatCalculationSystem : QuerySystem<AbilityStatValue>
 
     protected override void OnUpdate()
     {
+        // 循环内 RemoveTag 属结构变更：先收集，循环外清脏标记。
+        var recalculated = new List<Entity>();
+
         Query.ForEachEntity((ref AbilityStatValue stat, Entity statEntity) =>
         {
             var modifiers = statEntity.GetIncomingLinks<ModifyTarget>();
@@ -50,7 +53,13 @@ public class AbilityStatCalculationSystem : QuerySystem<AbilityStatValue>
             }
 
             stat.finalValue = (stat.baseValue + flatSum) * (1 + percentAddSum) * percentMulProduct;
-            statEntity.RemoveTag<AbilityStatDirty>();
+            recalculated.Add(statEntity);
         });
+
+        foreach (var statEntity in recalculated)
+        {
+            if (!statEntity.IsNull)
+                statEntity.RemoveTag<AbilityStatDirty>();
+        }
     }
 }

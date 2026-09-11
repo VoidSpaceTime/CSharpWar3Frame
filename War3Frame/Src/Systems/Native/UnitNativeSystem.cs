@@ -23,6 +23,10 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
 
     protected override void OnUpdate()
     {
+        // Position / 快照写回是 AddComponent（结构变更），不能在 Query 迭代内执行：先收集，循环外写回。
+        var posUpdates = new List<(Entity entity, Position pos)>();
+        var snapUpdates = new List<(Entity entity, UnitNativeSyncSnapshot snapshot)>();
+
         Query.ForEachEntity((ref UnitNative native, Entity entity) =>
         {
             var hasSnapshot = entity.TryGetComponent<UnitNativeSyncSnapshot>(out var snapshot);
@@ -56,19 +60,31 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
 
             // 同步单位位置
             // 位置以 native 世界为准回写到 ECS，供距离、弹道、区域搜索等系统读取。
-            // Position 是 struct，TryGetComponent 返回副本，必须显式 AddComponent 写回。
+            // Position 是 struct，TryGetComponent 返回副本，必须显式写回（收集到循环外）。
             if (entity.TryGetComponent<Position>(out var position))
             {
                 position.x = JassApi.GetUnitX(native.unit);
                 position.y = JassApi.GetUnitY(native.unit);
-                entity.AddComponent(position);
+                posUpdates.Add((entity, position));
             }
 
             if (hasSnapshot)
             {
-                entity.AddComponent(snapshot);
+                snapUpdates.Add((entity, snapshot));
             }
         });
+
+        foreach (var (entity, position) in posUpdates)
+        {
+            if (!entity.IsNull)
+                entity.AddComponent(position);
+        }
+
+        foreach (var (entity, snapshot) in snapUpdates)
+        {
+            if (!entity.IsNull)
+                entity.AddComponent(snapshot);
+        }
     }
 
     private static bool HasMeaningfulDifference(float left, float right)

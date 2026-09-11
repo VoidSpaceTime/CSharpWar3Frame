@@ -202,14 +202,45 @@ public static class UnitHelper
 
     /// <summary>
     /// 执行单位的 ECS 终态收尾（非死亡清理，不广播 UnitDiedEvent）。
-    /// 包括移除计时标记、清空属性、清空技能并删除实体。
+    /// 包括移除计时标记、光环、物品（安全解绑 + 回收）、技能、属性并删除实体。
     /// </summary>
     public static void CleanupFinalizeEntityDispose(Entity entity)
     {
-        // ECS 终态清理顺序：先移除外围状态，再删除属性/技能等子实体，最后删除单位本体。
+        // ECS 终态清理顺序：先移除外围状态，再回收附属实体（光环/物品/技能/属性），最后删除单位本体。
         entity.RemoveTag<TimerExpired>();
-        AttributeHelper.RemoveAllAttrs(entity);
+        AuraHelper.RemoveAllAuras(entity);
+        DetachAndRecycleItems(entity);
         AbilitySlotHelper.RemoveAllAbilities(entity);
+        AttributeHelper.RemoveAllAttrs(entity);
         entity.DeleteEntity();
+    }
+
+    /// <summary>
+    /// 解绑并回收单位身上的物品：先 Detach 撤销归属/伴生技能/属性贡献，再标记待销毁，
+    /// 由 ItemCompanionDeferredDeleteSystem(order 131) 在 companion 引用释放后删除物品实体。
+    /// 死亡路径不使物品落地；若需掉落请在此前显式调用 ItemHelper.DropToGround。
+    /// </summary>
+    private static void DetachAndRecycleItems(Entity unit)
+    {
+        var items = new List<Entity>();
+        foreach (var link in unit.GetIncomingLinks<War3Frame.Components.ItemOwner>())
+        {
+            items.Add(link.Entity);
+        }
+
+        foreach (var item in items)
+        {
+            if (item.IsNull)
+                continue;
+
+            War3Frame.Src.Systems.ItemLifecycleOperations.Detach(item, false, 0f, 0f, 0f);
+
+            if (!item.IsNull
+                && item.HasComponent<War3Frame.Components.ItemBase>()
+                && !item.Tags.Has<War3Frame.Components.ItemDestroyPendingTag>())
+            {
+                item.AddTag<War3Frame.Components.ItemDestroyPendingTag>();
+            }
+        }
     }
 }

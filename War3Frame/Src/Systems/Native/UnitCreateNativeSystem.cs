@@ -15,11 +15,15 @@ public class UnitCreateNativeSystem : QuerySystem<UnitCreateNativeRequest>
 
     protected override void OnUpdate()
     {
+        // 循环内 AddComponent/RemoveComponent 属结构变更：原生创建仍在循环内完成，ECS 写回收集到循环外。
+        var toAddNative = new List<(Entity entity, UnitNative native)>();
+        var toRemoveRequest = new List<Entity>();
+
         Query.ForEachEntity((ref UnitCreateNativeRequest request, Entity entity) =>
         {
             if (entity.HasComponent<UnitNative>())
             {
-                entity.RemoveComponent<UnitCreateNativeRequest>();
+                toRemoveRequest.Add(entity);
                 return;
             }
 
@@ -27,13 +31,24 @@ public class UnitCreateNativeSystem : QuerySystem<UnitCreateNativeRequest>
             HandleHelper.HandleAdd(junit);
             NativeEntityIndex.Register(entity, junit);
 
-            entity.AddComponent(new UnitNative
+            toAddNative.Add((entity, new UnitNative
             {
                 unit = junit,
                 player = request.player
-            });
-
-            entity.RemoveComponent<UnitCreateNativeRequest>();
+            }));
+            toRemoveRequest.Add(entity);
         });
+
+        foreach (var (entity, native) in toAddNative)
+        {
+            if (!entity.IsNull && !entity.HasComponent<UnitNative>())
+                entity.AddComponent(native);
+        }
+
+        foreach (var entity in toRemoveRequest)
+        {
+            if (!entity.IsNull)
+                entity.RemoveComponent<UnitCreateNativeRequest>();
+        }
     }
 }

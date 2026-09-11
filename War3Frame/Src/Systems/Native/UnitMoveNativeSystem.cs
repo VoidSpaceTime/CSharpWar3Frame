@@ -15,6 +15,9 @@ public class UnitMoveNativeSystem : QuerySystem<MoveNativeRequest, UnitNative>
 
     protected override void OnUpdate()
     {
+        // 循环内 RemoveComponent 属结构变更：先执行原生命令并收集，循环外移除请求。
+        var resolved = new List<Entity>();
+
         Query.ForEachEntity((ref MoveNativeRequest request, ref UnitNative native, Entity unit) =>
         {
             // commandToken 由上层 move 系统用于匹配结果；native 层只执行当前请求。
@@ -30,7 +33,13 @@ public class UnitMoveNativeSystem : QuerySystem<MoveNativeRequest, UnitNative>
                     JassApi.IssueImmediateOrder(native.unit, "holdposition");
                     break;
             }
-            unit.RemoveComponent<MoveNativeRequest>();
+            resolved.Add(unit);
         });
+
+        foreach (var unit in resolved)
+        {
+            if (!unit.IsNull)
+                unit.RemoveComponent<MoveNativeRequest>();
+        }
     }
 }

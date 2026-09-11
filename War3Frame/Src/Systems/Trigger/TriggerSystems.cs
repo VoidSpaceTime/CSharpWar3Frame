@@ -204,6 +204,34 @@ public class TriggerSystem : QuerySystem<TriggerEventMarker>
 }
 
 /// <summary>
+/// 触发器冷却递减系统。
+/// 把 Cooldown 策略规则的 cooldownRemain 随时间递减，冷却归零后规则可再次触发。
+/// 仅对 ref 字段原地写，符合 Query 循环结构安全规则。
+/// </summary>
+/// <remarks>order 44：早于 TriggerSystem(131)，保证同帧匹配读取到已递减的冷却值。</remarks>
+[SystemRegister(SystemKind.Interval, 44)]
+public class TriggerCooldownSystem : QuerySystem<TriggerSpec, TriggerRuntime>
+{
+    protected override void OnUpdate()
+    {
+        var deltaTime = Tick.deltaTime;
+
+        Query.ForEachEntity((ref TriggerSpec spec, ref TriggerRuntime runtime, Entity ruleEntity) =>
+        {
+            if (spec.policy.kind != TriggerPolicyKind.Cooldown)
+                return;
+
+            if (runtime.cooldownRemain > 0f)
+            {
+                runtime.cooldownRemain -= deltaTime;
+                if (runtime.cooldownRemain < 0f)
+                    runtime.cooldownRemain = 0f;
+            }
+        });
+    }
+}
+
+/// <summary>
 /// 事件实体清理系统。
 /// 删除带 TriggerEventMarker 的事件实体（消费窗口 = 1 tick：131 已消费，132 清理），
 /// 解决全仓事件实体永不清理的泄漏问题。TriggerSystem 只读事件实体，本系统负责生命周期。

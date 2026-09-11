@@ -38,69 +38,12 @@ public class UnitControlNativeSystem : QuerySystem<ControlStateNativeRequest>
                 case ControlType.Pause:
                     JassApi.PauseUnit(native.unit, request.entered);
                     break;
+                // Locust / Invulnerable / Invisible / Sorcery 依赖默认地图模板提供对应
+                // ability，模板就绪后再在此实现原生开关；当前不做原生副作用。
                 case ControlType.Locust:
-                    /*
-                     /// TODO 需要默认map有蝗虫的模板
-                    if (request.entered)
-                    {
-                        if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_locust"]) < 1)
-                            JassApi.UnitAddAbility(native.unit, FRAMEWORK_ID["ability_locust"]);
-                    }
-                    else
-                    {
-                        if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_locust"]) >= 1)
-                            JassApi.UnitRemoveAbility(native.unit, FRAMEWORK_ID["ability_locust"]);
-                    }
-                    */
-
-                    break;
                 case ControlType.Invulnerable:
-                    /*
-                     /// TODO 需要默认map有无敌的模板
-                    if (request.entered)
-                    {
-                        if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_invulnerable"]) < 1)
-                            JassApi.UnitAddAbility(native.unit, FRAMEWORK_ID["ability_invulnerable"]);
-                    }
-                    else
-                    {
-                        if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_invulnerable"]) >= 1)
-                            JassApi.UnitRemoveAbility(native.unit, FRAMEWORK_ID["ability_invulnerable"]);
-                    }
-                    */
-
-                    break;
                 case ControlType.Invisible:
-                    /*
-                     /// TODO 需要默认map有无敌的模板
-                    if (request.entered)
-                    {
-                        if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_invisible"]) < 1)
-                            JassApi.UnitAddAbility(native.unit, FRAMEWORK_ID["ability_invisible"]);
-                    }
-                    else
-                    {
-                        if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_invisible"]) >= 1)
-                            JassApi.UnitRemoveAbility(native.unit, FRAMEWORK_ID["ability_invisible"]);
-                    }
-                    */
-
-                    break;
                 case ControlType.Sorcery:
-                    /*
-                /// TODO 需要默认map有巫术的模板
-               if (request.entered)
-               {
-                   if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_invisible"]) < 1)
-                       JassApi.UnitAddAbility(native.unit, FRAMEWORK_ID["ability_invisible"]);
-               }
-               else
-               {
-                   if (JassApi.GetUnitAbilityLevel(native.unit, FRAMEWORK_ID["ability_invisible"]) >= 1)
-                       JassApi.UnitRemoveAbility(native.unit, FRAMEWORK_ID["ability_invisible"]);
-               }
-               */
-
                     break;
             }
 

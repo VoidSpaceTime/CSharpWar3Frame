@@ -32,6 +32,8 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
     {
         _arriveRequests.Clear();
         _expireRequests.Clear();
+        // EffectHelper.SetPosition 会 AddComponent（结构变更），不能在 Query 迭代内执行：先收集，循环外写回。
+        var positionUpdates = new List<(Entity effectEntity, float x, float y, float z)>();
 
         Query.ForEachEntity((ref ProjectileData projectile, ref EffectSource source,
             ref EffectTargetInfo target, ref Position position,
@@ -60,7 +62,7 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
 
             if (!projectile.effectEntity.IsNull)
             {
-                EffectHelper.SetPosition(projectile.effectEntity, position.x, position.y, position.z);
+                positionUpdates.Add((projectile.effectEntity, position.x, position.y, position.z));
             }
 
             if (arrived)
@@ -69,6 +71,12 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
                 _arriveRequests.Add(effectEntity);
             }
         });
+
+        foreach (var (effectEntity, x, y, z) in positionUpdates)
+        {
+            if (!effectEntity.IsNull)
+                EffectHelper.SetPosition(effectEntity, x, y, z);
+        }
 
         ProjectileFlowHelper.ApplyRequests(_arriveRequests, _expireRequests);
     }
@@ -349,42 +357,63 @@ public class EffectVisualSystem : QuerySystem<EffectVisualData, EffectSource, Ef
 
     protected override void OnUpdate()
     {
+        // 视觉步骤会创建/销毁实体并增删组件（结构变更）：先收集，循环外处理。
+        var pending = new List<Entity>();
         Query.ForEachEntity((ref EffectVisualData visual, ref EffectSource source,
             ref EffectTargetInfo target, Entity effectEntity) =>
         {
             if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
                 return;
 
-            var current = GetCurrentVisualStep(visual);
-            if (effectEntity.HasComponent<AreaSearchData>() && NeedsResolvedTarget(current.kind) && target.targetUnit.IsNull)
-                return;
-
-            if (current.kind == EffectVisualKind.RemoveByKey)
-            {
-                RemoveLinkedEffects(source.caster, current.key);
-                CompleteCurrentVisual(effectEntity, visual);
-                return;
-            }
-
-            var duration = EffectFormulaRegistry.Resolve(
-                source.caster,
-                source.ability,
-                target.targetUnit,
-                effectEntity,
-                current.duration,
-                current.fallbackDuration);
-            var visualEntity = CreateVisualEntity(current, source, target, duration);
-            if (visualEntity.HasValue && !string.IsNullOrEmpty(current.key))
-            {
-                visualEntity.Value.AddComponent(new EffectVisualLink
-                {
-                    owner = source.caster,
-                    key = current.key
-                });
-            }
-
-            CompleteCurrentVisual(effectEntity, visual);
+            pending.Add(effectEntity);
         });
+
+        foreach (var effectEntity in pending)
+        {
+            if (!effectEntity.IsNull)
+                ProcessVisual(effectEntity);
+        }
+    }
+
+    /// <summary>
+    /// 在查询结束后执行单个视觉步骤（读取组件、创建特效实体、标记完成）。
+    /// </summary>
+    private static void ProcessVisual(Entity effectEntity)
+    {
+        if (!effectEntity.TryGetComponent<EffectVisualData>(out var visual)
+            || !effectEntity.TryGetComponent<EffectSource>(out var source)
+            || !effectEntity.TryGetComponent<EffectTargetInfo>(out var target))
+            return;
+
+        var current = GetCurrentVisualStep(visual);
+        if (effectEntity.HasComponent<AreaSearchData>() && NeedsResolvedTarget(current.kind) && target.targetUnit.IsNull)
+            return;
+
+        if (current.kind == EffectVisualKind.RemoveByKey)
+        {
+            RemoveLinkedEffects(source.caster, current.key);
+            CompleteCurrentVisual(effectEntity, visual);
+            return;
+        }
+
+        var duration = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            target.targetUnit,
+            effectEntity,
+            current.duration,
+            current.fallbackDuration);
+        var visualEntity = CreateVisualEntity(current, source, target, duration);
+        if (visualEntity.HasValue && !string.IsNullOrEmpty(current.key))
+        {
+            visualEntity.Value.AddComponent(new EffectVisualLink
+            {
+                owner = source.caster,
+                key = current.key
+            });
+        }
+
+        CompleteCurrentVisual(effectEntity, visual);
     }
 
     /// <summary>
@@ -497,39 +526,57 @@ public class AreaSearchSystem : QuerySystem<AreaSearchData, EffectSource, Effect
 
     protected override void OnUpdate()
     {
+        // 区域搜索会创建子 effect 并打完成标记（结构变更）：先收集，循环外处理。
+        var pending = new List<Entity>();
         Query.ForEachEntity((ref AreaSearchData area, ref EffectSource source,
             ref EffectTargetInfo target, Entity effectEntity) =>
         {
             if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
                 return;
 
-            var sourceAbility = source.ability;
-            var radius = EffectFormulaRegistry.Resolve(
-                source.caster,
-                source.ability,
-                target.targetUnit,
-                effectEntity,
-                area.radiusValue,
-                () => AbilityHelper.GetRadius(sourceAbility));
-            var centerX = area.centerX == 0f && area.centerY == 0f ? target.targetX : area.centerX;
-            var centerY = area.centerX == 0f && area.centerY == 0f ? target.targetY : area.centerY;
-
-            var targets = GroupHelper.FindInCircle(
-                source.caster,
-                centerX,
-                centerY,
-                radius,
-                area.filter,
-                area.customFilterId,
-                area.maxTargets);
-
-            foreach (var targetUnit in targets)
-            {
-                AbilityEffectHelper.CreateChildEffect(effectEntity, targetUnit);
-            }
-
-            effectEntity.AddTag<EffectCompleted>();
+            pending.Add(effectEntity);
         });
+
+        foreach (var effectEntity in pending)
+        {
+            if (!effectEntity.IsNull)
+                ProcessArea(effectEntity);
+        }
+    }
+
+    private static void ProcessArea(Entity effectEntity)
+    {
+        if (!effectEntity.TryGetComponent<AreaSearchData>(out var area)
+            || !effectEntity.TryGetComponent<EffectSource>(out var source)
+            || !effectEntity.TryGetComponent<EffectTargetInfo>(out var target))
+            return;
+
+        var sourceAbility = source.ability;
+        var radius = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            target.targetUnit,
+            effectEntity,
+            area.radiusValue,
+            () => AbilityHelper.GetRadius(sourceAbility));
+        var centerX = area.centerX == 0f && area.centerY == 0f ? target.targetX : area.centerX;
+        var centerY = area.centerX == 0f && area.centerY == 0f ? target.targetY : area.centerY;
+
+        var targets = GroupHelper.FindInCircle(
+            source.caster,
+            centerX,
+            centerY,
+            radius,
+            area.filter,
+            area.customFilterId,
+            area.maxTargets);
+
+        foreach (var targetUnit in targets)
+        {
+            AbilityEffectHelper.CreateChildEffect(effectEntity, targetUnit);
+        }
+
+        effectEntity.AddTag<EffectCompleted>();
     }
 }
 
@@ -547,57 +594,75 @@ public class LineSearchSystem : QuerySystem<LineSearchData, EffectSource, Effect
 
     protected override void OnUpdate()
     {
+        // 线形搜索会创建子 effect、发区域反应请求并打完成标记（结构变更）：先收集，循环外处理。
+        var pending = new List<Entity>();
         Query.ForEachEntity((ref LineSearchData line, ref EffectSource source,
             ref EffectTargetInfo target, Entity effectEntity) =>
         {
             if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
                 return;
 
-            if (!source.caster.TryGetComponent<Position>(out var casterPos))
-            {
-                effectEntity.AddTag<EffectCompleted>();
-                return;
-            }
-
-            var legacyRange = line.range;
-            var sourceAbility = source.ability;
-            var range = EffectFormulaRegistry.Resolve(
-                source.caster,
-                source.ability,
-                target.targetUnit,
-                effectEntity,
-                line.rangeValue,
-                () => legacyRange > 0f ? legacyRange : AbilityHelper.GetCastRange(sourceAbility));
-            var width = EffectFormulaRegistry.Resolve(
-                source.caster,
-                source.ability,
-                target.targetUnit,
-                effectEntity,
-                line.widthValue,
-                line.width);
-
-            var end = ResolveLineEnd(casterPos.x, casterPos.y, target.targetX, target.targetY, range);
-            var targets = GroupHelper.FindInLine(
-                source.caster,
-                casterPos.x,
-                casterPos.y,
-                end.x,
-                end.y,
-                width,
-                line.filter,
-                line.customFilterId,
-                line.maxTargets);
-
-            foreach (var targetUnit in targets)
-            {
-                AbilityEffectHelper.CreateChildEffect(effectEntity, targetUnit);
-            }
-
-            if (line.reactionTag != GroundAreaTag.None)
-                GroundAreaQueryHelper.EmitLineContactRequests(source.caster, effectEntity, casterPos.x, casterPos.y, end.x, end.y, width, line.reactionTag);
-
-            effectEntity.AddTag<EffectCompleted>();
+            pending.Add(effectEntity);
         });
+
+        foreach (var effectEntity in pending)
+        {
+            if (!effectEntity.IsNull)
+                ProcessLine(effectEntity);
+        }
+    }
+
+    private static void ProcessLine(Entity effectEntity)
+    {
+        if (!effectEntity.TryGetComponent<LineSearchData>(out var line)
+            || !effectEntity.TryGetComponent<EffectSource>(out var source)
+            || !effectEntity.TryGetComponent<EffectTargetInfo>(out var target))
+            return;
+
+        if (!source.caster.TryGetComponent<Position>(out var casterPos))
+        {
+            effectEntity.AddTag<EffectCompleted>();
+            return;
+        }
+
+        var legacyRange = line.range;
+        var sourceAbility = source.ability;
+        var range = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            target.targetUnit,
+            effectEntity,
+            line.rangeValue,
+            () => legacyRange > 0f ? legacyRange : AbilityHelper.GetCastRange(sourceAbility));
+        var width = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            target.targetUnit,
+            effectEntity,
+            line.widthValue,
+            line.width);
+
+        var end = ResolveLineEnd(casterPos.x, casterPos.y, target.targetX, target.targetY, range);
+        var targets = GroupHelper.FindInLine(
+            source.caster,
+            casterPos.x,
+            casterPos.y,
+            end.x,
+            end.y,
+            width,
+            line.filter,
+            line.customFilterId,
+            line.maxTargets);
+
+        foreach (var targetUnit in targets)
+        {
+            AbilityEffectHelper.CreateChildEffect(effectEntity, targetUnit);
+        }
+
+        if (line.reactionTag != GroundAreaTag.None)
+            GroundAreaQueryHelper.EmitLineContactRequests(source.caster, effectEntity, casterPos.x, casterPos.y, end.x, end.y, width, line.reactionTag);
+
+        effectEntity.AddTag<EffectCompleted>();
     }
 
     private static (float x, float y) ResolveLineEnd(float startX, float startY, float targetX, float targetY, float range)
@@ -700,46 +765,63 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
 
     protected override void OnUpdate()
     {
+        // CreateEntity 允许在循环内，但 MarkSettlementDone 的结构变更不允许：统一先收集、循环外结算。
+        var pending = new List<Entity>();
         Query.ForEachEntity((ref DamageEffectData damageData, ref EffectSource source,
             ref EffectTargetInfo target, Entity effectEntity) =>
         {
             if (!EffectSettlementHelper.CanSettle(effectEntity))
                 return;
-
-            if (target.targetUnit.IsNull)
-            {
-                EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(DamageEffectData));
-                return;
-            }
-
-            var sourceAbility = source.ability;
-            // delegate 是高级自定义覆盖；普通技能走 EffectValueSpec 的 formulaId/statId。
-            var amount = damageData.damageFunc != null
-                ? damageData.damageFunc(source.caster, source.ability, target.targetUnit, damageData)
-                : EffectFormulaRegistry.Resolve(
-                    source.caster,
-                    source.ability,
-                    target.targetUnit,
-                    effectEntity,
-                    damageData.value,
-                    () => AbilityHelper.GetDamageAmount(sourceAbility));
-
-            Game.Store.CreateEntity(new DamageRequest
-            {
-                source = source.caster,
-                target = target.targetUnit,
-                damage = new DamageBase
-                {
-                    damage = amount,
-                    damageType = damageData.damageType,
-                    damageSrc = damageData.damageSrc,
-                    source = source.caster,
-                    target = target.targetUnit
-                }
-            });
-
-            EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(DamageEffectData));
+            pending.Add(effectEntity);
         });
+
+        foreach (var effectEntity in pending)
+        {
+            if (!effectEntity.IsNull)
+                ProcessDamage(effectEntity);
+        }
+    }
+
+    private static void ProcessDamage(Entity effectEntity)
+    {
+        if (!effectEntity.TryGetComponent<DamageEffectData>(out var damageData)
+            || !effectEntity.TryGetComponent<EffectSource>(out var source)
+            || !effectEntity.TryGetComponent<EffectTargetInfo>(out var target))
+            return;
+
+        if (target.targetUnit.IsNull)
+        {
+            EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(DamageEffectData));
+            return;
+        }
+
+        var sourceAbility = source.ability;
+        // delegate 是高级自定义覆盖；普通技能走 EffectValueSpec 的 formulaId/statId。
+        var amount = damageData.damageFunc != null
+            ? damageData.damageFunc(source.caster, source.ability, target.targetUnit, damageData)
+            : EffectFormulaRegistry.Resolve(
+                source.caster,
+                source.ability,
+                target.targetUnit,
+                effectEntity,
+                damageData.value,
+                () => AbilityHelper.GetDamageAmount(sourceAbility));
+
+        Game.Store.CreateEntity(new DamageRequest
+        {
+            source = source.caster,
+            target = target.targetUnit,
+            damage = new DamageBase
+            {
+                damage = amount,
+                damageType = damageData.damageType,
+                damageSrc = damageData.damageSrc,
+                source = source.caster,
+                target = target.targetUnit
+            }
+        });
+
+        EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(DamageEffectData));
     }
 }
 
@@ -757,41 +839,58 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
 
     protected override void OnUpdate()
     {
+        // MarkSettlementDone 的结构变更不允许在循环内执行：统一先收集、循环外结算。
+        var pending = new List<Entity>();
         Query.ForEachEntity((ref HealEffectData heal, ref EffectSource source,
             ref EffectTargetInfo target, Entity effectEntity) =>
         {
             if (!EffectSettlementHelper.CanSettle(effectEntity))
                 return;
-
-            if (target.targetUnit.IsNull)
-            {
-                EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(HealEffectData));
-                return;
-            }
-
-            var legacyHealAmount = heal.amount;
-            var sourceAbility = source.ability;
-            var amount = heal.healFunc != null
-                ? heal.healFunc(source.caster, source.ability, target.targetUnit, heal)
-                : EffectFormulaRegistry.Resolve(
-                    source.caster,
-                    source.ability,
-                    target.targetUnit,
-                    effectEntity,
-                    heal.value,
-                    () => legacyHealAmount > 0f
-                        ? legacyHealAmount
-                        : AbilityHelper.GetHealAmount(sourceAbility));
-
-            Game.Store.CreateEntity(new HealRequest
-            {
-                source = source.caster,
-                target = target.targetUnit,
-                amount = amount
-            });
-
-            EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(HealEffectData));
+            pending.Add(effectEntity);
         });
+
+        foreach (var effectEntity in pending)
+        {
+            if (!effectEntity.IsNull)
+                ProcessHeal(effectEntity);
+        }
+    }
+
+    private static void ProcessHeal(Entity effectEntity)
+    {
+        if (!effectEntity.TryGetComponent<HealEffectData>(out var heal)
+            || !effectEntity.TryGetComponent<EffectSource>(out var source)
+            || !effectEntity.TryGetComponent<EffectTargetInfo>(out var target))
+            return;
+
+        if (target.targetUnit.IsNull)
+        {
+            EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(HealEffectData));
+            return;
+        }
+
+        var legacyHealAmount = heal.amount;
+        var sourceAbility = source.ability;
+        var amount = heal.healFunc != null
+            ? heal.healFunc(source.caster, source.ability, target.targetUnit, heal)
+            : EffectFormulaRegistry.Resolve(
+                source.caster,
+                source.ability,
+                target.targetUnit,
+                effectEntity,
+                heal.value,
+                () => legacyHealAmount > 0f
+                    ? legacyHealAmount
+                    : AbilityHelper.GetHealAmount(sourceAbility));
+
+        Game.Store.CreateEntity(new HealRequest
+        {
+            source = source.caster,
+            target = target.targetUnit,
+            amount = amount
+        });
+
+        EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(HealEffectData));
     }
 }
 
@@ -809,56 +908,73 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
 
     protected override void OnUpdate()
     {
+        // MarkSettlementDone 的结构变更不允许在循环内执行：统一先收集、循环外结算。
+        var pending = new List<Entity>();
         Query.ForEachEntity((ref ApplyBuffData buffData, ref EffectSource source,
             ref EffectTargetInfo target, Entity effectEntity) =>
         {
             if (!EffectSettlementHelper.CanSettle(effectEntity))
                 return;
-
-            if (target.targetUnit.IsNull)
-            {
-                EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(ApplyBuffData));
-                return;
-            }
-
-            var fallbackDuration = buffData.duration;
-            var duration = EffectFormulaRegistry.Resolve(
-                source.caster,
-                source.ability,
-                target.targetUnit,
-                effectEntity,
-                buffData.durationValue,
-                fallbackDuration);
-
-            var fallbackValue = buffData.value;
-            var value = EffectFormulaRegistry.Resolve(
-                source.caster,
-                source.ability,
-                target.targetUnit,
-                effectEntity,
-                buffData.modifyValue,
-                fallbackValue);
-
-            Game.Store.CreateEntity(new BuffApplyRequest
-            {
-                source = source.caster,
-                target = target.targetUnit,
-                buffId = buffData.buffId,
-                attrTypeId = buffData.attrTypeId,
-                modifyType = buffData.modifyType,
-                value = value,
-                duration = duration,
-                refreshBehavior = buffData.refreshBehavior,
-                icon = buffData.icon,
-                tickInterval = buffData.tickInterval,
-                tickActionId = buffData.tickActionId,
-                tickValue = buffData.tickValue,
-                tags = buffData.tags,
-                kind = buffData.kind
-            });
-
-            EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(ApplyBuffData));
+            pending.Add(effectEntity);
         });
+
+        foreach (var effectEntity in pending)
+        {
+            if (!effectEntity.IsNull)
+                ProcessBuff(effectEntity);
+        }
+    }
+
+    private static void ProcessBuff(Entity effectEntity)
+    {
+        if (!effectEntity.TryGetComponent<ApplyBuffData>(out var buffData)
+            || !effectEntity.TryGetComponent<EffectSource>(out var source)
+            || !effectEntity.TryGetComponent<EffectTargetInfo>(out var target))
+            return;
+
+        if (target.targetUnit.IsNull)
+        {
+            EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(ApplyBuffData));
+            return;
+        }
+
+        var fallbackDuration = buffData.duration;
+        var duration = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            target.targetUnit,
+            effectEntity,
+            buffData.durationValue,
+            fallbackDuration);
+
+        var fallbackValue = buffData.value;
+        var value = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            target.targetUnit,
+            effectEntity,
+            buffData.modifyValue,
+            fallbackValue);
+
+        Game.Store.CreateEntity(new BuffApplyRequest
+        {
+            source = source.caster,
+            target = target.targetUnit,
+            buffId = buffData.buffId,
+            attrTypeId = buffData.attrTypeId,
+            modifyType = buffData.modifyType,
+            value = value,
+            duration = duration,
+            refreshBehavior = buffData.refreshBehavior,
+            icon = buffData.icon,
+            tickInterval = buffData.tickInterval,
+            tickActionId = buffData.tickActionId,
+            tickValue = buffData.tickValue,
+            tags = buffData.tags,
+            kind = buffData.kind
+        });
+
+        EffectSettlementHelper.MarkSettlementDone(effectEntity, typeof(ApplyBuffData));
     }
 }
 
@@ -1012,58 +1128,63 @@ public class BuffApplyResolveSystem : QuerySystem<BuffApplyRequest>
 {
     protected override void OnUpdate()
     {
-        var resolved = new List<Entity>();
-
+        // BuffHelper.ApplyBuff 会创建实体并增删组件（结构变更），事件实体也需 AddComponent：先收集，循环外结算。
+        var pending = new List<(BuffApplyRequest request, Entity requestEntity)>();
         Query.ForEachEntity((ref BuffApplyRequest request, Entity requestEntity) =>
         {
-            if (request.target.IsNull)
-            {
-                resolved.Add(requestEntity);
-                return;
-            }
-
-            // kind 显式判定：request.kind 优先；旧触发器路径（无 kind 时）按 tick 参数推断。
-            // DoT 型不贡献属性，attrTypeId 作为载体属性；非 DoT 型 attrTypeId 是目标属性
-            var isDot = request.kind == BuffKind.Tick ||
-                        (request.kind == BuffKind.Attribute && request.tickValue > 0f &&
-                         !string.IsNullOrEmpty(request.tickActionId));
-            var effectiveKind = isDot ? BuffKind.Tick : request.kind;
-
-            var spec = new BuffSpec(
-                buffId: request.buffId,
-                icon: request.icon,
-                attrTypeId: request.attrTypeId,
-                modifyType: request.modifyType,
-                value: isDot ? 0f : request.value,
-                duration: request.duration,
-                maxStacks: 1,
-                onDuplicate: request.refreshBehavior,
-                tickInterval: request.tickInterval,
-                tickActionId: request.tickActionId,
-                tags: request.tags,
-                tickValue: isDot ? request.tickValue : 0f,
-                kind: effectiveKind);
-
-            var buff = BuffHelper.ApplyBuff(
-                Game.Store,
-                request.target,
-                request.source,
-                spec);
-
-            var buffAppliedEvent = Game.Store.CreateEntity(new BuffAppliedEvent
-            {
-                source = request.source,
-                target = request.target,
-                buff = buff,
-                buffId = request.buffId
-            });
-            buffAppliedEvent.AddComponent(new TriggerEventMarker { eventTypeId = EventTypeRegistry.Get<BuffAppliedEvent>() });
-
-            resolved.Add(requestEntity);
+            pending.Add((request, requestEntity));
         });
 
-        foreach (var entity in resolved)
-            entity.DeleteEntity();
+        foreach (var (request, requestEntity) in pending)
+        {
+            if (!request.target.IsNull)
+            {
+                ApplyBuff(request);
+            }
+
+            if (!requestEntity.IsNull)
+                requestEntity.DeleteEntity();
+        }
+    }
+
+    private static void ApplyBuff(BuffApplyRequest request)
+    {
+        // kind 显式判定：request.kind 优先；旧触发器路径（无 kind 时）按 tick 参数推断。
+        // DoT 型不贡献属性，attrTypeId 作为载体属性；非 DoT 型 attrTypeId 是目标属性
+        var isDot = request.kind == BuffKind.Tick ||
+                    (request.kind == BuffKind.Attribute && request.tickValue > 0f &&
+                     !string.IsNullOrEmpty(request.tickActionId));
+        var effectiveKind = isDot ? BuffKind.Tick : request.kind;
+
+        var spec = new BuffSpec(
+            buffId: request.buffId,
+            icon: request.icon,
+            attrTypeId: request.attrTypeId,
+            modifyType: request.modifyType,
+            value: isDot ? 0f : request.value,
+            duration: request.duration,
+            maxStacks: 1,
+            onDuplicate: request.refreshBehavior,
+            tickInterval: request.tickInterval,
+            tickActionId: request.tickActionId,
+            tags: request.tags,
+            tickValue: isDot ? request.tickValue : 0f,
+            kind: effectiveKind);
+
+        var buff = BuffHelper.ApplyBuff(
+            Game.Store,
+            request.target,
+            request.source,
+            spec);
+
+        var buffAppliedEvent = Game.Store.CreateEntity(new BuffAppliedEvent
+        {
+            source = request.source,
+            target = request.target,
+            buff = buff,
+            buffId = request.buffId
+        });
+        buffAppliedEvent.AddComponent(new TriggerEventMarker { eventTypeId = EventTypeRegistry.Get<BuffAppliedEvent>() });
     }
 }
 
@@ -1105,42 +1226,62 @@ public class GroundAreaBuffSystem : QuerySystem<GroundAreaData, GroundAreaSource
 {
     protected override void OnUpdate()
     {
+        // 区域 Buff 会创建/删除 buff 实体并增删组件（结构变更）：先收集，循环外处理。
+        var pending = new List<Entity>();
         Query.ForEachEntity((ref GroundAreaData area, ref GroundAreaSource source,
             ref GroundAreaBuffData buffData, ref Position position, Entity areaEntity) =>
         {
             if (!buffData.enabled)
                 return;
 
-            var affected = GroundAreaQueryHelper.GetLinkedUnits(areaEntity);
-            var inRange = new HashSet<int>();
-            var targets = GroupHelper.FindInCircle(source.caster, position.x, position.y, area.radius, TargetFilter.EnemyAlive);
-            foreach (var target in targets)
-            {
-                inRange.Add(target.Id);
-                if (affected.Contains(target.Id))
-                    continue;
-
-                var value = EffectFormulaRegistry.Resolve(
-                    source.caster,
-                    source.ability,
-                    target,
-                    areaEntity,
-                    buffData.value,
-                    buffData.fallbackValue);
-                var buff = BuffHelper.AddPermanentBuff(
-                    Game.Store,
-                    target,
-                    areaEntity,
-                    buffData.buffId,
-                    buffData.attrTypeId,
-                    buffData.modifyType,
-                    value);
-                if (!buff.IsNull)
-                    buff.AddComponent(new GroundAreaBuffLink(areaEntity));
-            }
-
-            GroundAreaQueryHelper.DeleteAreaBuffsNotIn(areaEntity, inRange);
+            pending.Add(areaEntity);
         });
+
+        foreach (var areaEntity in pending)
+        {
+            if (!areaEntity.IsNull)
+                ProcessAreaBuff(areaEntity);
+        }
+    }
+
+    private static void ProcessAreaBuff(Entity areaEntity)
+    {
+        if (!areaEntity.TryGetComponent<GroundAreaData>(out var area)
+            || !areaEntity.TryGetComponent<GroundAreaSource>(out var source)
+            || !areaEntity.TryGetComponent<GroundAreaBuffData>(out var buffData)
+            || !areaEntity.TryGetComponent<Position>(out var position)
+            || !buffData.enabled)
+            return;
+
+        var affected = GroundAreaQueryHelper.GetLinkedUnits(areaEntity);
+        var inRange = new HashSet<int>();
+        var targets = GroupHelper.FindInCircle(source.caster, position.x, position.y, area.radius, TargetFilter.EnemyAlive);
+        foreach (var target in targets)
+        {
+            inRange.Add(target.Id);
+            if (affected.Contains(target.Id))
+                continue;
+
+            var value = EffectFormulaRegistry.Resolve(
+                source.caster,
+                source.ability,
+                target,
+                areaEntity,
+                buffData.value,
+                buffData.fallbackValue);
+            var buff = BuffHelper.AddPermanentBuff(
+                Game.Store,
+                target,
+                areaEntity,
+                buffData.buffId,
+                buffData.attrTypeId,
+                buffData.modifyType,
+                value);
+            if (!buff.IsNull)
+                buff.AddComponent(new GroundAreaBuffLink(areaEntity));
+        }
+
+        GroundAreaQueryHelper.DeleteAreaBuffsNotIn(areaEntity, inRange);
     }
 }
 

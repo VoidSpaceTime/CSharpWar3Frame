@@ -11,10 +11,25 @@ namespace War3Frame.Systems.Native;
 [SystemRegister(SystemKind.Immediate)]
 public class PlayerNativeSyncSystem : QuerySystem<PlayerNative, PlayerDirty>
 {
+    // Friflo 约束：Query 迭代内禁止结构变更（RemoveComponent / SyncAlliance 内的 AddComponent）：
+    // 先收集玩家实体，循环外执行同步。
+    private readonly List<Entity> _pending = new();
+
     protected override void OnUpdate()
     {
+        _pending.Clear();
         Query.ForEachEntity((ref PlayerNative player, ref PlayerDirty dirty, Entity entity) =>
         {
+            _pending.Add(entity);
+        });
+
+        foreach (var entity in _pending)
+        {
+            if (entity.IsNull)
+                continue;
+            if (!entity.TryGetComponent<PlayerNative>(out var player) || !entity.TryGetComponent<PlayerDirty>(out var dirty))
+                continue;
+
             if (dirty.flags.HasFlag(PlayerDirtyFlags.Name))
             {
                 JassApi.SetPlayerName(player.player, player.name);
@@ -31,7 +46,7 @@ public class PlayerNativeSyncSystem : QuerySystem<PlayerNative, PlayerDirty>
             }
 
             entity.RemoveComponent<PlayerDirty>();
-        });
+        }
     }
 
     /// <summary>

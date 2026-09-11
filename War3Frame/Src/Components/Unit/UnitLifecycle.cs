@@ -12,6 +12,7 @@ public enum UnitLifecyclePhase
     Corpse, //尸体
     ClearCorpse, //清理尸体
     Remove, //删除
+    Disposing, // 原生已移除，ECS 待销毁（原生移除与实体删除之间的确认阶段）
     RebornPending, // 复活等待 — 待实现
     Pooled         // 单位池   — 待实现
 }

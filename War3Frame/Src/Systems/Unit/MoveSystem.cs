@@ -23,15 +23,19 @@ public class MoveSystem : QuerySystem<MoveCommand, Position>, ITimedSystem
 
     protected override void OnUpdate()
     {
+        // 移动推进涉及增删 Tag/Component（结构变更），不能在 Query 迭代内执行：
+        // 先收集本轮的推进决策，循环外统一应用。
+        var interrupted = new List<(Entity unit, int token)>();
+        var overridden = new List<(Entity unit, int token)>();
+        var arrived = new List<(Entity unit, MoveCommand move)>();
+        var moving = new List<(Entity unit, MoveCommand move, Position pos)>();
+
         Query.ForEachEntity((ref MoveCommand move, ref Position pos, Entity unit) =>
         {
             // 如果被打断或控制
             if (ControlHelper.IsIncapacitated(unit))
             {
-                EmitOutcome(unit, move.commandToken, MoveOutcomeType.Interrupted);
-                unit.RemoveTag<MovingTag>();
-                unit.RemoveComponent<MoveCommand>();
-                unit.RemoveComponent<MoveExecutionState>();
+                interrupted.Add((unit, move.commandToken));
                 return;
             }
 
@@ -39,9 +43,7 @@ public class MoveSystem : QuerySystem<MoveCommand, Position>, ITimedSystem
             if (unit.TryGetComponent<MoveExecutionState>(out var execution)
                 && execution.commandToken != move.commandToken)
             {
-                EmitOutcome(unit, move.commandToken, MoveOutcomeType.Overridden);
-                unit.RemoveComponent<MoveCommand>();
-                unit.RemoveComponent<MoveExecutionState>();
+                overridden.Add((unit, move.commandToken));
                 return;
             }
 
@@ -50,15 +52,40 @@ public class MoveSystem : QuerySystem<MoveCommand, Position>, ITimedSystem
 
             if (dist <= move.arrivalDistance)
             {
-                // 到达目标
-                HandleArrival(unit, move);
+                arrived.Add((unit, move));
             }
             else
             {
-                // 继续移动
-                ExecuteMove(unit, move, pos);
+                moving.Add((unit, move, pos));
             }
         });
+
+        foreach (var (unit, token) in interrupted)
+        {
+            if (unit.IsNull) continue;
+            EmitOutcome(unit, token, MoveOutcomeType.Interrupted);
+            unit.RemoveTag<MovingTag>();
+            unit.RemoveComponent<MoveCommand>();
+            unit.RemoveComponent<MoveExecutionState>();
+        }
+
+        foreach (var (unit, token) in overridden)
+        {
+            if (unit.IsNull) continue;
+            EmitOutcome(unit, token, MoveOutcomeType.Overridden);
+            unit.RemoveComponent<MoveCommand>();
+            unit.RemoveComponent<MoveExecutionState>();
+        }
+
+        foreach (var (unit, move) in arrived)
+        {
+            if (!unit.IsNull) HandleArrival(unit, move);
+        }
+
+        foreach (var (unit, move, pos) in moving)
+        {
+            if (!unit.IsNull) ExecuteMove(unit, move, pos);
+        }
     }
 
     /// <summary>
@@ -125,6 +152,10 @@ public class MoveToTaskSystem : QuerySystem<MoveOutcome, MoveContinuation>
 {
     protected override void OnUpdate()
     {
+        // 收尾涉及增删组件（结构变更）：先收集，循环外应用。
+        var toComplete = new List<Entity>();
+        var toCancel = new List<Entity>();
+
         Query.ForEachEntity((ref MoveOutcome outcome, ref MoveContinuation continuation, Entity unit) =>
         {
             if (continuation.kind != MoveContinuationKind.ExecuteTask)
@@ -135,13 +166,7 @@ public class MoveToTaskSystem : QuerySystem<MoveOutcome, MoveContinuation>
             // 到达
             if (outcome.outcome is MoveOutcomeType.Arrived)
             {
-                unit.AddComponent(new MoveTaskState
-                {
-                    completed = true,
-                    cancelled = false
-                });
-                unit.RemoveComponent<MoveOutcome>();
-                unit.RemoveComponent<MoveContinuation>();
+                toComplete.Add(unit);
                 return;
             }
 
@@ -149,14 +174,32 @@ public class MoveToTaskSystem : QuerySystem<MoveOutcome, MoveContinuation>
             if (outcome.outcome is MoveOutcomeType.Cancelled or MoveOutcomeType.Overridden
                 or MoveOutcomeType.Interrupted or MoveOutcomeType.Failed)
             {
-                unit.AddComponent(new MoveTaskState
-                {
-                    completed = false,
-                    cancelled = true
-                });
-                unit.RemoveComponent<MoveOutcome>();
-                unit.RemoveComponent<MoveContinuation>();
+                toCancel.Add(unit);
             }
         });
+
+        foreach (var unit in toComplete)
+        {
+            if (unit.IsNull) continue;
+            unit.AddComponent(new MoveTaskState
+            {
+                completed = true,
+                cancelled = false
+            });
+            unit.RemoveComponent<MoveOutcome>();
+            unit.RemoveComponent<MoveContinuation>();
+        }
+
+        foreach (var unit in toCancel)
+        {
+            if (unit.IsNull) continue;
+            unit.AddComponent(new MoveTaskState
+            {
+                completed = false,
+                cancelled = true
+            });
+            unit.RemoveComponent<MoveOutcome>();
+            unit.RemoveComponent<MoveContinuation>();
+        }
     }
 }

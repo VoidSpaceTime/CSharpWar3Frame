@@ -32,7 +32,9 @@ public static class PlayerHelper
     /// </summary>
     public static void InitializePlayers(ref PlayerNative[] players)
     {
-        _players = PlayerHelper._players;
+        // 修正：原为 _players = PlayerHelper._players（自赋值），导致玩家镜像恒空、
+        // 原生事件桥未注册、联盟矩阵保持默认全 Allie。此处必须引用调用方传入的数组。
+        _players = players;
 
         // 初始化默认敌对关系，同一玩家视为友方，后续通过 SetAlliance/SetNeutral 覆盖。
         foreach (var sourcePlayer in _players)

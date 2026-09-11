@@ -17,6 +17,10 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
 
     protected override void OnUpdate()
     {
+        // Aura 更新会产生结构变更（创建/删除 buff、打脏），不能在 Query 迭代内执行：
+        // 先收集本轮到期的光环，循环外再更新。
+        var dueAuras = new List<(Entity aura, Entity owner, (float x, float y) ownerPos, AuraConfig config, AuraEffect effect)>();
+
         Query.ForEachEntity((ref AuraConfig config, ref AuraEffect effect, Entity auraEntity) =>
         {
             config.timeSinceUpdate += Tick.deltaTime;
@@ -32,11 +36,14 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
             if (owner.IsNull)
                 return;
 
-            var ownerPos = GetUnitPosition(owner);
-            var configCopy = config;
-            var effectCopy = effect;
-            UpdateAuraEffects(auraEntity, owner, ownerPos, configCopy, effectCopy);
+            dueAuras.Add((auraEntity, owner, GetUnitPosition(owner), config, effect));
         });
+
+        foreach (var due in dueAuras)
+        {
+            if (!due.aura.IsNull && !due.owner.IsNull)
+                UpdateAuraEffects(due.aura, due.owner, due.ownerPos, due.config, due.effect);
+        }
     }
 
     private void UpdateAuraEffects(Entity auraEntity, Entity owner, (float x, float y) ownerPos,
@@ -63,8 +70,10 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
         }
 
         var unitsInRange = new HashSet<int>();
+        var unitsToAdd = new List<Entity>();
         var query = store.Query<UnitNative>();
 
+        // 嵌套查询只收集"需要新增 buff"的单位，结构变更留到循环外执行。
         query.ForEachEntity((ref UnitNative unit, Entity unitEntity) =>
         {
             var unitPos = GetUnitPosition(unitEntity);
@@ -81,9 +90,15 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
 
             if (!currentlyAffected.Contains(unitEntity.Id))
             {
-                AddAuraBuffToUnit(store, auraEntity, unitEntity, effect, config);
+                unitsToAdd.Add(unitEntity);
             }
         });
+
+        foreach (var unitEntity in unitsToAdd)
+        {
+            if (!unitEntity.IsNull)
+                AddAuraBuffToUnit(store, auraEntity, unitEntity, effect, config);
+        }
 
         var toDelete = new List<Entity>();
         foreach (var link in auraBufs)
@@ -103,7 +118,8 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
 
         foreach (var buff in toDelete)
         {
-            buff.DeleteEntity();
+            if (!buff.IsNull)
+                buff.DeleteEntity();
         }
     }
 

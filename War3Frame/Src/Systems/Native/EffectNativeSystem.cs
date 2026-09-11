@@ -16,22 +16,25 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
 
     protected override void OnUpdate()
     {
+        // Friflo 约束：Query 迭代内禁止 AddComponent/RemoveComponent/DeleteEntity。
+        // 原生副作用（YDApi/KKApi/JassApi）仍在循环内执行，ECS 结构变更收集到循环外应用。
+        var toAddNative = new List<(Entity entity, EffectNative native)>();
+        var toClearDirty = new List<Entity>();
+        var toClearAnim = new List<Entity>();
+        var toDelete = new List<Entity>();
+
         Query.ForEachEntity((ref EffectBase effect, Entity entity) =>
         {
+            var needsFullSync = false;
             if (!entity.TryGetComponent<EffectNative>(out var native))
             {
-                // 首次遇到 EffectBase 时创建原生句柄，并标记所有可同步字段需要下刷。
+                // 首次遇到 EffectBase 时创建原生句柄；本轮直接全字段同步，无需再挂一次脏标记。
                 native = new EffectNative
                 {
                     effect = CreateNativeEffect(entity, effect)
                 };
-                entity.AddComponent(native);
-                entity.AddComponent(new EffectDirty
-                {
-                    flags = EffectDirtyFlags.Color | EffectDirtyFlags.Scale | EffectDirtyFlags.Speed |
-                            EffectDirtyFlags.Visible | EffectDirtyFlags.Alpha | EffectDirtyFlags.TeamColor |
-                            EffectDirtyFlags.Transform
-                });
+                toAddNative.Add((entity, native));
+                needsFullSync = true;
             }
 
             // 更新位置
@@ -41,43 +44,61 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
                 YDApi.EXSetEffectZ(native.effect, position.z);
             }
 
-            // 同步外观与变换脏标记
-            if (entity.TryGetComponent<EffectDirty>(out var dirty))
+            // 同步外观与变换脏标记：首次创建按全字段同步，否则只处理被标记的字段。
+            EffectDirtyFlags flags;
+            var hasDirty = false;
+            if (needsFullSync)
             {
-                // 只同步被标记为 dirty 的字段，避免每帧重复写所有原生属性。
-                if (dirty.flags.HasFlag(EffectDirtyFlags.Alpha))
+                flags = EffectDirtyFlags.Color | EffectDirtyFlags.Scale | EffectDirtyFlags.Speed |
+                        EffectDirtyFlags.Visible | EffectDirtyFlags.Alpha | EffectDirtyFlags.TeamColor |
+                        EffectDirtyFlags.Transform;
+                hasDirty = true;
+            }
+            else if (entity.TryGetComponent<EffectDirty>(out var dirty))
+            {
+                flags = dirty.flags;
+                hasDirty = true;
+            }
+            else
+            {
+                flags = default;
+            }
+
+            if (hasDirty)
+            {
+                if (flags.HasFlag(EffectDirtyFlags.Alpha))
                 {
                     KKApi.DzSetEffectVertexAlpha(native.effect, effect.alpha);
                 }
 
-                if (dirty.flags.HasFlag(EffectDirtyFlags.Color))
+                if (flags.HasFlag(EffectDirtyFlags.Color))
                 {
                     KKApi.DzSetEffectVertexColor(native.effect,
                         DzApi.DzGetColor(effect.red, effect.green, effect.blue, effect.alpha));
                 }
 
-                if (dirty.flags.HasFlag(EffectDirtyFlags.Scale))
+                if (flags.HasFlag(EffectDirtyFlags.Scale))
                 {
                     YDApi.EXSetEffectSize(native.effect, effect.sizeScale);
                 }
 
-                if (dirty.flags.HasFlag(EffectDirtyFlags.Speed))
+                if (flags.HasFlag(EffectDirtyFlags.Speed))
                 {
                     YDApi.EXSetEffectSpeed(native.effect, effect.speed);
                 }
 
-                if (dirty.flags.HasFlag(EffectDirtyFlags.TeamColor))
+                if (flags.HasFlag(EffectDirtyFlags.TeamColor))
                 {
                     KKApi.DzSetEffectTeamColor(native.effect, effect.teamColor);
                 }
 
-                if (dirty.flags.HasFlag(EffectDirtyFlags.Visible))
+                if (flags.HasFlag(EffectDirtyFlags.Visible))
                 {
                     KKApi.DzSetEffectVisible(native.effect, effect.visible);
                 }
 
                 // 同步累积变换
-                if (dirty.flags.HasFlag(EffectDirtyFlags.Transform)
+                if (flags.HasFlag(EffectDirtyFlags.Transform)
                     && entity.TryGetComponent<EffectTransform>(out var transform))
                 {
                     if (transform.needsReset)
@@ -90,19 +111,22 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
                     YDApi.EXEffectMatRotateZ(native.effect, transform.rotateZ);
                 }
 
-                entity.RemoveComponent<EffectDirty>();
+                if (!needsFullSync)
+                {
+                    toClearDirty.Add(entity);
+                }
             }
 
-            // 播放动画 
+            // 播放动画
             if (entity.TryGetComponent<EffectAnimationRequest>(out var animation))
             {
                 KKApi.DzPlayEffectAnimation(native.effect, animation.animation, animation.link);
-                entity.RemoveComponent<EffectAnimationRequest>();
+                toClearAnim.Add(entity);
             }
 
             if (entity.TryGetComponent<EffectDestroyRequest>(out var destroy))
             {
-                // 销毁请求是一次性 native 副作用，执行后直接删除 ECS 特效实体。
+                // 销毁请求是一次性 native 副作用，执行后删除 ECS 特效实体（删除收集到循环外）。
                 if (destroy.hideFirst)
                 {
                     KKApi.DzSetEffectVisible(native.effect, false);
@@ -110,9 +134,33 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
 
                 JassApi.DestroyEffect(native.effect);
                 HandleHelper.HandleRemove(native.effect);
-                entity.DeleteEntity();
+                toDelete.Add(entity);
             }
         });
+
+        foreach (var (entity, native) in toAddNative)
+        {
+            if (!entity.IsNull && !entity.HasComponent<EffectNative>())
+                entity.AddComponent(native);
+        }
+
+        foreach (var entity in toClearDirty)
+        {
+            if (!entity.IsNull && entity.HasComponent<EffectDirty>())
+                entity.RemoveComponent<EffectDirty>();
+        }
+
+        foreach (var entity in toClearAnim)
+        {
+            if (!entity.IsNull && entity.HasComponent<EffectAnimationRequest>())
+                entity.RemoveComponent<EffectAnimationRequest>();
+        }
+
+        foreach (var entity in toDelete)
+        {
+            if (!entity.IsNull)
+                entity.DeleteEntity();
+        }
     }
 
     private static JEffect CreateNativeEffect(Entity entity, EffectBase effect)

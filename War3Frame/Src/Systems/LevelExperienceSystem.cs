@@ -20,8 +20,20 @@ public class UnitLevelStatRebuildSystem : QuerySystem<UnitSpecData, UnitLevel>
 
     protected override void OnUpdate()
     {
+        // 重算涉及创建属性实体/打脏（结构变更）：先收集单位，循环外重算。
+        var pending = new List<Entity>();
         Query.ForEachEntity((ref UnitSpecData specData, ref UnitLevel level, Entity unit) =>
         {
+            pending.Add(unit);
+        });
+
+        foreach (var unit in pending)
+        {
+            if (unit.IsNull)
+                continue;
+            if (!unit.TryGetComponent<UnitSpecData>(out var specData) || !unit.TryGetComponent<UnitLevel>(out var level))
+                continue;
+
             foreach (var attribute in specData.spec.attributes)
             {
                 if (!AttributeHelper.TryGetAttr(unit, attribute.attrTypeId, out var attr))
@@ -37,7 +49,7 @@ public class UnitLevelStatRebuildSystem : QuerySystem<UnitSpecData, UnitLevel>
             }
 
             unit.RemoveTag<LevelStatDirty>();
-        });
+        }
     }
 }
 
@@ -54,14 +66,26 @@ public class ItemLevelStatRebuildSystem : QuerySystem<ItemSpecData, ItemLevel>
 
     protected override void OnUpdate()
     {
+        // 刷新物品等级贡献涉及 AddComponent/RemoveTag（结构变更）：先收集物品，循环外处理。
+        var pending = new List<Entity>();
         Query.ForEachEntity((ref ItemSpecData specData, ref ItemLevel level, Entity item) =>
         {
+            pending.Add(item);
+        });
+
+        foreach (var item in pending)
+        {
+            if (item.IsNull)
+                continue;
+            if (!item.TryGetComponent<ItemSpecData>(out var specData) || !item.TryGetComponent<ItemLevel>(out var level))
+                continue;
+
             if (!ItemCompanionAbilityHelper.SynchronizeLevel(item))
-                return;
+                continue;
 
             ApplyItemAttributes(item, specData.spec, level.level);
             item.RemoveTag<LevelStatDirty>();
-        });
+        }
     }
 
     private static void ApplyItemAttributes(Entity item, ItemSpec spec, int level)

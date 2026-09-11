@@ -17,6 +17,9 @@ public class DurationSystem : QuerySystem<Duration>
 
     protected override void OnUpdate()
     {
+        // Friflo 禁止在 Query 迭代内增删 Tag（结构变更）：先收集到期实体，循环外统一打标。
+        var expired = new List<Entity>();
+
         Query.ForEachEntity((ref Duration duration, Entity entity) =>
         {
             if (duration.remaining < 0f)
@@ -30,11 +33,15 @@ public class DurationSystem : QuerySystem<Duration>
                 duration.remaining = 0f;
                 if (!entity.Tags.Has<DurationExpired>())
                 {
-                    entity.AddTag<DurationExpired>();
+                    expired.Add(entity);
                 }
             }
-
-            entity.AddComponent(duration);
         });
+
+        foreach (var entity in expired)
+        {
+            if (!entity.IsNull)
+                entity.AddTag<DurationExpired>();
+        }
     }
 }

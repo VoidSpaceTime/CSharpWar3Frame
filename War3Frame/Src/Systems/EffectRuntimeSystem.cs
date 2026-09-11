@@ -17,6 +17,8 @@ public class EffectRuntimeSystem : QuerySystem<EffectBase>, ITimedSystem
     protected override void OnUpdate()
     {
         var toDelete = new List<Entity>();
+        // 循环内 AddComponent 属结构变更，会抛异常：收集位置写回，循环外应用。
+        var posUpdates = new List<(Entity entity, Position pos)>();
 
         Query.ForEachEntity((ref EffectBase effect, Entity entity) =>
         {
@@ -41,13 +43,20 @@ public class EffectRuntimeSystem : QuerySystem<EffectBase>, ITimedSystem
                 pos.x = targetPos.x;
                 pos.y = targetPos.y;
                 pos.z = targetPos.z;
-                entity.AddComponent(pos);
+                posUpdates.Add((entity, pos));
             }
         });
 
+        foreach (var (entity, pos) in posUpdates)
+        {
+            if (!entity.IsNull)
+                entity.AddComponent(pos);
+        }
+
         foreach (var entity in toDelete)
         {
-            EffectHelper.Destroy(entity, hideFirst: true);
+            if (!entity.IsNull)
+                EffectHelper.Destroy(entity, hideFirst: true);
         }
     }
 }

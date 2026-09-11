@@ -2,24 +2,6 @@ using Friflo.Engine.ECS;
 
 namespace War3Frame;
 
-#region 枚举定义
-
-
-/// <summary>
-///     修改器来源类型
-/// </summary>
-public enum ModifierSourceType
-{
-    Item, // 物品
-    Ability, // 技能
-    Buff, // Buff/Debuff
-    Aura, // 光环
-    Talent, // 天赋
-    Other // 其他
-}
-
-#endregion
-
 #region 组件定义
 
 /// <summary>
