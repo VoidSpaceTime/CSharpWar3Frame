@@ -2,198 +2,57 @@
 
 ## 仓库协作总规则
 
-本仓库已经引入 `OpenSpec`，未来所有代码改动、架构调整、治理更新与跨项目修改，统一遵循：
+本仓库采用官方 `OpenSpec`（`@fission-ai/openspec`）作为变更治理机制，统一遵循：
 
-`design -> review -> implement -> test -> summarize -> commit`
+`propose -> review -> apply -> verify -> sync -> archive`
 
-- 任何实现前都必须先有 **OpenSpec 提案**。
-- 任何实现前都必须先经过 **用户审核批准**。
-- 未经批准，不得直接改代码、补实现、顺手修复或提交 commit。
+- 任何实现前都必须先有 **OpenSpec 提案**，并经 **用户审核批准**。
+- `openspec/specs/<capability>/spec.md` 是当前系统行为的**唯一真相层**；change 目录只放 delta。
+- 完成一个变更 = 成功执行 `openspec archive`：合并 delta 进 `openspec/specs/`，并把 change 移入 `openspec/changes/archive/`。
 - 仓库文件与工具验证结果是第一事实源；OpenViking 只作为长期上下文辅助。
+- 详细流程与命令见 `openspec/README.md`；分级、总结与复盘规则见 `openspec/specs/repository-governance/spec.md`。
 
-## OpenSpec 分级治理
+## 官方工作流
 
-### Level 0: fast
+- 探索（可选）：`/opsx:explore`。
+- 提案：`openspec new change` 或 `/opsx:propose`，在 `openspec/changes/<id>/` 下写 `proposal.md`（必要时 `design.md`、`tasks.md`、以及 `specs/<capability>/spec.md` 形式的 delta）。
+- 实施：`/opsx:apply`，只实现已批准范围。
+- 验证：`openspec validate <change>`，并按风险执行构建、测试或静态检查。
+- 归档：`openspec archive <change> --yes`；不影响行为契约的无 delta 变更使用 `--skip-specs`，或在 change 元数据声明 `skip_specs: true`。
 
-适用于低风险、强局部、可快速回滚的改动，例如：
 
-- 注释、文案、命名微调。
-- 不改变公共契约的局部样式或格式整理。
-- 明显低风险的单点 bug 修复。
+## 工件与分级（附加层）
 
-最小提案内容：
+官方机制不强制工件分级。本仓库保留 `fast | light | full | architecture` 作为**建议强度**，用于决定需要哪些工件与复盘强度。该分级是仓库附加约定，**不阻塞官方 `openspec archive`**。
 
-- 正式记录在 `openspec/changes/<change-id>/proposal.md`。
-- 变更目标。
-- 影响文件。
-- 为什么判定为低风险。
-- 如何验证。
+- `fast`：`proposal.md` 即可；总结 2-4 行。
+- `light`：`proposal.md`，必要时补 `design.md` / `tasks.md` / spec delta；总结一个短段落。
+- `full`：`proposal.md`、`design.md`、`tasks.md`、相关 spec delta；完整总结。
+- `architecture`：`full` 全套，并在 `proposal.md` / `design.md` 额外覆盖方案比较、迁移、回滚、阶段拆分。
 
-### Level 1: light
+升级触发器、复盘强度矩阵（`R0~R3`）、审查工具门禁等细则，以 `openspec/specs/repository-governance/spec.md` 为准；`AGENTS.md` 只定义入口规则，不替代 change 内的正式提案记录。
 
-适用于单模块或少量文件内的常规改动，不涉及跨项目架构边界，例如：
+## 归档与生命周期
 
-- 已有模块内新增小能力。
-- 局部逻辑优化。
-- 小范围重构。
+- 归档即官方“完成动作”，由 `openspec archive` 执行：校验 change 与 delta → 按 `RENAMED → REMOVED → MODIFIED → ADDED` 合并 delta 进 `openspec/specs/` → 移动到 `openspec/changes/archive/<yyyy-MM-dd>-<change-id>/`（日期用归档当天）。
+- 归档失败时，官方会回滚主 specs 并把 change 留在原位。
+- 若已批准提案的验证计划包含真实 War3 客户端验证：默认阻塞；只有在审核阶段显式声明非阻塞，并在 `summary.md` 记录未执行原因与剩余风险后，才可推迟并归档。
+- 状态字段（`待审核 / 已批准 / 实施中 / 已实施 / 已取消 / 已取代`）与 `summary.md` 为仓库附加约定，用于人类可读追踪，不阻塞官方 `archive`。
 
-最小提案内容：
+## 实施后验证与复盘强度（附加层）
 
-- 正式记录在 `openspec/changes/<change-id>/proposal.md`。
-- 背景与目标。
-- 影响范围。
-- 方案摘要。
-- 风险与回滚。
-- 验收标准。
-
-补充规则：
-
-- `light` 默认不要求完整四件套。
-- 当方案存在多步骤、边界条件、局部规格约束或仅凭 `proposal.md` 无法完成审查时，再补 `tasks.md`、`design.md` 或相关 `spec.md`。
-
-### Level 2: full
-
-适用于需要完整全局分析的改动，例如：
-
-- 跨模块改动。
-- 公共 API / 生成器输出契约变更。
-- 构建流程、核心业务流程、公共数据结构调整。
-- 可能影响多个项目边界的实现。
-
-必须补齐：
-
-- `proposal.md`
-- `design.md`
-- `tasks.md`
-- 对应 `specs/.../spec.md`
-
-### Level 3: architecture
-
-适用于架构级事项，例如：
-
-- 基础设施引入或替换。
-- 目录结构 / 分层边界重构。
-- 跨项目依赖关系调整。
-- 框架迁移、领域模型重划、长期治理策略调整。
-
-除 `full` 级工件外，还必须明确：
-
-- 备选方案比较。
-- 迁移路径。
-- 阶段拆分。
-- 回滚策略。
-- 长期维护影响。
-
-## 分级判定规则
-
-满足任一项，至少按 `full` 处理：
-
-- 改公共接口或对外契约。
-- 改生成器输出、构建链路或项目依赖关系。
-- 改核心业务流程、全局状态流转、跨模块协作。
-- 改持久化结构、配置规范、安全边界。
-- 影响 `War3Frame`、`War3Frame.Generator`、`FrameBuild`、`CSharpWar3Frame`、`Projects/*` 中两个及以上区域。
-
-满足任一项，可考虑按 `fast` 处理：
-
-- 不改变行为语义。
-- 不改变接口契约。
-- 局部即可验证。
-- 可快速回滚。
-
-其余默认按 `light` 处理。
-
-如果分析过程中发现范围扩大，必须 **自动升级提案等级**，重新提交审核。
-
-## 工件矩阵
-
-- `fast`：必须 `proposal.md`；`design.md`、`tasks.md`、相关 `spec.md` 按需要补充。
-- `light`：必须 `proposal.md`；当存在多步骤、边界条件、局部规格约束或审查复杂度提高时，再补 `design.md`、`tasks.md`、相关 `spec.md`。
-- `full`：必须 `proposal.md`、`design.md`、`tasks.md`、相关 `spec.md`。
-- `architecture`：必须具备 `full` 全套工件，并在 `proposal.md` 与 `design.md` 中额外覆盖方案比较、迁移、回滚与阶段拆分。
-
-规则说明：
-
-- 所有等级都必须在对应 change 的 `proposal.md` 中留痕。
-- `AGENTS.md` 只定义入口规则，不替代 change 内的正式提案记录。
-- 若文档之间对工件要求有冲突，以 `openspec/.../spec.md` 中的 capability requirement 为准。
-
-## OpenSpec 提案生命周期与归档规范
-
-### 提案生命周期状态
-
-所有提案在 `proposal.md` 中必须显式标注以下状态之一：
-- `待审核`：提案已提交，等待用户批准。
-- `已批准`：用户已批准，尚未开始实施。
-- `实施中`：正在进行代码编写或文档修改。
-- `已实施`：变更已完成实施、验证与总结。
-- `已取消`：提案被放弃，不再实施。
-- `已取代`：提案被新的提案替代。
-
-### 实施完成（已实施）的硬性要求
-
-一个变更要标记为 `已实施`，必须同时满足以下条件：
-1. 批准的变更范围已全部完成。
-2. 要求的验证（如测试、构建、静态检查）已全部通过。
-3. 实施后总结已完成，且必须在 change 目录下存在 `summary.md`。
-4. 无阻塞性未完成项。
-
-`R0/R1/R2/R3` 证据和 verdict 用于支持验证，但绝不能替代 `summary.md`。
-
-### 归档前置条件与规则
-
-1. 归档位置（`openspec/changes/archive/`）表示变更已关闭且不再活跃，并不等同于已实施。
-2. 状态为 `已实施` 的变更，在满足上述实施完成要求后可以归档。
-3. 状态为 `已取消` 或 `已取代` 的变更，只要在 `proposal.md` 中记录了关闭原因，即可直接归档，不要求提供 `summary.md`。
-4. 归档目录命名规范：`openspec/changes/archive/<yyyy-MM-dd>-<change-id>/`，日期使用归档当天。
-5. 若已批准提案的验证计划包含真实 War3 客户端验证，该验证默认是阻塞的。只有在审核阶段显式声明为非阻塞，并在 `summary.md` 中记录未执行原因与剩余风险时，才允许推迟该验证并归档。
-
-## 实施后验证与复盘强度
-
-OpenSpec 提案等级、实施后复盘强度和审查工具启用是三个独立层次：提案等级决定治理工件与默认强度，实际风险可以提高最终强度，具体工具还必须满足独立授权与可用性要求。实施前的 `review` 仍是用户批准门禁；实施后的直接验证与专业复盘属于 `test` 阶段，不能相互替代。
-
-复盘强度使用有序等级：
+提案等级、实施后复盘强度和审查工具启用是三个独立层次。复盘强度使用有序等级：
 
 - `R0 Direct`：直接测试、构建、静态检查或文档验证。
-- `R1 Focused`：在 `R0` 基础上增加 1 个技术准确性视角。
-- `R2 Targeted`：在 `R0` 基础上增加 2-3 个与实际风险匹配的专项视角。
-- `R3 Comprehensive`：在 `R0` 基础上覆盖目标/约束、技术质量、安全、QA、上下文五类视角。
+- `R1 Focused`：`R0` + 1 个技术准确性视角。
+- `R2 Targeted`：`R0` + 2-3 个与实际风险匹配的专项视角。
+- `R3 Comprehensive`：`R0` + 目标/约束、技术质量、安全、QA、上下文五类视角。
 
-每个视角都必须有独立证据和 verdict；计数单位不是代理数量或工具调用次数。
+默认映射：`fast → R0`；`light → R0`（复杂或版本敏感时 `R1`）；`full → R2`；`architecture → R3`。每个视角都必须有独立证据和 verdict。
 
-默认强度如下：
+以下风险至少要求 `R2`：公共 API / 对外契约、Source Generator 输出、配置/构建/发布契约、持久化与迁移、性能与资源、多系统跨边界协作。命中 `architecture` 等级、安全敏感、重大实现，或用户明确要求完整五路时，使用 `R3`。
 
-- `fast`：`R0 Direct`。
-- `light`：默认 `R0`；当变更仍满足 `light` 边界，但包含多步骤技术推理、版本敏感事实或技术事实不确定性时，必须使用 `R1 Focused`。
-- `full`：`R2 Targeted`，按风险选择 2-3 路专项复核。
-- `architecture`：`R3 Comprehensive`，必须覆盖完整五类视角。
-
-以下风险至少要求 `R2 Targeted`，但不会仅因分类名称自动触发 `R3`：
-
-- 公共 API 或对外行为契约。
-- Source Generator 输出契约。
-- 配置格式、构建链或发布契约。
-- 持久化、迁移、数据兼容性或数据丢失可能性。
-- 性能、资源、实时性或大规模数据影响。
-- 多系统、多项目或跨边界状态协作。
-
-命中以下任一条件时，必须使用 `R3 Comprehensive`：
-
-- 提案等级为 `architecture`。
-- 涉及权限、认证授权、敏感数据、不可信外部输入、供应链，或具有可利用后果的 native / 进程边界等安全敏感事项。
-- 属于改变核心行为或架构边界、影响半径较大、涉及复杂跨项目迁移、难以快速回滚，或失败会显著影响运行与交付的重大实现。
-- 用户明确要求完整五路或更高强度。
-- 更高优先级 system / developer 指令要求。
-
-不得仅按目录名、文件数量或代码行数判定重大实现；普通原生调用也不自动等同于安全敏感。如果新风险超出已批准提案范围，必须先修订或升级 OpenSpec 并重新取得用户批准，不能只增加复盘路数后继续实施。
-
-工具门禁：
-
-- `light/R1` 的技术准确性复核在 Oracle 可用时优先使用 Oracle；不可用时可使用等价复核，但必须记录替代原因、证据和 verdict。
-- 完整五路复盘是一种强度要求，不等同于完整 `review-work`。
-- 不得仅因 `architecture`、安全敏感、重大实现或其他 `R3` 要求自动启用完整 `review-work`。
-- 只有用户明确要求“全面复盘”“完整 QA”或直接指定 `review-work` 时，才允许启用完整 `review-work`；更高优先级 system / developer 指令要求时必须遵守。
-- 未获完整 `review-work` 授权但必须执行 `R3` 时，使用当前获准且可用的检查方式覆盖五类视角。
+工具门禁：`R3` 不自动授权完整 `review-work`；只有用户明确要求“全面复盘”“完整 QA”或直接指定 `review-work` 时才启用。未获授权但必须执行 `R3` 时，用当前获准且可用的方式覆盖五类视角。
 
 任一测试、构建、静态检查或专业复核失败，都不得进入成功总结；必须修复并重新验证，或明确标记为阻塞/未完成。失败本身不机械触发 `R3`，但必须重新判断它是否揭示安全敏感、重大实现或未批准范围。
 
@@ -436,10 +295,10 @@ Native 层（执行）   ← 消费 Dirty/Request，调用 War3 API，不承担�
 
 ## 执行要求
 
-### 1. Design
+### 1. Design（提案）
 
 - 先确定提案等级。
-- 在 `openspec/changes/<change-id>/proposal.md` 中留下正式提案记录，并按等级补齐对应工件。
+- 用 `openspec new change` / `/opsx:propose` 建立 `openspec/changes/<id>/`，在 `proposal.md` 留下正式提案记录，并按等级补齐 `design.md`、`tasks.md`、spec delta。
 - 提案必须先覆盖目标、边界、风险、验证。
 
 ### 2. Review
@@ -459,28 +318,25 @@ Native 层（执行）   ← 消费 Dirty/Request，调用 War3 API，不承担�
 
 ### 5. Summarize
 
-- `fast`：可用 2-4 行短摘要，写清实际改动、验证结果、是否有遗留风险或后续事项。
-- `light`：可用一个短段落或少量要点，写清改动范围、验证结果、是否需要后续提案。
-- `full`：保持完整总结，说明实际改动范围、全局影响、验证覆盖、风险与后续建议。
-- `architecture`：在 `full` 基础上，额外说明阶段结果、迁移状态、剩余风险与未完成事项。
-- 所有进入 `已实施` 状态的变更都必须完成 `summarize` 阶段并生成 `summary.md`；`已取消` 或 `已取代` 的变更可跳过此阶段，但须在 `proposal.md` 中记录关闭原因。
+- 按等级写 `summary.md`：`fast` 2-4 行；`light` 一个短段落；`full` 完整总结；`architecture` 架构级完整总结（含阶段结果、迁移状态、剩余风险）。
+- `summary.md` 是仓库附加质量证据，不阻塞官方 `archive`。
 
-### 6. Commit
+### 6. Archive / Commit
 
+- 归档：`openspec archive <change> --yes`；无 delta 的变更使用 `--skip-specs`。
 - 只有在用户明确要求提交时才允许 commit。
 - 未经用户要求，不主动创建 git commit。
 
 ## 模板与入口
 
-- 分级提案模板：`openspec/templates/proposal-levels.md`
-- 审核检查清单：`openspec/templates/review-checklist.md`
-- OpenSpec 使用说明：`openspec/README.md`
-- 历史治理变更：`openspec/changes/archive/2026-08-13-establish-openspec-governance/`
-- 历史治理澄清变更：`openspec/changes/archive/2026-08-13-clarify-graded-governance-artifact-rules/`
-- 当前活跃变更：`openspec/changes/define-openspec-implemented-and-archive-markers/`、`openspec/changes/document-ecs-message-naming/`、`openspec/changes/remove-dead-projectile-template-hooks/`、`openspec/changes/unify-native-request-naming/`、`openspec/changes/fix-historical-request-tags/`
+- 官方工作流与命令：`openspec/README.md`
+- 仓库附加治理规则（分级 / 复盘 / 总结）：`openspec/specs/repository-governance/spec.md`
+- 工件模板由官方 CLI 提供（`openspec templates`）；仓库不再维护独立模板文件。
+- 历史治理变更：`openspec/changes/archive/`（以日期前缀定位）
+- 当前活跃变更：以 `openspec list` 为准。
 
 ## 特别说明
 
-- 本仓库已经有 `openspec/`，后续一律复用，不重复初始化。
+- 本仓库已初始化 `openspec/`（`openspec/config.yaml`，schema: `spec-driven`），后续用 `openspec update` 刷新，不重复 `init`。
 - 如果外部记忆、历史对话与仓库文件冲突，以仓库当前内容为准。
 - 如果用户只要求讨论、评估、审查，则先分析，不直接实现。

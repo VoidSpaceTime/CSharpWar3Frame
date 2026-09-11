@@ -366,4 +366,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /.build
 /.omo
-/openspec
+# /openspec 已纳入版本控制：specs 与 changes 是版本化真相（见 openspec/README.md）
