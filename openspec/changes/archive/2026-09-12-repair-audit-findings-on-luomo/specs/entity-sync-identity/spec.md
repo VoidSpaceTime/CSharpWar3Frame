@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: 代次安全的实体身份
-同步 token SHALL 包含版本、ID 与代次；解码验证当前 Store 及实体身份，不接受裸 ID 降级。
+同步 token SHALL 包含版本、ID 与 Friflo revision；编码只接受当前同步 Store 的存活实体，解码验证该 Store 内的 ID 与代次，不接受裸 ID 降级。token 仅用于当前会话，不作为跨 Store、跨会话或无限次 ID 复用后的永久身份。
 
 #### Scenario: ID 回收
 - **WHEN** A 编码后被删除，B 复用 A 的 ID
