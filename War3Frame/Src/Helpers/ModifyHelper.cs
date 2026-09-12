@@ -15,7 +15,9 @@ public class ModifyHelper
         float value,
         int priority = 0)
     {
-        var mod = Game.Store.CreateEntity(
+        if (!source.IsNull && !ReferenceEquals(attrEntity.Store, source.Store))
+            throw new ArgumentException("修改器与来源必须属于同一 Store", nameof(source));
+        var mod = attrEntity.Store.CreateEntity(
             new ModifyValue { modifyType = type, value = value, priority = priority },
             new ModifyTarget(attrEntity),
             new ModifySource(source)
@@ -47,6 +49,7 @@ public class ModifyHelper
     {
         var links = source.GetIncomingLinks<ModifySource>();
         var affectedAttrs = new HashSet<Entity>();
+        var toDelete = new List<Entity>();
 
         foreach (var link in links)
         {
@@ -56,8 +59,10 @@ public class ModifyHelper
                 affectedAttrs.Add(target.target);
             }
 
-            modEntity.DeleteEntity();
+            toDelete.Add(modEntity);
         }
+        foreach (var modifier in toDelete)
+            if (!modifier.IsNull) modifier.DeleteEntity();
 
         // 标记受影响属性需重算
         // 被移除 modifier 影响过的属性需要重新计算，避免面板和 native 同步读到旧值。

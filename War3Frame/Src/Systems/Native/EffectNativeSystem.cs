@@ -77,11 +77,6 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
                         DzApi.DzGetColor(effect.red, effect.green, effect.blue, effect.alpha));
                 }
 
-                if (flags.HasFlag(EffectDirtyFlags.Scale))
-                {
-                    YDApi.EXSetEffectSize(native.effect, effect.sizeScale);
-                }
-
                 if (flags.HasFlag(EffectDirtyFlags.Speed))
                 {
                     YDApi.EXSetEffectSpeed(native.effect, effect.speed);
@@ -101,17 +96,18 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
                 if (flags.HasFlag(EffectDirtyFlags.Transform)
                     && entity.TryGetComponent<EffectTransform>(out var transform))
                 {
-                    if (transform.needsReset)
-                    {
-                        YDApi.EXEffectMatReset(native.effect);
-                    }
-
+                    // 原生旋转是增量操作，ECS 保存累计角度：每次重建，不能重复叠加旧角度。
+                    YDApi.EXEffectMatReset(native.effect);
                     YDApi.EXEffectMatRotateX(native.effect, transform.rotateX);
                     YDApi.EXEffectMatRotateY(native.effect, transform.rotateY);
                     YDApi.EXEffectMatRotateZ(native.effect, transform.rotateZ);
                 }
 
-                if (!needsFullSync)
+                // Reset 会清除缩放，变换后重放 ECS 的绝对缩放值。
+                if ((flags & (EffectDirtyFlags.Scale | EffectDirtyFlags.Transform)) != 0)
+                    YDApi.EXSetEffectSize(native.effect, effect.sizeScale);
+
+                if (entity.HasComponent<EffectDirty>())
                 {
                     toClearDirty.Add(entity);
                 }
@@ -132,8 +128,8 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
                     KKApi.DzSetEffectVisible(native.effect, false);
                 }
 
-                JassApi.DestroyEffect(native.effect);
                 HandleHelper.HandleRemove(native.effect);
+                JassApi.DestroyEffect(native.effect);
                 toDelete.Add(entity);
             }
         });
@@ -172,20 +168,17 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
         {
             handle = JassApi.AddSpecialEffectTarget(effect.model, unitNative.unit,
                 GetAttachPointString(attachment.attachType));
+            HandleHelper.HandleAdd(handle);
         }
         else if (entity.TryGetComponent<Position>(out var position))
         {
             handle = JassApi.AddSpecialEffect(effect.model, position.x, position.y);
+            HandleHelper.HandleAdd(handle);
             YDApi.EXSetEffectZ(handle, position.z);
         }
         else
         {
             handle = JassApi.AddSpecialEffect(effect.model, 0, 0);
-        }
-
-        // 创建原生对象后立即登记句柄引用（配对规则：销毁前 HandleRemove，见 AGENTS.md）。
-        if (handle.Handle > 0)
-        {
             HandleHelper.HandleAdd(handle);
         }
 

@@ -10,8 +10,6 @@ public static class PlayerHelper
 {
     private const int MaxPlayers = 16;
 
-    // 关系矩阵是 ECS 外的快速查询缓存；联盟状态真相在 PlayerAllianceState 组件。
-    private static readonly PlayerTeamState[,] Relations = new PlayerTeamState[MaxPlayers, MaxPlayers];
     private static PlayerNative[] _players = Array.Empty<PlayerNative>();
 
     /// <summary>
@@ -36,19 +34,12 @@ public static class PlayerHelper
         // 原生事件桥未注册、联盟矩阵保持默认全 Allie。此处必须引用调用方传入的数组。
         _players = players;
 
-        // 初始化默认敌对关系，同一玩家视为友方，后续通过 SetAlliance/SetNeutral 覆盖。
-        foreach (var sourcePlayer in _players)
-        foreach (var targetPlayer in _players)
-        {
-            Relations[sourcePlayer.index, targetPlayer.index] = sourcePlayer.index == targetPlayer.index
-                ? PlayerTeamState.Allie
-                : PlayerTeamState.Enemy;
-        }
-
         // 玩家实体挂载联盟状态组件（ECS 真相）。
         foreach (var player in _players)
         {
-            player.getentity.AddComponent(PlayerAllianceState.Create(MaxPlayers));
+            var state = PlayerAllianceState.Create(MaxPlayers);
+            state.bits[player.index] = PlayerAllianceState.AllianceBitBasic;
+            player.getentity.AddComponent(state);
         }
     }
 
@@ -82,11 +73,9 @@ public static class PlayerHelper
     /// </summary>
     public static void SetAlliance(PlayerNative playerA, PlayerNative playerB, bool allied)
     {
-        var state = allied ? PlayerTeamState.Allie : PlayerTeamState.Enemy;
-        Relations[playerA.index, playerB.index] = state;
-        Relations[playerB.index, playerA.index] = state;
-
         // 基础同盟是双向关系：A→B 与 B→A 都要写位并打 Dirty。
+        SetAllianceBit(playerA, playerB, PlayerAllianceState.AllianceBitNeutral, false);
+        SetAllianceBit(playerB, playerA, PlayerAllianceState.AllianceBitNeutral, false);
         SetAllianceBit(playerA, playerB, PlayerAllianceState.AllianceBitBasic, allied);
         SetAllianceBit(playerB, playerA, PlayerAllianceState.AllianceBitBasic, allied);
     }
@@ -121,20 +110,21 @@ public static class PlayerHelper
     /// </summary>
     public static void SetNeutral(PlayerNative playerA, PlayerNative playerB, bool flag)
     {
-        Relations[playerA.index, playerB.index] = PlayerTeamState.Neutral;
-        Relations[playerB.index, playerA.index] = PlayerTeamState.Neutral;
-
         SetAllianceBit(playerA, playerB, PlayerAllianceState.AllianceBitNeutral, flag);
         SetAllianceBit(playerB, playerA, PlayerAllianceState.AllianceBitNeutral, flag);
     }
 
     /// <summary>
-    /// 查询两玩家阵营关系（读静态缓存，非 ECS 组件）。
+    /// 查询两玩家阵营关系，直接从 ECS 联盟位派生。
     /// </summary>
     public static PlayerTeamState GetRelation(PlayerNative playerA, PlayerNative playerB)
     {
-        // 查询始终读缓存，避免把原生 alliance 状态当作长期语义真相。
-        return Relations[playerA.index, playerB.index];
+        // 不维护第二份可漂移的关系矩阵，也不读取原生 alliance。
+        if (playerA.index == playerB.index) return PlayerTeamState.Allie;
+        if (!playerA.getentity.IsNull && playerA.getentity.TryGetComponent<PlayerAllianceState>(out var alliance)
+            && playerB.index >= 0 && playerB.index < alliance.bits.Length)
+            return GetRelationFromBits(alliance.bits[playerB.index]);
+        return PlayerTeamState.Enemy;
     }
 
     /// <summary>
@@ -142,7 +132,7 @@ public static class PlayerHelper
     /// </summary>
     public static bool IsAlly(PlayerNative playerA, PlayerNative playerB)
     {
-        return Relations[playerA.index, playerB.index] == PlayerTeamState.Allie;
+        return GetRelation(playerA, playerB) == PlayerTeamState.Allie;
     }
 
     /// <summary>
@@ -150,8 +140,14 @@ public static class PlayerHelper
     /// </summary>
     public static bool IsEnemy(PlayerNative playerA, PlayerNative playerB)
     {
-        return Relations[playerA.index, playerB.index] == PlayerTeamState.Enemy;
+        return GetRelation(playerA, playerB) == PlayerTeamState.Enemy;
     }
+
+    /// <summary>唯一联盟位解释规则，供领域查询与 Native 投影共同使用。</summary>
+    public static PlayerTeamState GetRelationFromBits(byte bits)
+        => (bits & PlayerAllianceState.AllianceBitNeutral) != 0 ? PlayerTeamState.Neutral
+            : (bits & PlayerAllianceState.AllianceBitBasic) != 0 ? PlayerTeamState.Allie
+            : PlayerTeamState.Enemy;
 
     /// <summary>
     /// 修改源玩家对目标玩家的单个联盟位，并标记目标待同步。

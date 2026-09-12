@@ -1,5 +1,6 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
+using War3Frame.Systems;
 
 namespace War3Frame.Src.Systems;
 
@@ -9,6 +10,7 @@ namespace War3Frame.Src.Systems;
 /// 执行顺序：应在所有移动系统之后、所有搜索/效果系统之前执行
 /// 即: MoveSystem → SpatialGridSystem → AreaSearchSystem / GroupHelper 查询
 /// </summary>
+[SystemRegister(SystemKind.Interval, 99)]
 public class SpatialGridSystem : QuerySystem<Position>
 {
     protected override void OnUpdate()

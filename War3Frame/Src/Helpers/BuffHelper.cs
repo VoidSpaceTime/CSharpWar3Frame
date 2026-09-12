@@ -451,6 +451,8 @@ public static class BuffHelper
             duration.remaining = spec.duration;
             duration.total = spec.duration;
             existing.AddComponent(duration);
+            existing.RemoveTag<DurationExpired>();
+            existing.RemoveTag<BuffExpired>();
         }
 
         var hasStacks = existing.TryGetComponent<BuffStacks>(out _);
@@ -491,9 +493,11 @@ public static class BuffHelper
     ///     创建 Buff 实体的核心逻辑（不查重，供 ApplyBuff 与 Replace 重建使用）
     ///     按 BuffSpec.kind 定型：Attribute 挂 ModifyValue；Tick/PureTag 不挂（Tick 的 tick 由行为读 tickValue）。
     /// </summary>
-    private static Entity CreateBuffInternal(EntityStore store, Entity unit, Entity source, BuffSpec spec)
+    internal static Entity CreateBuffInternal(EntityStore store, Entity unit, Entity source, BuffSpec spec)
     {
-        var isDot = spec.kind == BuffKind.Tick;
+        if (unit.IsNull || !ReferenceEquals(store, unit.Store)
+            || (!source.IsNull && !ReferenceEquals(store, source.Store)))
+            throw new ArgumentException("Buff、目标与来源必须属于同一 Store");
 
         // 获取对应的属性 Entity（普通 buff 贡献到该属性；DoT 以该属性作载体供反查/净化）。
         // 单位模板未声明该属性时自动创建 base=0 的属性实体，避免 buff 静默挂不上。
@@ -527,7 +531,7 @@ public static class BuffHelper
         );
 
         // DoT 型不挂 ModifyValue（避免伤害值污染属性计算）；普通型挂 ModifyValue
-        if (!isDot)
+        if (spec.kind == BuffKind.Attribute)
         {
             buff.AddComponent(new ModifyValue
             {
@@ -557,7 +561,7 @@ public static class BuffHelper
         if (source.IsNull) return default;
 
         // source 直接是单位（挂有属性关系）→ 返回本身
-        if (source.HasComponent<AttrOwner>()) return source;
+        if (source.HasComponent<UnitLifeState>() || source.HasComponent<UnitBase>()) return source;
 
         // 地面区域实体 → 取 caster
         if (source.TryGetComponent<GroundAreaSource>(out var areaSource))

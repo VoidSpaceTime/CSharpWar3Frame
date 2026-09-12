@@ -86,8 +86,9 @@ public class PlayerNativeSyncSystem : QuerySystem<PlayerNative, PlayerDirty>
     /// </summary>
     private static void ApplyAllianceBits(JPlayer source, JPlayer target, byte bits)
     {
-        var isNeutral = (bits & PlayerAllianceState.AllianceBitNeutral) != 0;
-        var isBasic = !isNeutral && (bits & PlayerAllianceState.AllianceBitBasic) != 0;
+        var relation = PlayerHelper.GetRelationFromBits(bits);
+        var isNeutral = relation == PlayerTeamState.Neutral;
+        var isBasic = relation == PlayerTeamState.Allie;
         var isVision = (bits & PlayerAllianceState.AllianceBitVision) != 0;
         var isControl = (bits & PlayerAllianceState.AllianceBitControl) != 0;
         var isFullControl = (bits & PlayerAllianceState.AllianceBitFullControl) != 0;

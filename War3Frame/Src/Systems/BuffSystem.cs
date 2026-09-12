@@ -26,6 +26,10 @@ public class BuffDurationSystem : QuerySystem<Buff, BuffBehavior, Duration>, ITi
 
             if (entity.Tags.Has<DurationExpired>())
             {
+                // 周期消费者尚未处理最后一段存活时间时，延迟领域回收。
+                if (buff.tickInterval > 0f && !string.IsNullOrEmpty(buff.tickActionId)
+                    && buff.tickElapsed < runtime.elapsed)
+                    return;
                 toMark.Add(entity);
             }
         });
@@ -84,7 +88,6 @@ public class BuffTickSystem : QuerySystem<Buff, Duration>, ITimedSystem
 
     protected override void OnUpdate()
     {
-        var deltaTime = Interval;
         // tick 行为可能创建实体/删除实体（结构变更），Friflo 禁止在 Query 迭代内做，
         // 先收集到点的事件，循环外执行。
         var dueTicks = new List<(Entity buffEntity, Entity targetUnit, float tickValue, string actionId, int hitCount)>();
@@ -95,20 +98,12 @@ public class BuffTickSystem : QuerySystem<Buff, Duration>, ITimedSystem
             if (buff.tickInterval <= 0f || string.IsNullOrEmpty(buff.tickActionId))
                 return;
 
-            // 跳过永久 buff（不 tick）
-            if (duration.remaining < 0f)
-                return;
-
-            // 累加经过时间
-            buff.lastTick += deltaTime;
-
-            // 记录到点次数（不在此直接执行，避免迭代内结构变更）
-            var hitCount = 0;
-            while (buff.lastTick >= buff.tickInterval)
-            {
-                buff.lastTick -= buff.tickInterval;
-                hitCount++;
-            }
+            // Duration 是唯一生命周期时钟；积累有效存活时间，支持不同频率与卡顿补跳。
+            var available = Math.Max(0d, duration.elapsed - buff.tickElapsed);
+            buff.tickElapsed = duration.elapsed;
+            var accumulated = buff.lastTick + available;
+            var hitCount = (int)Math.Floor((accumulated + 0.0000001d) / buff.tickInterval);
+            buff.lastTick = (float)Math.Max(0d, accumulated - hitCount * (double)buff.tickInterval);
 
             if (hitCount > 0)
             {
@@ -117,7 +112,7 @@ public class BuffTickSystem : QuerySystem<Buff, Duration>, ITimedSystem
                     return;
 
                 var attrEntity = modifyTarget.target;
-                if (!attrEntity.TryGetComponent<AttrOwner>(out var attrOwner))
+                if (attrEntity.IsNull || !attrEntity.TryGetComponent<AttrOwner>(out var attrOwner))
                     return;
 
                 dueTicks.Add((entity, attrOwner.owner, buff.tickValue, buff.tickActionId, hitCount));
@@ -136,6 +131,7 @@ public class BuffTickSystem : QuerySystem<Buff, Duration>, ITimedSystem
             // 同一帧内多次到点则执行多次
             for (var i = 0; i < hitCount; i++)
             {
+                if (buffEntity.IsNull || targetUnit.IsNull) break;
                 action.Execute(buffEntity, targetUnit);
             }
         }

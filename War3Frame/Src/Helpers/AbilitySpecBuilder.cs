@@ -245,13 +245,7 @@ public sealed class AbilitySpecBuilder
             targetType = spec.targetType
         });
 
-        foreach (var (statId, value) in spec.baseValues)
-            AbilityHelper.SetBaseValue(ability, statId, value.Resolve(level));
-
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.CastTime, spec.castPoint.Resolve(level));
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.BackswingDuration, spec.backswing.Resolve(level));
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.ChannelDuration, spec.channelDuration.Resolve(level));
-        AbilityHelper.SetBaseValue(ability, AbilityHelper.ChannelTickInterval, spec.channelTickInterval.Resolve(level));
+        ApplyLevelValues(ability, spec, level);
 
         if (spec.experience.HasValue)
             ability.AddComponent(spec.experience.Value);
@@ -268,6 +262,17 @@ public sealed class AbilitySpecBuilder
             if (effect != null)
                 AbilityHelper.SetEffectSpec(ability, effect);
         }
+    }
+
+    internal static void ApplyLevelValues(Entity ability, AbilitySpec spec, int level)
+    {
+        foreach (var (statId, value) in spec.baseValues)
+            AbilityHelper.SetBaseValue(ability, statId, value.Resolve(level));
+
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.CastTime, spec.castPoint.Resolve(level));
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.BackswingDuration, spec.backswing.Resolve(level));
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ChannelDuration, spec.channelDuration.Resolve(level));
+        AbilityHelper.SetBaseValue(ability, AbilityHelper.ChannelTickInterval, spec.channelTickInterval.Resolve(level));
     }
 
     private static EffectSpec? FindEffect(List<AbilityBehaviorSpec> behaviors, AbilityBehaviorTrigger trigger)

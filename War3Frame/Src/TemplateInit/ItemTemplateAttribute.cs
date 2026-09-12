@@ -32,8 +32,8 @@ public static partial class ItemTemplate
     public static void Initialize()
     {
         if (_initialized) return;
-        _initialized = true;
         RegisterGenerated();
+        _initialized = true;
     }
 
     /// <summary>
