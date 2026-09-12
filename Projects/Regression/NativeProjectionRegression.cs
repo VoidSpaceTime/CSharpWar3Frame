@@ -27,6 +27,22 @@ internal static class NativeProjectionRegression
         root.Update(new UpdateTick(.02f, .02f));
         Check.That(calls[0] == "create" && calls[1] == "add", "handle registration immediately follows creation");
         Check.That(!effect.HasComponent<EffectDirty>(), "first sync consumes dirty state");
+        calls.Clear();
+        for (var tick = 0; tick < 100; tick++) root.Update(new UpdateTick(.02f, tick * .02f));
+        Check.That(calls.Count == 0, "stationary effects do not repeat position setters");
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        for (var tick = 0; tick < 1000; tick++) root.Update(new UpdateTick(.02f, tick * .02f));
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        Check.That(calls.Count == 0, "warmed stationary projection has no native calls");
+        Console.WriteLine($"MEASURE stationary-effect: 1000 updates, {calls.Count} native calls, {allocated} allocated bytes");
+        Check.That(allocated == 0, "warmed stationary projection does not allocate per update");
+        effect.GetComponent<Position>().x = 5;
+        root.Update(new UpdateTick(.02f, 2.02f));
+        Check.That(calls.SequenceEqual(new[] { "xy" }), "XY-only movement does not rewrite Z");
+        calls.Clear();
+        effect.GetComponent<Position>().z = 7;
+        root.Update(new UpdateTick(.02f, 2.04f));
+        Check.That(calls.SequenceEqual(new[] { "z" }), "Z-only movement does not rewrite XY");
         EffectHelper.RotateZ(effect, 10);
         root.Update(new UpdateTick(.02f, .04f));
         Check.Near((float)recording.GetField("Angle")!.GetValue(null)!, 20, "native cumulative rotation equals ECS");
@@ -78,8 +94,8 @@ internal static class NativeProjectionRegression
                     ALLIANCE_SHARED_VISION=4, ALLIANCE_SHARED_CONTROL=5, ALLIANCE_SHARED_ADVANCED_CONTROL=6;
             }
             public static class YDApi {
-                public static void EXSetEffectXY(JEffect e,float x,float y) {}
-                public static void EXSetEffectZ(JEffect e,float z) {}
+                public static void EXSetEffectXY(JEffect e,float x,float y) => NativeRecording.Calls.Add("xy");
+                public static void EXSetEffectZ(JEffect e,float z) => NativeRecording.Calls.Add("z");
                 public static void EXSetEffectSize(JEffect e,float value) { NativeRecording.Scale=value; NativeRecording.Calls.Add("scale"); }
                 public static void EXSetEffectSpeed(JEffect e,float v) {}
                 public static void EXEffectMatReset(JEffect e) { NativeRecording.Angle=0; NativeRecording.Scale=1; NativeRecording.Calls.Add("reset"); }

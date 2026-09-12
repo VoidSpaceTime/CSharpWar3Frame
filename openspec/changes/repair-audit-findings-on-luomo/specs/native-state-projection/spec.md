@@ -1,5 +1,12 @@
 ## ADDED Requirements
 
+### Requirement: 特效位置按差异同步
+Effect Position SHALL 保持 ECS 真相；Native 组件缓存上次已投影位置，只同步变化的轴组。
+
+#### Scenario: 静止与移动
+- **WHEN** 特效首次创建后连续静止，再只改变 XY 或 Z
+- **THEN** 首次完整同步，静止无重复位置调用，变化仅同步对应轴组
+
 ### Requirement: 玩家关系投影一致
 玩家关系缓存 SHALL 从最终联盟位派生；切换 Basic/Neutral 后 ECS 判断与 Native PASSIVE 投影一致。
 
