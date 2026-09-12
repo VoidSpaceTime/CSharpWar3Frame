@@ -93,6 +93,7 @@ public class TimedSystemRoot : SystemRoot
 
         info.Interval = interval;
         info.Accumulated = 0;
+        info.Undelivered = 0;
     }
 
     /// <summary>
@@ -138,14 +139,15 @@ public class TimedSystemRoot : SystemRoot
             }
 
             info.Accumulated += tick.deltaTime;
+            info.Undelivered += tick.deltaTime;
             if (info.Accumulated < info.Interval)
             {
                 continue;
             }
 
-            var elapsed = info.Accumulated;
-            var overrun = elapsed % info.Interval;
-            info.Accumulated = overrun;
+            var elapsed = info.Undelivered;
+            info.Accumulated %= info.Interval;
+            info.Undelivered = 0;
 
             // 传入累计 elapsed，避免低频系统在卡顿帧丢失应推进的时间。
             group.Update(new UpdateTick(elapsed, tick.time));
@@ -155,6 +157,7 @@ public class TimedSystemRoot : SystemRoot
     private class TimerInfo
     {
         public float Accumulated;
+        public float Undelivered;
         public float Interval;
     }
 }

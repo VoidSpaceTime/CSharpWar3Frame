@@ -1,5 +1,6 @@
 using Friflo.Engine.ECS;
 using War3Frame.Components;
+using War3Frame.Src.Systems;
 
 namespace War3Frame;
 
@@ -35,6 +36,8 @@ public static class AuraHelper
         bool affectEnemies = false,
         float updateInterval = 0.5f)
     {
+        if (owner.IsNull || !ReferenceEquals(store, owner.Store))
+            throw new ArgumentException("光环与 owner 必须属于同一 Store", nameof(owner));
         var aura = store.CreateEntity(
             new AuraConfig
             {
@@ -52,7 +55,7 @@ public static class AuraHelper
                 modifyType = modifyType,
                 value = value
             },
-            new ModifyTarget(owner)  // 光环挂载在持有者身上
+            new AuraOwner(owner)
         );
 
         aura.AddTag<Aura>();
@@ -65,7 +68,7 @@ public static class AuraHelper
     /// </summary>
     public static void RemoveAura(Entity owner, string auraId)
     {
-        var modifiers = owner.GetIncomingLinks<ModifyTarget>();
+        var modifiers = owner.GetIncomingLinks<AuraOwner>();
 
         foreach (var link in modifiers)
         {
@@ -88,7 +91,7 @@ public static class AuraHelper
     /// </summary>
     public static void RemoveAllAuras(Entity owner)
     {
-        var modifiers = owner.GetIncomingLinks<ModifyTarget>();
+        var modifiers = owner.GetIncomingLinks<AuraOwner>();
         var toDelete = new List<Entity>();
 
         foreach (var link in modifiers)
@@ -109,7 +112,7 @@ public static class AuraHelper
     /// <summary>
     ///     移除光环产生的所有 Buff
     /// </summary>
-    private static void RemoveAuraBuffs(Entity aura)
+    internal static void RemoveAuraBuffs(Entity aura)
     {
         var buffs = aura.GetIncomingLinks<AuraBuffLink>();
         var toDelete = new List<Entity>();
@@ -145,7 +148,7 @@ public static class AuraHelper
     /// </summary>
     public static bool HasAura(Entity owner, string auraId)
     {
-        var modifiers = owner.GetIncomingLinks<ModifyTarget>();
+        var modifiers = owner.GetIncomingLinks<AuraOwner>();
 
         foreach (var link in modifiers)
         {

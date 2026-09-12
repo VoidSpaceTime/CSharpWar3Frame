@@ -43,6 +43,7 @@ public static class ItemCompanionAbilityValidationScenario
             new Position { x = 10.5f, y = -20.25f, z = 0f },
             new ItemSlotContainer { maxSlots = 1, currentCount = 0 });
         var target = store.CreateEntity(
+            new UnitLifeState { isAlive = true, lifePhase = UnitLifecyclePhase.Alive },
             new Position { x = 125.5f, y = -87.25f, z = 3f });
         var item = store.CreateEntity();
 

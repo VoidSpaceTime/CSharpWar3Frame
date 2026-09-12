@@ -88,7 +88,7 @@ public static partial class AttributeHelper
             return existing;
 
         // 创建属性 Entity
-        var attr = Game.Store.CreateEntity(
+        var attr = entity.Store.CreateEntity(
             new AttrTypeId { typeId = typeId },
             new AttrValue { baseValue = baseValue, finalValue = baseValue, current = baseValue },
             new AttrOwner(entity)

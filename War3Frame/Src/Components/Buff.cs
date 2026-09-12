@@ -65,6 +65,9 @@ public struct Buff : IComponent
     /// <summary>上次 tick 时间（内部字段）</summary>
     public float lastTick;
 
+    /// <summary>已消费的 Duration.elapsed；与统一生命周期时钟对齐，避免低频 tick 丢失或超出存活期。</summary>
+    public double tickElapsed;
+
     /// <summary>每跳数值（DoT 模式用，不参与属性贡献；非 tick 型忽略）</summary>
     public float tickValue;
 }

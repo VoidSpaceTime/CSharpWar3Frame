@@ -20,6 +20,7 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
         // Aura 更新会产生结构变更（创建/删除 buff、打脏），不能在 Query 迭代内执行：
         // 先收集本轮到期的光环，循环外再更新。
         var dueAuras = new List<(Entity aura, Entity owner, (float x, float y) ownerPos, AuraConfig config, AuraEffect effect)>();
+        var orphaned = new List<Entity>();
 
         Query.ForEachEntity((ref AuraConfig config, ref AuraEffect effect, Entity auraEntity) =>
         {
@@ -29,15 +30,21 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
 
             config.timeSinceUpdate = 0;
 
-            if (!auraEntity.TryGetComponent<AuraOwner>(out var ownerLink))
+            if (!auraEntity.TryGetComponent<AuraOwner>(out var ownerLink) || ownerLink.owner.IsNull)
+            {
+                orphaned.Add(auraEntity);
                 return;
+            }
 
             var owner = ownerLink.owner;
-            if (owner.IsNull)
-                return;
-
             dueAuras.Add((auraEntity, owner, GetUnitPosition(owner), config, effect));
         });
+
+        foreach (var aura in orphaned)
+        {
+            AuraHelper.RemoveAuraBuffs(aura);
+            aura.DeleteEntity();
+        }
 
         foreach (var due in dueAuras)
         {
@@ -60,22 +67,22 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
             var buffEntity = link.Entity;
             if (buffEntity.TryGetComponent<ModifyTarget>(out var target) && !target.target.IsNull)
             {
-                var attrOwnerLinks = target.target.GetIncomingLinks<AttrOwner>();
-                foreach (var ownerLink in attrOwnerLinks)
+                if (target.target.TryGetComponent<AttrOwner>(out var attrOwner) && !attrOwner.owner.IsNull)
                 {
-                    currentlyAffected.Add(ownerLink.Entity.Id);
-                    break;
+                    currentlyAffected.Add(attrOwner.owner.Id);
                 }
             }
         }
 
         var unitsInRange = new HashSet<int>();
         var unitsToAdd = new List<Entity>();
-        var query = store.Query<UnitNative>();
+        var query = store.Query<Position>();
 
         // 嵌套查询只收集"需要新增 buff"的单位，结构变更留到循环外执行。
-        query.ForEachEntity((ref UnitNative unit, Entity unitEntity) =>
+        query.ForEachEntity((ref Position position, Entity unitEntity) =>
         {
+            if (!unitEntity.HasComponent<UnitNative>() && !unitEntity.HasComponent<UnitBase>()
+                && !unitEntity.HasComponent<UnitLifeState>()) return;
             var unitPos = GetUnitPosition(unitEntity);
             var distSq = (unitPos.x - ownerPos.x) * (unitPos.x - ownerPos.x) +
                          (unitPos.y - ownerPos.y) * (unitPos.y - ownerPos.y);
@@ -104,9 +111,10 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
         foreach (var link in auraBufs)
         {
             var buffEntity = link.Entity;
-            if (buffEntity.TryGetComponent<ModifyTarget>(out var target) &&
-                target.target.TryGetComponent<AttrOwner>(out var attrOwner) &&
-                !unitsInRange.Contains(attrOwner.owner.Id))
+            if (!buffEntity.TryGetComponent<ModifyTarget>(out var target) ||
+                target.target.IsNull ||
+                !target.target.TryGetComponent<AttrOwner>(out var attrOwner) ||
+                attrOwner.owner.IsNull || !unitsInRange.Contains(attrOwner.owner.Id))
             {
                 toDelete.Add(buffEntity);
                 if (!target.target.IsNull)
@@ -125,14 +133,10 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
 
     private void AddAuraBuffToUnit(EntityStore store, Entity auraEntity, Entity unit, AuraEffect effect, AuraConfig config)
     {
-        var buff = BuffHelper.AddPermanentBuff(
-            store,
-            unit,
-            auraEntity,
-            $"aura:{config.auraId}",
-            effect.attrType,
-            effect.modifyType,
-            effect.value);
+        // 来源唯一性由 AuraBuffLink 与当前目标集合管理，不与其他同名光环共享 Buff 实体。
+        var buff = BuffHelper.CreateBuffInternal(store, unit, auraEntity,
+            new BuffSpec($"aura:{config.auraId}", null, effect.attrType, effect.modifyType,
+                effect.value, -1f, 1, BuffRefreshBehavior.Independent, 0, null, BuffTag.None));
 
         if (!buff.IsNull)
         {
@@ -142,10 +146,12 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
 
     private bool ShouldAffectUnit(Entity owner, Entity target, AuraConfig config)
     {
-        if (owner.Id == target.Id)
+        if (owner == target)
             return config.affectSelf;
 
-        return config.affectAllies;
+        if (!UnitRelationHelper.TryGetRelation(owner, target, out var relation)) return false;
+        return relation == PlayerTeamState.Allie && config.affectAllies
+            || relation == PlayerTeamState.Enemy && config.affectEnemies;
     }
 
     private (float x, float y) GetUnitPosition(Entity unit)

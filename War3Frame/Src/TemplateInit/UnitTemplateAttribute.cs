@@ -32,10 +32,9 @@ public static partial class UnitTemplate
     public static void Initialize()
     {
         if (_initialized) return;
-        _initialized = true;
-
         // Call auto-generated registration method
         RegisterGenerated();
+        _initialized = true;
     }
 
     /// <summary>

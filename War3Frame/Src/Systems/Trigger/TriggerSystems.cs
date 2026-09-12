@@ -111,10 +111,9 @@ public class TriggerSystem : QuerySystem<TriggerEventMarker>
             if (!EvaluateConditions(spec, eventEntity, ruleEntity))
                 continue;
 
-            ExecuteActions(spec, eventEntity, ruleEntity);
             ConsumePolicy(spec.policy, ref runtime, ruleEntity);
-
             ruleEntity.AddComponent(runtime);
+            ExecuteActions(spec, eventEntity, ruleEntity);
         }
     }
 
@@ -127,6 +126,7 @@ public class TriggerSystem : QuerySystem<TriggerEventMarker>
         return policy.kind switch
         {
             TriggerPolicyKind.Count => runtime.triggerCount < policy.maxCount,
+            TriggerPolicyKind.Once => runtime.triggerCount == 0,
             _ => true,
         };
     }
@@ -191,6 +191,7 @@ public class TriggerSystem : QuerySystem<TriggerEventMarker>
         switch (policy.kind)
         {
             case TriggerPolicyKind.Once:
+                runtime.triggerCount = 1;
                 _expiredRules.Add(ruleEntity);
                 break;
             case TriggerPolicyKind.Cooldown:

@@ -8,6 +8,7 @@ public static class Game
     [UnmanagedCallersOnly(EntryPoint = "main")]
     public static int MainAOT()
     {
+        global::War3Frame.Generated.ProjectTemplateRegistration.Initialize();
         War3.EnableConsole();
         Console.WriteLine("Hello World!");
 

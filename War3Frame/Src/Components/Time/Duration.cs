@@ -15,6 +15,9 @@ public struct Duration : IComponent
     /// <summary>初始总时长，供进度显示</summary>
     public float total;
 
+    /// <summary>由 DurationSystem 累计的有效存活时间；续期不清零，供不同频率的周期消费者补跳。</summary>
+    public double elapsed;
+
     /// <summary>
     /// 创建持续时间。-1 或 0 表示永久/立即到期的约定由调用方语义决定。
     /// </summary>

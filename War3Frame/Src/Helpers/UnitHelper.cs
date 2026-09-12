@@ -131,8 +131,8 @@ public static class UnitHelper
     /// </summary>
     public static bool IsEnemy(Entity unit, Entity other)
     {
-        // TODO: 实现基于玩家/队伍的敌对判断
-        return true;
+        return UnitRelationHelper.TryGetRelation(unit, other, out var relation)
+            && relation == PlayerTeamState.Enemy;
     }
 
     /// <summary>
@@ -140,7 +140,16 @@ public static class UnitHelper
     /// </summary>
     public static bool IsAlly(Entity unit, Entity other)
     {
-        return !IsEnemy(unit, other);
+        return UnitRelationHelper.TryGetRelation(unit, other, out var relation)
+            && relation == PlayerTeamState.Allie;
+    }
+
+    /// <summary>声明 ECS 筛选特征；不调用原生 API，不推断未声明的原生类型。</summary>
+    public static void SetTargetTraits(Entity unit, TargetFilter traits)
+    {
+        if ((traits & ~UnitTargetTraits.Allowed) != 0)
+            throw new ArgumentOutOfRangeException(nameof(traits), "只允许目标类型、隐形与魔免特征");
+        unit.AddComponent(new UnitTargetTraits { flags = traits });
     }
 
     #endregion

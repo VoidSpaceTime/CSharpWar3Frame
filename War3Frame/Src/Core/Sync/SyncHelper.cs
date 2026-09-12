@@ -66,17 +66,32 @@ public static class SyncHelper
     // 使用 Base36 编码 Entity.Id，比十进制更紧凑
     private const string Base36Chars = "0123456789abcdefghijklmnopqrstuvwxyz";
 
-    /// <summary>将 Entity 编码为紧凑字符串（Base36 of Entity.Id）</summary>
+    /// <summary>编码当前同步 Store 的实体身份。e1:id:revision 不占用消息分隔符 |。</summary>
     public static string EncodeEntity(Entity entity)
     {
-        return IntToBase36(entity.Id);
+        if (entity.IsNull || Store == null || !ReferenceEquals(entity.Store, Store))
+            throw new ArgumentException("同步实体必须存活并属于当前 Store", nameof(entity));
+        return $"e1:{IntToBase36(entity.Id)}:{IntToBase36(entity.Revision)}";
     }
 
     /// <summary>将紧凑字符串解码为 Entity</summary>
     public static Entity DecodeEntity(string encoded)
     {
-        int id = Base36ToInt(encoded);
-        return Store!.GetEntityById(id);
+        return TryDecodeEntity(encoded, out var entity) ? entity : default;
+    }
+
+    public static bool TryDecodeEntity(string? encoded, out Entity entity)
+    {
+        entity = default;
+        if (Store == null || encoded == null || encoded.Length > 24) return false;
+        var parts = encoded.Split(':');
+        if (parts.Length != 3 || parts[0] != "e1"
+            || !TryBase36ToInt(parts[1], out var id) || id <= 0
+            || !TryBase36ToInt(parts[2], out var revision) || revision < short.MinValue || revision > short.MaxValue
+            || !Store.TryGetEntityById(id, out var candidate) || candidate.IsNull || candidate.Revision != revision)
+            return false;
+        entity = candidate;
+        return true;
     }
 
     /// <summary>将 int 编码为 Base36 字符串</summary>
@@ -86,12 +101,12 @@ public static class SyncHelper
 
         var result = "";
         bool negative = value < 0;
-        if (negative) value = -value;
+        long magnitude = negative ? -(long)value : value;
 
-        while (value > 0)
+        while (magnitude > 0)
         {
-            result = Base36Chars[value % 36] + result;
-            value /= 36;
+            result = Base36Chars[(int)(magnitude % 36)] + result;
+            magnitude /= 36;
         }
 
         return negative ? "-" + result : result;
@@ -100,11 +115,19 @@ public static class SyncHelper
     /// <summary>将 Base36 字符串解码为 int</summary>
     public static int Base36ToInt(string encoded)
     {
-        if (string.IsNullOrEmpty(encoded)) return 0;
+        if (!TryBase36ToInt(encoded, out var value))
+            throw new FormatException("无效或超出 Int32 范围的 Base36 数值");
+        return value;
+    }
 
+    private static bool TryBase36ToInt(string encoded, out int value)
+    {
+        value = 0;
+        if (string.IsNullOrEmpty(encoded) || encoded.Length > 8) return false;
         bool negative = encoded[0] == '-';
         int start = negative ? 1 : 0;
-        int result = 0;
+        if (start == encoded.Length) return false;
+        long result = 0;
 
         for (int i = start; i < encoded.Length; i++)
         {
@@ -114,9 +137,13 @@ public static class SyncHelper
                 result += c - '0';
             else if (c >= 'a' && c <= 'z')
                 result += c - 'a' + 10;
+            else
+                return false;
+            if (result > (negative ? 2147483648L : int.MaxValue)) return false;
         }
 
-        return negative ? -result : result;
+        value = (int)(negative ? -result : result);
+        return true;
     }
 
     #endregion

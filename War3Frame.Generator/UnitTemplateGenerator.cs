@@ -1,202 +1,109 @@
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace War3Frame.Generator;
 
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                    Source Generator 学习指南                               ║
-// ╠═══════════════════════════════════════════════════════════════════════════╣
-// ║  Source Generator 是 C# 编译器的扩展，在编译时运行                          ║
-// ║  它可以分析源代码并生成额外的 C# 代码                                        ║
-// ║                                                                           ║
-// ║  工作流程:                                                                 ║
-// ║  1. 编译器加载 Generator                                                   ║
-// ║  2. Generator 扫描源代码，查找特定模式（如 Attribute）                       ║
-// ║  3. Generator 根据发现的内容生成新代码                                       ║
-// ║  4. 生成的代码加入编译                                                      ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
-/// <summary>
-/// UnitTemplate + AbilityTemplate 源生成器
-/// 
-/// 功能: 自动发现所有标记了 [UnitTemplate("xxx")] 和 [AbilityTemplate("xxx")] 的类，
-///      并生成注册代码，避免手动维护模板列表
-/// </summary>
+/// <summary>框架生成 partial 注册；消费者生成独立、显式调用的本程序集 registrar。</summary>
 [Generator]
-public class UnitTemplateGenerator : IIncrementalGenerator
+public sealed class UnitTemplateGenerator : IIncrementalGenerator
 {
+    private static readonly DiagnosticDescriptor Invalid = new("WFGEN001", "Invalid template", "Template '{0}': {1}", "Registration", DiagnosticSeverity.Error, true);
+    private static readonly DiagnosticDescriptor Duplicate = new("WFGEN002", "Duplicate template name", "Duplicate {0} name '{1}' in this assembly", "Registration", DiagnosticSeverity.Error, true);
+    private static readonly string[] Registries = { "UnitTemplate", "AbilityTemplate", "ItemTemplate" };
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // ════════════════ UnitTemplate 管道 ════════════════
-
-        var unitTemplates = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
-                "War3Frame.TemplateInit.UnitTemplateAttribute",
-                predicate: static (node, _) => node is ClassDeclarationSyntax,
-                transform: static (ctx, _) => GetTemplateInfo(ctx, "War3Frame.TemplateInit.UnitTemplateAttribute"))
-            .Where(static info => info is not null)
-            .Select(static (info, _) => info!.Value);
-
-        var collectedUnitTemplates = unitTemplates.Collect();
-        context.RegisterSourceOutput(collectedUnitTemplates,
-            (ctx, templates) => GenerateRegistrationCode(ctx, templates,
-                "UnitTemplate.g.cs", "UnitTemplate", "IUnitTemplate"));
-
-        // ════════════════ AbilityTemplate 管道 ════════════════
-
-        var abilityTemplates = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
-                "War3Frame.TemplateInit.AbilityTemplateAttribute",
-                predicate: static (node, _) => node is ClassDeclarationSyntax,
-                transform: static (ctx, _) => GetTemplateInfo(ctx, "War3Frame.TemplateInit.AbilityTemplateAttribute"))
-            .Where(static info => info is not null)
-            .Select(static (info, _) => info!.Value);
-
-        var collectedAbilityTemplates = abilityTemplates.Collect();
-        context.RegisterSourceOutput(collectedAbilityTemplates,
-            (ctx, templates) => GenerateRegistrationCode(ctx, templates,
-                "AbilityTemplate.g.cs", "AbilityTemplate", "IAbilityTemplate"));
-
-        // ════════════════ ItemTemplate 管道 ════════════════
-
-        var itemTemplates = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
-                "War3Frame.TemplateInit.ItemTemplateAttribute",
-                predicate: static (node, _) => node is ClassDeclarationSyntax,
-                transform: static (ctx, _) => GetTemplateInfo(ctx, "War3Frame.TemplateInit.ItemTemplateAttribute"))
-            .Where(static info => info is not null)
-            .Select(static (info, _) => info!.Value);
-
-        var collectedItemTemplates = itemTemplates.Collect();
-        context.RegisterSourceOutput(collectedItemTemplates,
-            (ctx, templates) => GenerateRegistrationCode(ctx, templates,
-                "ItemTemplate.g.cs", "ItemTemplate", "IItemTemplate"));
+        var classes = context.SyntaxProvider.CreateSyntaxProvider(
+            static (node, _) => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 },
+            static (ctx, _) => ctx.SemanticModel.GetDeclaredSymbol((ClassDeclarationSyntax)ctx.Node) as INamedTypeSymbol)
+            .Where(static symbol => symbol != null).Collect();
+        context.RegisterSourceOutput(context.CompilationProvider.Combine(classes),
+            static (ctx, input) => Generate(ctx, input.Left, input.Right));
     }
 
-    /// <summary>
-    /// 从语法上下文中提取模板信息（通用方法，支持 UnitTemplate 和 AbilityTemplate）
-    /// </summary>
-    private static TemplateInfo? GetTemplateInfo(GeneratorAttributeSyntaxContext context, string attributeFullName)
+    private static void Generate(SourceProductionContext context, Compilation compilation, ImmutableArray<INamedTypeSymbol?> classes)
     {
-        if (context.TargetSymbol is not INamedTypeSymbol classSymbol)
-            return null;
-
-        var attributeData = context.Attributes.FirstOrDefault(a =>
-            a.AttributeClass?.ToDisplayString() == attributeFullName);
-
-        if (attributeData is null)
-            return null;
-
-        var templateName = attributeData.ConstructorArguments.FirstOrDefault().Value?.ToString();
-        if (string.IsNullOrEmpty(templateName))
-            return null;
-
-        return new TemplateInfo
-        {
-            ClassName = classSymbol.ToDisplayString(),
-            TemplateName = templateName!,
-            Namespace = classSymbol.ContainingNamespace.ToDisplayString()
-        };
-    }
-
-    /// <summary>
-    /// 生成注册代码（通用方法）
-    /// </summary>
-    private static void GenerateRegistrationCode(
-        SourceProductionContext context,
-        ImmutableArray<TemplateInfo> templates,
-        string fileName,
-        string registryClassName,
-        string interfaceName)
-    {
-        if (templates.Length == 0)
-            return;
-
-        var sb = new StringBuilder();
-
-        sb.AppendLine("// <auto-generated/>");
-        sb.AppendLine("#nullable enable");
-        sb.AppendLine();
-        sb.AppendLine("using Friflo.Engine.ECS;");
-        sb.AppendLine();
-
-        var namespaces = templates
-            .Select(t => t.Namespace)
-            .Distinct()
-            .OrderBy(n => n);
-
-        foreach (var ns in namespaces)
-        {
-            if (!string.IsNullOrEmpty(ns) && ns != "global")
+        var registry = compilation.GetTypeByMetadataName("War3Frame.TemplateInit.UnitTemplate");
+        if (registry == null) return;
+        var isRuntime = SymbolEqualityComparer.Default.Equals(registry.ContainingAssembly, compilation.Assembly);
+        var entries = classes.Where(c => c != null).Cast<INamedTypeSymbol>()
+            .GroupBy(c => c.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), StringComparer.Ordinal)
+            .Select(g => g.First()).SelectMany(c => c.GetAttributes().Select(a => new { Symbol = c, Attribute = a }))
+            .Where(e => Registries.Any(r => e.Attribute.AttributeClass?.ToDisplayString() == "War3Frame.TemplateInit." + r + "Attribute"))
+            .Select(e => new
             {
-                sb.AppendLine($"using {ns};");
-            }
-        }
-
-        sb.AppendLine();
-        sb.AppendLine("namespace War3Frame.TemplateInit;");
-        sb.AppendLine();
-        sb.AppendLine($"public static partial class {registryClassName}");
-        sb.AppendLine("{");
-        sb.AppendLine("    /// <summary>");
-        sb.AppendLine($"    /// Auto-generated method to register all {registryClassName.ToLower()}s");
-        sb.AppendLine("    /// </summary>");
-        sb.AppendLine("    static partial void RegisterGenerated()");
-        sb.AppendLine("    {");
-
-        foreach (var template in templates.OrderBy(t => t.TemplateName))
+                e.Symbol,
+                Registry = e.Attribute.AttributeClass!.Name.Replace("Attribute", ""),
+                Name = e.Attribute.ConstructorArguments.FirstOrDefault().Value as string,
+                Type = e.Symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+            }).OrderBy(e => e.Registry, StringComparer.Ordinal).ThenBy(e => e.Name, StringComparer.Ordinal).ThenBy(e => e.Type, StringComparer.Ordinal).ToArray();
+        var valid = new System.Collections.Generic.List<(string Registry, string Name, string Type)>();
+        foreach (var entry in entries)
         {
-            sb.AppendLine($"        Register(\"{template.TemplateName}\", new {template.ClassName}());");
+            var error = RegistrationSymbols.ConstructionError(entry.Symbol, compilation);
+            var contract = compilation.GetTypeByMetadataName("War3Frame.TemplateInit.I" + entry.Registry);
+            if (string.IsNullOrWhiteSpace(entry.Name)) error = "name must not be empty";
+            else if (!entry.Symbol.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, contract)))
+                error = "must implement I" + entry.Registry;
+            else if (entry.Registry == "AbilityTemplate" && entry.Name!.StartsWith("__item_inline__:", StringComparison.Ordinal))
+                error = "name uses a reserved framework prefix";
+            if (error != null)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Invalid, entry.Symbol.Locations.FirstOrDefault(), entry.Type, error));
+                continue;
+            }
+            if (entries.Count(e => e.Registry == entry.Registry && e.Name == entry.Name) > 1)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Duplicate, entry.Symbol.Locations.FirstOrDefault(), entry.Registry, entry.Name));
+                continue;
+            }
+            valid.Add((entry.Registry, entry.Name!, entry.Type));
         }
 
-        sb.AppendLine("    }");
-        sb.AppendLine("}");
+        if (isRuntime)
+        {
+            foreach (var kind in Registries)
+            {
+                var code = new StringBuilder("// <auto-generated/>\n#nullable enable\nnamespace War3Frame.TemplateInit;\n");
+                code.Append("public static partial class ").Append(kind).Append("\n{\n    static partial void RegisterGenerated()\n    {\n");
+                foreach (var entry in valid.Where(e => e.Registry == kind))
+                    code.Append("        Register(").Append(SymbolDisplay.FormatLiteral(entry.Name, true)).Append(", new ").Append(entry.Type).Append("());\n");
+                code.Append("    }\n}\n");
+                context.AddSource(kind + ".g.cs", SourceText.From(code.ToString(), Encoding.UTF8));
+            }
+            return;
+        }
 
-        context.AddSource(fileName, SourceText.From(sb.ToString(), Encoding.UTF8));
-    }
-
-    /// <summary>
-    /// 模板信息结构体
-    /// </summary>
-    private struct TemplateInfo
-    {
-        public string ClassName;
-        public string TemplateName;
-        public string Namespace;
+        var output = new StringBuilder("// <auto-generated/>\n#nullable enable\nnamespace War3Frame.Generated;\ninternal static class ProjectTemplateRegistration\n{\n    private static bool _initialized;\n    internal static void Initialize()\n    {\n        if (_initialized) return;\n");
+        foreach (var kind in Registries)
+            output.Append("        global::War3Frame.TemplateInit.").Append(kind).Append(".Initialize();\n");
+        // 完成全部构造后才写注册表，构造失败可重试，不留下部分项目模板。
+        for (var i = 0; i < valid.Count; i++)
+            output.Append("        var template").Append(i).Append(" = new ").Append(valid[i].Type).Append("();\n");
+        for (var i = 0; i < valid.Count; i++)
+            output.Append("        global::War3Frame.TemplateInit.").Append(valid[i].Registry).Append(".Register(")
+                .Append(SymbolDisplay.FormatLiteral(valid[i].Name, true)).Append(", template").Append(i).Append(");\n");
+        output.Append("        _initialized = true;\n    }\n}\n");
+        context.AddSource("ProjectTemplateRegistration.g.cs", SourceText.From(output.ToString(), Encoding.UTF8));
     }
 }
 
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                              生成结果示例                                  ║
-// ╠═══════════════════════════════════════════════════════════════════════════╣
-// ║  当项目中有以下模板类:                                                     ║
-// ║                                                                           ║
-// ║    [UnitTemplate("footman")]                                              ║
-// ║    public class FootmanTemplate : IUnitTemplate { ... }                   ║
-// ║                                                                           ║
-// ║    [UnitTemplate("knight")]                                               ║
-// ║    public class KnightTemplate : IUnitTemplate { ... }                    ║
-// ║                                                                           ║
-// ║  生成的代码 (UnitTemplate.g.cs):                                          ║
-// ║                                                                           ║
-// ║    // <auto-generated/>                                                   ║
-// ║    #nullable enable                                                       ║
-// ║                                                                           ║
-// ║    using Friflo.Engine.ECS;                                               ║
-// ║    using War3Frame.Templates;                                             ║
-// ║                                                                           ║
-// ║    namespace War3Frame.TemplateInit;                                      ║
-// ║                                                                           ║
-// ║    public static partial class UnitTemplate                               ║
-// ║    {                                                                      ║
-// ║        static partial void RegisterGenerated()                            ║
-// ║        {                                                                  ║
-// ║            Register("footman", new FootmanTemplate());                    ║
-// ║            Register("knight", new KnightTemplate());                      ║
-// ║        }                                                                  ║
-// ║    }                                                                      ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
+internal static class RegistrationSymbols
+{
+    internal static string? ConstructionError(INamedTypeSymbol type, Compilation compilation)
+    {
+        if (type.IsAbstract || type.IsStatic) return "must be a concrete class";
+        for (var current = type; current != null; current = current.ContainingType)
+            if (current.Arity != 0 || current.IsFileLocal) return "generic or file-local types cannot be registered";
+        if (!compilation.IsSymbolAccessibleWithin(type, compilation.Assembly)) return "type is inaccessible from generated registration";
+        if (!type.InstanceConstructors.Any(c => c.Parameters.Length == 0 && compilation.IsSymbolAccessibleWithin(c, compilation.Assembly)))
+            return "an accessible parameterless constructor is required";
+        return null;
+    }
+}

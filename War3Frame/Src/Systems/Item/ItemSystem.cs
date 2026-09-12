@@ -202,6 +202,13 @@ internal static class ItemLifecycleOperations
         {
             if (currentOwner.unit == owner && currentSlot.index == slotIndex)
             {
+                if (!item.Tags.Has<ItemEquippedTag>())
+                {
+                    item.AddTag<ItemEquippedTag>();
+                    item.AddTag<ItemInventoryTag>();
+                    item.AddComponent(new ItemAttrApplyRequest());
+                    item.RemoveComponent<ItemAttrRemoveRequest>();
+                }
                 ItemCompanionAbilityHelper.TryEnsureCompanion(item, out _);
                 return;
             }

@@ -153,10 +153,7 @@ public class AbilityLevelStatRebuildSystem : QuerySystem<AbilitySpecData, Abilit
 
         foreach (var (specData, abilityBase, ability) in _pending)
         {
-            foreach (var (statId, value) in specData.spec.baseValues)
-            {
-                AbilityHelper.SetBaseValue(ability, statId, value.Resolve(abilityBase.level));
-            }
+            War3Frame.Helpers.AbilitySpecBuilder.ApplyLevelValues(ability, specData.spec, abilityBase.level);
 
             ability.RemoveTag<LevelStatDirty>();
         }

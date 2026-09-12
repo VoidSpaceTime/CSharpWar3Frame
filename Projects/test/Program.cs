@@ -44,6 +44,7 @@ public static partial class Bootstrap
         Console.WriteLine($"War3 test client started. isAot: {isAot}");
 
         Game.ECSInit();
+        global::War3Frame.Generated.ProjectTemplateRegistration.Initialize();
 
         ItemCompanionAbilityValidationScenario.Initialize(JassApi.Player(0));
         ControlStateValidationScenario.Initialize(JassApi.Player(0));
