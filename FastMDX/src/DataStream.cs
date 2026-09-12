@@ -13,6 +13,7 @@ internal interface IDataRW
 internal unsafe class DataStream : IDisposable
 {
     private IntPtr _ptr;
+    private uint _capacity;
     private MemoryBlock memory;
 
     internal DataStream() : this(1024 * 1024)
@@ -21,44 +22,53 @@ internal unsafe class DataStream : IDisposable
 
     internal DataStream(uint size)
     {
-        _ptr = Marshal.AllocHGlobal((IntPtr)size);
-        GC.AddMemoryPressure(size);
-        memory = new MemoryBlock { current = Pointer, end = Pointer + size };
+        if (size > int.MaxValue) throw new ArgumentOutOfRangeException(nameof(size));
+        _capacity = Math.Max(1u, size);
+        _ptr = Marshal.AllocHGlobal((IntPtr)_capacity);
+        GC.AddMemoryPressure(_capacity);
+        memory = new MemoryBlock { current = Pointer, end = Pointer + _capacity };
     }
 
     internal byte* Pointer => (byte*)_ptr;
     internal uint Offset => (uint)(memory.current - Pointer);
-    internal uint Size => (uint)(memory.end - Pointer);
+    internal uint Size => _capacity;
 
     private void Realloc(uint bump)
     {
-        var offset = memory.current - Pointer;
-        var ensureSize = offset + bump;
-        var size = Size;
+        ObjectDisposedException.ThrowIf(_ptr == IntPtr.Zero, this);
+        var offset = Offset;
+        var ensureSize = checked(offset + bump);
+        if (ensureSize > int.MaxValue) throw new OverflowException("Model buffer exceeds supported size.");
+        var size = _capacity;
 
         while (size < ensureSize)
-            size *= 2;
+            size = (uint)Math.Min((long)size * 2, int.MaxValue);
 
         _ptr = Marshal.ReAllocHGlobal(_ptr, (IntPtr)size);
-        GC.AddMemoryPressure(size - Size);
+        GC.AddMemoryPressure(size - _capacity);
+        _capacity = size;
         memory.current = Pointer + offset;
         memory.end = Pointer + size;
     }
 
     internal void Skip(uint count)
     {
+        ObjectDisposedException.ThrowIf(_ptr == IntPtr.Zero, this);
+        if ((ulong)Offset + count > int.MaxValue) throw new ParsingException();
         memory.current += count;
     }
 
     internal void CheckReadBounds(uint count)
     {
-        if (memory.current + count > memory.end)
+        ObjectDisposedException.ThrowIf(_ptr == IntPtr.Zero, this);
+        if (Offset > Size || count > Size - Offset)
             throw new ParsingException();
     }
 
     private void CheckWriteBounds(uint count)
     {
-        if (memory.current + count > memory.end)
+        ObjectDisposedException.ThrowIf(_ptr == IntPtr.Zero, this);
+        if ((ulong)Offset + count > Size)
             Realloc(count);
     }
 
@@ -72,6 +82,7 @@ internal unsafe class DataStream : IDisposable
 
     internal void SetValueAt<T>(uint offset, T value) where T : unmanaged
     {
+        ObjectDisposedException.ThrowIf(_ptr == IntPtr.Zero, this);
         var pos = Pointer + offset;
         if (pos < Pointer || pos + sizeof(T) > memory.end)
             throw new ParsingException();
@@ -103,7 +114,7 @@ internal unsafe class DataStream : IDisposable
 
     internal T[] ReadStructArray<T>(uint count) where T : unmanaged
     {
-        var byteLen = count * (uint)sizeof(T);
+        var byteLen = checked(count * (uint)sizeof(T));
         CheckReadBounds(byteLen);
         var arr = new T[count];
         fixed (void* p = arr)
@@ -117,7 +128,7 @@ internal unsafe class DataStream : IDisposable
 
     internal void ReadUnmanagedArray<T>(T* dst, uint count) where T : unmanaged
     {
-        var byteLen = count * (uint)sizeof(T);
+        var byteLen = checked(count * (uint)sizeof(T));
         CheckReadBounds(byteLen);
         Buffer.MemoryCopy(memory.current, dst, byteLen, byteLen);
         memory.current += byteLen;
@@ -210,7 +221,7 @@ internal unsafe class DataStream : IDisposable
         if (src.Length < 1)
             return;
 
-        var byteLen = (uint)(src.Length * sizeof(T));
+        var byteLen = checked((uint)src.Length * (uint)sizeof(T));
         CheckWriteBounds(byteLen);
         fixed (void* p = src)
         {
@@ -222,7 +233,7 @@ internal unsafe class DataStream : IDisposable
 
     internal void WriteUnmanagedArray<T>(T* src, uint count) where T : unmanaged
     {
-        var byteLen = count * (uint)sizeof(T);
+        var byteLen = checked(count * (uint)sizeof(T));
         CheckWriteBounds(byteLen);
         Buffer.MemoryCopy(src, memory.current, byteLen, byteLen);
         memory.current += byteLen;
@@ -277,7 +288,9 @@ internal unsafe class DataStream : IDisposable
 
         Marshal.FreeHGlobal(_ptr);
         _ptr = IntPtr.Zero;
-        GC.RemoveMemoryPressure(Size);
+        GC.RemoveMemoryPressure(_capacity);
+        _capacity = 0;
+        memory = default;
         GC.SuppressFinalize(this);
     }
 

@@ -1,24 +1,31 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
+using Friflo.Engine.ECS;
 
 namespace War3Frame;
 
-public static class Game
+/// <summary>demo 与新建项目共用的 AOT/JIT 启动入口。</summary>
+public static class Bootstrap
 {
-    // Native AOT 入口
     [UnmanagedCallersOnly(EntryPoint = "main")]
-    public static int MainAOT()
+    public static int AotMain() => Main(true);
+
+    // BridgeToJIT 固定调用此签名；程序集名称由 demo.csproj 固定为 project。
+    public static int BridgeMain() => Main(false);
+
+    private static int Main(bool isAot)
     {
-        global::War3Frame.Generated.ProjectTemplateRegistration.Initialize();
         War3.EnableConsole();
-        Console.WriteLine("Hello World!");
-
-        var func = War3.GetNativeFunction("CreateTimer");
-        var t = War3.CallNative<int>(func);
-        Console.WriteLine($"timer = {t}");
-        var i = 0;
-        func = War3.GetNativeFunction("TimerStart");
-        War3.CallNative<int>(func, t, 1.0f, true, () => { Console.WriteLine($"{t} {i++}"); });
-
+        Game.ECSInit();
+        global::War3Frame.Generated.ProjectTemplateRegistration.Initialize();
+        Console.WriteLine($"War3 demo started. isAot: {isAot}");
+        var elapsed = 0f;
+        const float interval = .01f;
+        var timer = War3.CallNative<int>(War3.GetNativeFunction("CreateTimer"));
+        War3.CallNative<int>(War3.GetNativeFunction("TimerStart"), timer, interval, true, () =>
+        {
+            elapsed += interval;
+            Game.Root.Update(new UpdateTick(interval, elapsed));
+        });
         return 0;
     }
 }

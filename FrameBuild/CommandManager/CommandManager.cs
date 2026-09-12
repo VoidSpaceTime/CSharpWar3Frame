@@ -4,6 +4,10 @@ namespace War3FrameBuild.CommandManager
 {
     public partial class CommandManager
     {
+        internal War3FrameBuild.Execution.IProcessRunner ProcessRunner { get; set; } = new War3FrameBuild.Execution.ProcessRunner();
+        internal TimeSpan LaunchInterval { get; set; } = TimeSpan.FromSeconds(1);
+        private string? _workingBuildPath;
+        internal string WorkingBuildPath => _workingBuildPath ?? BuildDstPath;
         public ConfigPath Config { get; set; }
         public string ProjectName { get; set; }
         public string Vendor { get; set; }
@@ -33,6 +37,9 @@ namespace War3FrameBuild.CommandManager
         public bool IsSkip { get; set; }
         public CommandManager(ConfigPath configPath, string project, BuildModeEnum buildMode = BuildModeEnum.Test)
         {
+            if (project is "." or ".." || Path.IsPathRooted(project) || project != Path.GetFileName(project)
+                || project.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                throw new ArgumentException("项目名必须是单个目录名", nameof(project));
             Config = configPath;
             ProjectName = project;
             Vendor = Path.Combine(Config.Pwd, "Vendor");

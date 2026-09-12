@@ -1,4 +1,4 @@
-﻿using Serilog;
+using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -45,36 +45,11 @@ public static class ApplicationBuilderExtensions
                 .Build();
 
             pathConfig = deserializer.Deserialize<ConfigPath>(yamlFile);
-            if (!Directory.Exists(pathConfig.We) && File.Exists(pathConfig.We + "\\WE.exe"))
+            if (!ValidateConfig(pathConfig, out var error))
             {
-                Log.Warning("WE工具目录或WE.exe文件不存在不存在，请配置WE工具目录");
+                Log.Error("配置无效: {Error}", error);
                 return false;
             }
-
-            if (!Directory.Exists(pathConfig.War3) && File.Exists(pathConfig.War3 + "\\War3.exe"))
-            {
-                Log.Warning("war3游戏目录或War3.exe文件不存在不存在，请配置war3目录");
-                return false;
-            }
-
-            if (!Directory.Exists(pathConfig.W3x2lni) && File.Exists(pathConfig.W3x2lni + "\\w2l.exe"))
-            {
-                Log.Warning("W3x2lni工具目录或w2l.exe文件不存在，请配置W3x2lni工具目录");
-                return false;
-            }
-
-            if (!Directory.Exists(pathConfig.Pwd))
-            {
-                Log.Warning("框架核心目录不存在，请配置框架核心目录");
-                return false;
-            }
-
-            if (!Directory.Exists(pathConfig.Assets))
-            {
-                Log.Warning("Assets目录不存在，请配置框架Assets目录");
-                return false;
-            }
-
             Log.Information("配置文件加载成功");
             return true;
         }
@@ -109,5 +84,17 @@ assets: ""./assets""
         File.WriteAllText(configPath, yaml);
         Log.Warning($"配置文件不存在，已创建默认配置文件，请根据注释修改配置后重新运行，路径: {configPath}");
         return isExists;
+    }
+    internal static bool ValidateConfig(ConfigPath? config, out string error)
+    {
+        error = "";
+        if (config == null) { error = "配置内容为空"; return false; }
+        if (!Directory.Exists(config.We) || !(File.Exists(Path.Combine(config.We, "WE.exe")) || File.Exists(Path.Combine(config.We, "KKWE.exe")))
+            || !File.Exists(Path.Combine(config.We, "bin", "YDWEConfig.exe"))) error = "WE.exe/KKWE.exe 或 bin/YDWEConfig.exe 不存在";
+        else if (!Directory.Exists(config.War3) || !File.Exists(Path.Combine(config.War3, "war3.exe"))) error = "war3.exe 不存在";
+        else if (!Directory.Exists(config.W3x2lni) || !File.Exists(Path.Combine(config.W3x2lni, "w2l.exe"))) error = "w2l.exe 不存在";
+        else if (!Directory.Exists(config.Pwd)) error = "框架目录不存在";
+        else if (!Directory.Exists(config.Assets)) error = "资源目录不存在";
+        return error.Length == 0;
     }
 }

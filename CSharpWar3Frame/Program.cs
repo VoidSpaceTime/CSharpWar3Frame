@@ -1,4 +1,4 @@
-﻿// 或者
+// 或者
 
 using System.Diagnostics;
 using CommandLine;
@@ -71,7 +71,7 @@ namespace CSharpWar3FrameConsole
         [Verb("multi", HelpText = "多开")]
         class MultiOptions
         {
-            [Value(0, Default = 2, Required = false, HelpText = "项目名称")]
+            [Value(0, Default = 2, Required = false, HelpText = "额外启动的客户端数量，必须大于0")]
             public int Count { get; set; } = 2;
         }
 
@@ -79,94 +79,23 @@ namespace CSharpWar3FrameConsole
         {
             Console.InputEncoding = System.Text.Encoding.UTF8;
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            // 日志和配置初始化
             ApplicationBuilderExtensions.LogRegister();
-            var configFlag = ApplicationBuilderExtensions.ConfigLoad(out var pathConfig);
-            if (!configFlag || pathConfig is null)
+            try
             {
-                Log.Error("配置加载失败，程序终止");
-                return 1;
+                if (!ApplicationBuilderExtensions.ConfigLoad(out var config)) return 1;
+                return await Parser.Default.ParseArguments<RunOptions, WeOptions, NewOptions, MultiOptions>(args)
+                    .MapResult(
+                        async (RunOptions options) => await new CommandManager(config, options.ProjectName, options.CurrentBuildMode)
+                            .Run(options.CacheBuild, options.NoRunTests) ? 0 : 1,
+                        (WeOptions options) => Task.FromResult(new CommandManager(config, options.ProjectName).WE() ? 0 : 1),
+                        (NewOptions options) => Task.FromResult(new CommandManager(config, options.ProjectName).New() ? 0 : 1),
+                        async (MultiOptions options) => await new CommandManager(config, "").LaunchAdditionalAsync(options.Count) ? 0 : 1,
+                        errors => Task.FromResult(errors.Any(e => e is HelpRequestedError or HelpVerbRequestedError or VersionRequestedError) ? 0 : 1));
             }
-
-            // 关键点：泛型里填入 <RunOptions, WeOptions>
-            // 库会根据用户输入的第一个词（run 或 we）自动匹配到对应的类
-            return await Parser.Default.ParseArguments<RunOptions, WeOptions, NewOptions, MultiOptions>(args)
-                .MapResult(
-                    async (RunOptions opts) =>
-                    {
-                        CommandManager =
-                            new CommandManager(pathConfig, opts.ProjectName, opts.CurrentBuildMode); // 项目名后续传入
-                        await RunCommand(opts);
-                        return 0;
-                    },
-                    async (WeOptions opts) =>
-                    {
-                        CommandManager = new CommandManager(pathConfig, opts.ProjectName); // 项目名后续传入
-                        await WeCommand(opts);
-                        return 0;
-                    },
-                    async (NewOptions opts) =>
-                    {
-                        CommandManager = new CommandManager(pathConfig, opts.ProjectName); // 项目名后续传入
-                        await NewCommand(opts);
-                        return 0;
-                    },
-                    (MultiOptions ops) =>
-                    {
-                        CommandManager = new CommandManager(pathConfig, ""); // 项目名后续传入
-                        MultiCommand(ops);
-                        return Task.FromResult(0);
-                    },
-                    errs =>
-                    {
-                        Log.Error("无匹配命令: {Errors}", errs.ToString());
-                        return Task.FromResult(1);
-                    });
-        }
-
-
-        private static async Task NewCommand(NewOptions options)
-        {
-            CommandManager.New();
-            //Log.Verbose($"新建项目: {demo}");
-        }
-
-        private static async Task RunCommand(RunOptions options)
-        {
-            await CommandManager.Run(options.CacheBuild, options.NoRunTests);
-            Console.WriteLine($"运行项目: {options.ProjectName}");
-        }
-
-        private static async Task WeCommand(WeOptions options)
-        {
-            CommandManager.ProjectName = options.ProjectName;
-            CommandManager.WE();
-        }
-
-        static void MultiCommand(MultiOptions options)
-        {
-            for (int i = 0; i < options.Count; i++)
+            catch (Exception exception)
             {
-                Log.Information("启动魔兽争霸III");
-                var path = Path.Combine(CommandManager.Config.We, "bin", "YDWEConfig.exe");
-                var psi = new ProcessStartInfo
-                {
-                    FileName = path,
-                    UseShellExecute = false,
-                };
-                psi.ArgumentList.Add("-launchwar3");
-                Task.Delay(1000);
-                //var bo3 = File.Exists(Path.Combine(Config.We, "bin", "WEConfig.exe"));
-
-                using var war3Psi = Process.Start(psi);
-
-                var war3Count = Process.GetProcesses()
-                    .Count(p => string.Equals(p.ProcessName, "war3", StringComparison.OrdinalIgnoreCase));
-                Log.Information($"当前魔兽争霸III进程数量: {war3Count}");
-                if (i < war3Count)
-                {
-                    i--;
-                }
+                Log.Error(exception, "命令失败: {Message}", exception.Message);
+                return 1;
             }
         }
     }

@@ -19,11 +19,15 @@ multi N SHALL 表示额外启动 N 个客户端，N 为正，既有进程不改�
 
 #### Scenario: 发布或打包失败
 - **WHEN** 任一前置阶段失败或缺少必需产物
-- **THEN** CLI 返回非零且原有效地图保持不变
+- **THEN** CLI 返回非零且原有效地图及其外部 JIT 模块保持不变
 
 #### Scenario: 成功替换
 - **WHEN** 临时 w3x 打包和验证成功
 - **THEN** 替换最终地图并保持 callback 的模块目录路径有效
+
+#### Scenario: 脚手架发布
+- **WHEN** 从 demo 创建并发布一个项目
+- **THEN** 输出 project.dll、Bootstrap.BridgeMain 与项目模板注册器，不复制模板构建缓存
 
 ### Requirement: 内容同步与标记事务
 非缓存同步 SHALL 反映文件新增、修改、删除，不以目录时间代表内容；WE 标记仅在解包及回同步全部成功后删除。
@@ -33,11 +37,15 @@ multi N SHALL 表示额外启动 N 个客户端，N 为正，既有进程不改�
 - **THEN** 下一次非缓存构建使用新内容
 
 ### Requirement: 资源转换保留契约
-资源转换 SHALL 按方法签名保留默认/命名参数，派生代码进入构建目录且不改用户源清单。
+资源转换 SHALL 按方法签名保留默认/命名参数及显式表达式的源码求值顺序，派生代码进入构建目录且不改用户源清单。
 
 #### Scenario: 省略参数与再次构建
 - **WHEN** 使用 AddModel(path) 或 AddV3D(path, alias)，再重复构建
 - **THEN** 生成结果可编译，默认 volume 保持 127，转换确定且不改源文件
+
+#### Scenario: 命名参数求值
+- **WHEN** volume、alias 等命名参数表达式带有可观察副作用，且源码顺序不同于声明顺序
+- **THEN** 转换保留源码求值顺序，只追加省略的派生参数
 
 ### Requirement: 配置与模型工具正确性
 工具 SHALL 在使用前验证必需配置，载入图写回目标 INI，ModelFormat 使用用户输入并可非交互结束。

@@ -11,6 +11,7 @@
     <ProjectReference Include="../../War3Frame/War3Frame.csproj" />
     <ProjectReference Include="../../FrameBuild/War3FrameBuild.csproj" />
     <ProjectReference Include="../../FastMDX/FastMDX.csproj" />
+    <ProjectReference Include="../../CSharpWar3Frame/CSharpWar3FrameConsole.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../War3Frame.Generator/War3Frame.Generator.csproj" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
     <Compile Include="../test/Scripts/Process/*.cs" Link="ExistingScenarios/%(Filename)%(Extension)" />

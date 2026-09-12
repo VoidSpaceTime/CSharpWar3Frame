@@ -5,6 +5,9 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>War3Frame</RootNamespace>
+        <AssemblyName>project</AssemblyName>
+        <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     </PropertyGroup>
 
     <ItemGroup>
