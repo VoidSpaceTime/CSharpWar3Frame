@@ -127,29 +127,57 @@ public static class UnitHelper
     }
 
     /// <summary>
-    ///     检查两个单位是否敌对
+    ///     检查两个单位是否敌对；未知归属不当敌人。
     /// </summary>
     public static bool IsEnemy(Entity unit, Entity other)
     {
-        return UnitRelationHelper.TryGetRelation(unit, other, out var relation)
+        return TryGetRelation(unit, other, out var relation)
             && relation == PlayerTeamState.Enemy;
     }
 
     /// <summary>
-    ///     检查两个单位是否友方
+    ///     检查两个单位是否友方；未知归属不当友军。
     /// </summary>
     public static bool IsAlly(Entity unit, Entity other)
     {
-        return UnitRelationHelper.TryGetRelation(unit, other, out var relation)
+        return TryGetRelation(unit, other, out var relation)
             && relation == PlayerTeamState.Allie;
     }
 
-    /// <summary>声明 ECS 筛选特征；不调用原生 API，不推断未声明的原生类型。</summary>
-    public static void SetTargetTraits(Entity unit, TargetFilter traits)
+    /// <summary>
+    ///     解析单位所属玩家：优先读 UnitOwner，其次用 UnitNative 的玩家句柄在玩家镜像中定位。
+    ///     只读 ECS 与玩家镜像，不查询原生状态。
+    /// </summary>
+    public static bool TryGetPlayer(Entity unit, out PlayerNative player)
     {
-        if ((traits & ~UnitTargetTraits.Allowed) != 0)
-            throw new ArgumentOutOfRangeException(nameof(traits), "只允许目标类型、隐形与魔免特征");
-        unit.AddComponent(new UnitTargetTraits { flags = traits });
+        player = default;
+        if (unit.IsNull) return false;
+        if (unit.TryGetComponent<UnitOwner>(out var owner) && !owner.player.IsNull
+            && owner.player.TryGetComponent(out player))
+            return true;
+        // 已创建原生单位的缓存只用于定位玩家，不进行原生状态查询。
+        if (unit.TryGetComponent<UnitNative>(out var native) && native.player != null)
+            foreach (var known in PlayerHelper.Players)
+                if (!known.getentity.IsNull && ReferenceEquals(unit.Store, known.getentity.Store)
+                    && known.player != null && known.player.Handle == native.player.Handle)
+                {
+                    player = known;
+                    return true;
+                }
+        return false;
+    }
+
+    /// <summary>
+    ///     查询两单位的阵营关系；同一单位视为友方，未知归属返回 false（不推断为敌或友）。
+    /// </summary>
+    public static bool TryGetRelation(Entity source, Entity target, out PlayerTeamState relation)
+    {
+        relation = default;
+        if (source.IsNull || target.IsNull || !ReferenceEquals(source.Store, target.Store)) return false;
+        if (source == target) { relation = PlayerTeamState.Allie; return true; }
+        if (!TryGetPlayer(source, out var playerA) || !TryGetPlayer(target, out var playerB)) return false;
+        relation = PlayerHelper.GetRelation(playerA, playerB);
+        return true;
     }
 
     #endregion

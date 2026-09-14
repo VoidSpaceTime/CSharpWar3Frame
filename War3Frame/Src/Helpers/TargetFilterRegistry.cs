@@ -2,15 +2,13 @@ using Friflo.Engine.ECS;
 
 namespace War3Frame;
 
-/// <summary>预设条件与自定义筛选的统一入口。阵营/类型组内为 OR，各组及状态条件之间为 AND。</summary>
+/// <summary>预设条件与自定义筛选的统一入口。阵营组内为 OR，阵营与存活条件之间为 AND。</summary>
 public static class TargetFilterRegistry
 {
     public delegate bool FilterFunc(Entity caster, Entity target);
     private static readonly SortedDictionary<string, FilterFunc> _filters = new(StringComparer.Ordinal);
     private const TargetFilter Teams = TargetFilter.Self | TargetFilter.Ally | TargetFilter.Enemy | TargetFilter.Neutral;
-    private const TargetFilter Types = TargetFilter.Hero | TargetFilter.Normal | TargetFilter.Building | TargetFilter.Summon | TargetFilter.Ward;
     private const TargetFilter Life = TargetFilter.Alive | TargetFilter.Dead;
-    private const TargetFilter Traits = TargetFilter.Invisible | TargetFilter.MagicImmune;
 
     public static void Register(string filterId, FilterFunc filter) => _filters[filterId] = filter;
     public static void Unregister(string filterId) => _filters.Remove(filterId);
@@ -28,7 +26,7 @@ public static class TargetFilterRegistry
             TargetFilter team;
             if (!caster.IsNull && caster == target)
                 team = TargetFilter.Self;
-            else if (UnitRelationHelper.TryGetRelation(caster, target, out var relation))
+            else if (UnitHelper.TryGetRelation(caster, target, out var relation))
                 team = relation switch
                 {
                     PlayerTeamState.Allie => TargetFilter.Ally,
@@ -40,10 +38,6 @@ public static class TargetFilterRegistry
             if ((filter & team) == 0) return false;
         }
 
-        // TODO Native：自动识别原生类型尚未实现；只消费作者声明的 ECS traits，不猜测原生状态。
-        target.TryGetComponent<UnitTargetTraits>(out var traits);
-        if ((filter & Types) != 0 && (filter & Types & traits.flags) == 0) return false;
-        if ((filter & Traits & traits.flags) != (filter & Traits)) return false;
         if ((filter & Life) != 0)
         {
             if (!target.TryGetComponent<UnitLifeState>(out var life)) return false;

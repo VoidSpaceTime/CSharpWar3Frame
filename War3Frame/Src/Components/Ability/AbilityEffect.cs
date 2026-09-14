@@ -123,7 +123,8 @@ public struct ApplyBuffData : IComponent
 [Flags]
 /// <summary>
 /// 区域搜索目标过滤条件。
-/// 这些标记描述语义意图，具体阵营/类型判断由 TargetFilterRegistry 和 GroupHelper 实现。
+/// 只保留框架可评估的语义位：阵营（Self/Ally/Enemy/Neutral）、存活（Alive/Dead）与无敌（Invulnerable）。
+/// 位值保持历史编号稳定：已移除的类型/隐形/魔免位不回填、不复用，避免外部按整数值持久化时错位。
 /// </summary>
 public enum TargetFilter
 {
@@ -134,24 +135,16 @@ public enum TargetFilter
     Enemy = 1 << 2,
     Neutral = 1 << 3,
 
-    Hero = 1 << 4,
-    Normal = 1 << 5,
-    Building = 1 << 6,
-    Summon = 1 << 7,
-    Ward = 1 << 8,
-
+    // 1 << 4 ~ 1 << 8：原 Hero/Normal/Building/Summon/Ward 编号，已移除；若恢复同名能力沿用原编号，勿改作他用。
     Alive = 1 << 9,
     Dead = 1 << 10,
     Invulnerable = 1 << 11,
-    Invisible = 1 << 12,
-    MagicImmune = 1 << 13,
+    // 1 << 12 ~ 1 << 13：原 Invisible/MagicImmune 编号，已移除；若恢复同名能力沿用原编号，勿改作他用。
 
     EnemyAlive = Enemy | Alive,
     AllyAlive = Ally | Alive,
     AllAlive = Enemy | Ally | Alive,
     AllAliveIncludeSelf = Enemy | Ally | Self | Alive,
-    EnemyHero = Enemy | Hero | Alive,
-    EnemyNonBuilding = Enemy | Hero | Normal | Summon | Alive,
 }
 
 /// <summary>

@@ -149,7 +149,7 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
         if (owner == target)
             return config.affectSelf;
 
-        if (!UnitRelationHelper.TryGetRelation(owner, target, out var relation)) return false;
+        if (!UnitHelper.TryGetRelation(owner, target, out var relation)) return false;
         return relation == PlayerTeamState.Allie && config.affectAllies
             || relation == PlayerTeamState.Enemy && config.affectEnemies;
     }

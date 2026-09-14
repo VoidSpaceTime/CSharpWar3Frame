@@ -60,10 +60,8 @@ internal static class DomainRegression
         Check.That(!TargetFilterRegistry.PassPresetFilter(TargetFilter.Enemy, source, store.CreateEntity()), "unknown owner rejected");
         Check.That(!TargetFilterRegistry.PassPresetFilter(TargetFilter.Ally, source, source), "self is distinct from ally");
         Check.That(TargetFilterRegistry.PassPresetFilter(TargetFilter.Self | TargetFilter.Alive, source, source), "self alive");
-        Check.That(!TargetFilterRegistry.PassPresetFilter(TargetFilter.Hero, source, target), "missing traits rejected");
-        UnitHelper.SetTargetTraits(target, TargetFilter.Hero | TargetFilter.MagicImmune);
-        Check.That(TargetFilterRegistry.PassPresetFilter(TargetFilter.Hero | TargetFilter.Normal | TargetFilter.MagicImmune | TargetFilter.Alive, source, target), "types OR, status AND");
-        Check.That(!TargetFilterRegistry.PassPresetFilter(TargetFilter.Dead | TargetFilter.Invisible, source, target), "missing state rejected");
+        Check.That(TargetFilterRegistry.PassPresetFilter(TargetFilter.Ally | TargetFilter.Alive, source, target), "ally alive");
+        Check.That(!TargetFilterRegistry.PassPresetFilter(TargetFilter.Dead, source, target), "alive target excluded from dead filter");
         target.GetComponent<UnitLifeState>().isAlive = false;
         Check.That(TargetFilterRegistry.PassPresetFilter(TargetFilter.Alive | TargetFilter.Dead, source, target), "life group OR");
         Check.That(!TargetFilterRegistry.PassPresetFilter(TargetFilter.Alive, source, target), "dead target excluded");

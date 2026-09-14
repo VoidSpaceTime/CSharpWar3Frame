@@ -33,15 +33,6 @@ public sealed class UnitSpecBuilder
         return this;
     }
 
-    /// <summary>声明参与 ECS 筛选的类型与状态，默认普通单位；不读取原生对象类型。</summary>
-    public UnitSpecBuilder TargetTraits(TargetFilter traits)
-    {
-        if ((traits & ~UnitTargetTraits.Allowed) != 0)
-            throw new ArgumentOutOfRangeException(nameof(traits));
-        _spec.targetTraits = traits;
-        return this;
-    }
-
     /// <summary>
     /// 设置单位固定基础属性。
     /// </summary>
@@ -141,7 +132,6 @@ public sealed class UnitSpecBuilder
         });
 
         // 仅非近战时挂 AttackTypeState（无组件即 Melee，近战单位零组件开销）。
-        UnitHelper.SetTargetTraits(unit, spec.targetTraits);
         if (spec.attackType != War3Frame.AttackType.Melee)
         {
             unit.AddComponent(new AttackTypeState { value = spec.attackType });
