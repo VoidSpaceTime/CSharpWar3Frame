@@ -530,13 +530,19 @@ public static class BuffHelper
             }
         );
 
+        // 控制属性在无敌/免疫期间施加时被吸收（贡献计 0），避免无敌结束后延迟爆发。
+        // 未命中吸收时与既有行为完全一致（含 DoT：其 value 不参与 ModifyValue）。
+        var contribution = spec.kind == BuffKind.Attribute && ControlHelper.ShouldAbsorbControl(unit, spec.attrTypeId)
+            ? 0f
+            : spec.value;
+
         // DoT 型不挂 ModifyValue（避免伤害值污染属性计算）；普通型挂 ModifyValue
         if (spec.kind == BuffKind.Attribute)
         {
             buff.AddComponent(new ModifyValue
             {
                 modifyType = spec.modifyType,
-                value = spec.value,
+                value = contribution,
                 priority = 0
             });
         }
@@ -544,7 +550,7 @@ public static class BuffHelper
         // 如果是堆叠型 buff，添加 BuffStacks
         if (spec.maxStacks > 1)
         {
-            buff.AddComponent(BuffStacks.Create(spec.maxStacks, spec.value));
+            buff.AddComponent(BuffStacks.Create(spec.maxStacks, contribution));
         }
 
         attrEntity.AddTag<AttrDirty>();

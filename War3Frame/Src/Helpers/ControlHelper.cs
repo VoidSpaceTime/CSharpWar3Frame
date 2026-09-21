@@ -29,6 +29,37 @@ public static class ControlHelper
     };
 
     /// <summary>
+    /// 判断属性类型是否为控制属性（在 ControlAttrs 权威表内）。
+    /// </summary>
+    public static bool IsControlAttr(int attrTypeId)
+    {
+        foreach (var entry in ControlAttrs)
+        {
+            if (attrTypeId == entry.AttrId)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 施加时吸收判定：目标处于无敌（Invulnerable > 0）或持有对应免疫属性时，
+    /// 本次控制贡献计 0，且不会在无敌/免疫解除后延迟生效。
+    /// 只影响"施加时刻"——已存在的控制贡献不被回收（仍按原时长保留，由 GetEffectiveValue 压制读取）。
+    /// </summary>
+    public static bool ShouldAbsorbControl(Entity unit, int attrTypeId)
+    {
+        if (!IsControlAttr(attrTypeId))
+            return false;
+
+        if (GetAttrValue(unit, AttributeHelper.Invulnerable) > 0)
+            return true;
+
+        var immunityId = GetImmunityAttrId(attrTypeId);
+        return immunityId.HasValue && GetAttrValue(unit, immunityId.Value) > 0;
+    }
+
+    /// <summary>
     /// 检查单位是否处于任何禁止行动的控制效果中（眩晕/击飞）
     /// </summary>
     public static bool IsIncapacitated(Entity unit)

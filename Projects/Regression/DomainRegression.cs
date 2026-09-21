@@ -22,6 +22,7 @@ internal static class DomainRegression
         tests.Add(new("runtime", "sync-identity-and-input", SyncIdentity));
         tests.Add(new("runtime", "spatial-search", SpatialSearch));
         tests.Add(new("runtime", "pause-synthesis", PauseSynthesis));
+        tests.Add(new("runtime", "absorb-control-under-immune", AbsorbControlUnderImmune));
     }
 
     private static PlayerNative Player(EntityStore store, int index)
@@ -254,6 +255,78 @@ internal static class DomainRegression
         ModifyHelper.RemoveModifiersFromSource(pauseSource);
         root.Update(new UpdateTick(.02f, .22f));
         Check.That(CountNativeRequests(store, ControlType.Pause, false) == 4, "pure pause exits");
+    }
+
+    /// <summary>
+    /// 验证无敌/免疫期间施加的控制被吸收（贡献 0、解除后不延迟生效），
+    /// 且已施加的控制不被回收、非控制属性不受影响。
+    /// </summary>
+    private static void AbsorbControlUnderImmune()
+    {
+        var store = new EntityStore();
+        var root = new TimedSystemRoot(store);
+        root.Add(new AttrCalculationSystem(), 0f);
+        root.Add(new ControlStateTransitionSystem(), 0f);
+
+        var unit = store.CreateEntity();
+        var invulnSource = store.CreateEntity();
+        var stunSource = store.CreateEntity();
+        var immunitySource = store.CreateEntity();
+
+        // A. 无敌期间施加眩晕 → 贡献 0（属性贡献路径）
+        // 吸收判定读 finalValue，故无敌需先结算（与 GetEffectiveValue 读取压制同源）。
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.Invulnerable, invulnSource, ModifyType.Flat, 1);
+        root.Update(new UpdateTick(.02f, .02f));
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.Stun, stunSource, ModifyType.Flat, 1);
+        root.Update(new UpdateTick(.02f, .03f));
+        Check.Near(AttributeHelper.GetFinalValue(unit, AttributeHelper.Stun), 0, "stun absorbed while invulnerable");
+        Check.That(CountNativeRequests(store, ControlType.Pause, true) == 0, "absorbed stun must not pause");
+
+        // B. 无敌解除后不延迟生效
+        ModifyHelper.RemoveModifiersFromSource(invulnSource);
+        root.Update(new UpdateTick(.02f, .04f));
+        Check.Near(AttributeHelper.GetFinalValue(unit, AttributeHelper.Stun), 0, "absorbed stun stays 0 after invulnerability ends");
+        Check.That(CountNativeRequests(store, ControlType.Pause, true) == 0, "absorbed stun never pauses later");
+
+        // C. 无无敌/免疫时正常路径未破坏（buff 路径）
+        ModifyHelper.RemoveModifiersFromSource(stunSource);
+        root.Update(new UpdateTick(.02f, .06f));
+        BuffHelper.Stun(store, unit, stunSource, 1f);
+        root.Update(new UpdateTick(.02f, .08f));
+        Check.Near(AttributeHelper.GetFinalValue(unit, AttributeHelper.Stun), 1, "control applies normally without immunity");
+        Check.That(CountNativeRequests(store, ControlType.Pause, true) == 1, "normal stun still pauses");
+
+        // D. 免疫期间施加眩晕 → 贡献 0，免疫移除后仍为 0
+        ModifyHelper.RemoveModifiersFromSource(stunSource);
+        root.Update(new UpdateTick(.02f, .10f));
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.StunImmunity, immunitySource, ModifyType.Flat, 1);
+        root.Update(new UpdateTick(.02f, .11f));
+        BuffHelper.Stun(store, unit, stunSource, 1f);
+        root.Update(new UpdateTick(.02f, .12f));
+        Check.Near(AttributeHelper.GetFinalValue(unit, AttributeHelper.Stun), 0, "stun absorbed while immune");
+        ModifyHelper.RemoveModifiersFromSource(immunitySource);
+        root.Update(new UpdateTick(.02f, .14f));
+        Check.Near(AttributeHelper.GetFinalValue(unit, AttributeHelper.Stun), 0, "absorbed stun stays 0 after immunity ends");
+
+        // E. 已施加的控制不被回收：先眩晕后无敌，贡献保留、读取被压制，无敌解除后恢复
+        ModifyHelper.RemoveModifiersFromSource(stunSource);
+        root.Update(new UpdateTick(.02f, .16f));
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.Stun, stunSource, ModifyType.Flat, 1);
+        root.Update(new UpdateTick(.02f, .18f));
+        Check.Near(AttributeHelper.GetFinalValue(unit, AttributeHelper.Stun), 1, "pre-existing stun keeps its contribution");
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.Invulnerable, invulnSource, ModifyType.Flat, 1);
+        root.Update(new UpdateTick(.02f, .20f));
+        Check.Near(AttributeHelper.GetFinalValue(unit, AttributeHelper.Stun), 1, "pre-existing stun contribution not reclaimed");
+        Check.Near(ControlHelper.GetEffectiveValue(unit, AttributeHelper.Stun), 0, "pre-existing stun suppressed while invulnerable");
+        ModifyHelper.RemoveModifiersFromSource(invulnSource);
+        root.Update(new UpdateTick(.02f, .22f));
+        Check.That(ControlHelper.GetEffectiveValue(unit, AttributeHelper.Stun) > 0, "pre-existing stun resumes after invulnerability");
+
+        // F. 非控制属性不受吸收影响
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.Invulnerable, invulnSource, ModifyType.Flat, 1);
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.Health, stunSource, ModifyType.Flat, 100);
+        root.Update(new UpdateTick(.02f, .24f));
+        Check.Near(AttributeHelper.GetFinalValue(unit, AttributeHelper.Health), 100, "non-control attribute contribution unaffected");
     }
 
     private static int CountNativeRequests(EntityStore store, ControlType controlType, bool entered)

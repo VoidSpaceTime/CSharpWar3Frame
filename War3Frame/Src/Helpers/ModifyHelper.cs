@@ -18,7 +18,7 @@ public class ModifyHelper
         if (!source.IsNull && !ReferenceEquals(attrEntity.Store, source.Store))
             throw new ArgumentException("修改器与来源必须属于同一 Store", nameof(source));
         var mod = attrEntity.Store.CreateEntity(
-            new ModifyValue { modifyType = type, value = value, priority = priority },
+            new ModifyValue { modifyType = type, value = ResolveAbsorbedValue(attrEntity, value), priority = priority },
             new ModifyTarget(attrEntity),
             new ModifySource(source)
         );
@@ -26,6 +26,19 @@ public class ModifyHelper
         // modifier 只写入贡献项，最终值由 AttrCalculationSystem 统一重算。
         attrEntity.AddTag<AttrDirty>();
         return mod;
+    }
+
+    /// <summary>
+    /// 控制属性在无敌/免疫期间施加时把贡献降为 0（吸收），避免无敌结束后延迟生效。
+    /// 非控制属性、零值、或无法解析所属单位时原样返回，不影响其它属性的贡献语义。
+    /// </summary>
+    private static float ResolveAbsorbedValue(Entity attrEntity, float value)
+    {
+        if (value == 0f) return 0f;
+        if (!attrEntity.TryGetComponent<AttrTypeId>(out var attrType)) return value;
+        if (!attrEntity.TryGetComponent<AttrOwner>(out var attrOwner) || attrOwner.owner.IsNull) return value;
+
+        return ControlHelper.ShouldAbsorbControl(attrOwner.owner, attrType.typeId) ? 0f : value;
     }
 
     /// <summary>为 Unit 的某属性添加修改器</summary>
