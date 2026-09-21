@@ -42,6 +42,9 @@ public static partial class AttributeHelper
     public static readonly int NoAttack = Register("NoAttack"); // 缴械（禁止攻击）
     public static readonly int Root = Register("Root"); // 定身（禁止移动）
     public static readonly int CrackFly = Register("CrackFly"); // 击飞/击退
+    // 纯暂停（过场/镜头等独立暂停）：不进 ControlStateTransitionSystem 的控制主表，
+    // 由 Pause 合成判定消费；不注册 PauseImmunity——暂停是最底层硬控制（类比 War3 PauseUnit），系统级强制、不可免疫。
+    public static readonly int Pause = Register("Pause");
 
     // ============================================================================
     // 状态属性（值 > 0 表示状态生效；不参与 ControlStateTransitionSystem 跳变检测，仅作为叠加态供伤害/控制读取侧压制判断）

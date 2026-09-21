@@ -21,6 +21,7 @@ internal static class DomainRegression
         tests.Add(new("runtime", "modifier-multiple-removal", Modifiers));
         tests.Add(new("runtime", "sync-identity-and-input", SyncIdentity));
         tests.Add(new("runtime", "spatial-search", SpatialSearch));
+        tests.Add(new("runtime", "pause-synthesis", PauseSynthesis));
     }
 
     private static PlayerNative Player(EntityStore store, int index)
@@ -182,6 +183,99 @@ internal static class DomainRegression
             Check.That(SyncHelper.DecodeEntity(token).IsNull, "missing store rejected");
         }
         finally { SyncHelper.Store = previous; }
+    }
+
+    /// <summary>
+    /// 验证 Pause 由 Stun / CrackFly / 纯 Pause 属性合成驱动 PauseUnit：
+    /// 同帧多控制只发一次请求、多来源叠加全归零才恢复、免疫不穿透到 Pause、纯 Pause 不可免疫。
+    /// </summary>
+    private static void PauseSynthesis()
+    {
+        var store = new EntityStore();
+        var root = new TimedSystemRoot(store);
+        root.Add(new AttrCalculationSystem(), 0f);
+        root.Add(new ControlStateTransitionSystem(), 0f);
+
+        var unit = store.CreateEntity();
+        var stunSource = store.CreateEntity();
+        var stunSource2 = store.CreateEntity();
+        var flySource = store.CreateEntity();
+        var immunitySource = store.CreateEntity();
+        var pauseSource = store.CreateEntity();
+
+        // A. 眩晕生效 → 合成一次暂停进入；快照 Pause 位（序号 10）不因位宽溢出失效
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.Stun, stunSource, ModifyType.Flat, 1);
+        root.Update(new UpdateTick(.02f, .02f));
+        Check.That(CountNativeRequests(store, ControlType.Pause, true) == 1, "stun synthesizes one pause enter");
+        Check.That(unit.GetComponent<ControlStateSnapshot>().IsActive(ControlType.Pause), "pause bit survives snapshot width");
+        Check.That(CountNativeRequests(store, ControlType.Stun, true) == 0
+            && CountNativeRequests(store, ControlType.CrackFly, true) == 0,
+            "stun/crackfly stop emitting their own native request");
+        Check.That(CountEvents(store, ControlType.Stun, true) == 1, "stun still broadcasts its changed event");
+
+        // B. 同帧叠加（第二来源 + 击飞）→ 已暂停，不重复发请求
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.Stun, stunSource2, ModifyType.Flat, 1);
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.CrackFly, flySource, ModifyType.Flat, 1);
+        root.Update(new UpdateTick(.02f, .04f));
+        Check.That(CountNativeRequests(store, ControlType.Pause, true) == 1, "same-frame changes synthesize a single pause");
+
+        // C. 解除眩晕、击飞仍在 → 保持暂停
+        ModifyHelper.RemoveModifiersFromSource(stunSource);
+        ModifyHelper.RemoveModifiersFromSource(stunSource2);
+        root.Update(new UpdateTick(.02f, .06f));
+        Check.That(CountNativeRequests(store, ControlType.Pause, false) == 0, "pause holds while crackfly remains");
+
+        // D. 解除击飞 → 恰好一次暂停解除
+        ModifyHelper.RemoveModifiersFromSource(flySource);
+        root.Update(new UpdateTick(.02f, .08f));
+        Check.That(CountNativeRequests(store, ControlType.Pause, false) == 1, "all controls released resumes unit once");
+
+        // E. 免疫压制 → 不暂停；免疫移除 → 恢复暂停
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.Stun, stunSource, ModifyType.Flat, 1);
+        root.Update(new UpdateTick(.02f, .10f));
+        Check.That(CountNativeRequests(store, ControlType.Pause, true) == 2, "stun re-enters pause");
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.StunImmunity, immunitySource, ModifyType.Flat, 1);
+        root.Update(new UpdateTick(.02f, .12f));
+        Check.That(CountNativeRequests(store, ControlType.Pause, true) == 2
+            && CountNativeRequests(store, ControlType.Pause, false) == 2, "immunity suppresses stun pause");
+        ModifyHelper.RemoveModifiersFromSource(immunitySource);
+        root.Update(new UpdateTick(.02f, .14f));
+        Check.That(CountNativeRequests(store, ControlType.Pause, true) == 3, "immunity removal restores pause");
+        ModifyHelper.RemoveModifiersFromSource(stunSource);
+        root.Update(new UpdateTick(.02f, .16f));
+        Check.That(CountNativeRequests(store, ControlType.Pause, false) == 3, "stun release after immunity resumes");
+
+        // F. 纯 Pause 不经免疫，独立驱动暂停
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.StunImmunity, immunitySource, ModifyType.Flat, 1);
+        root.Update(new UpdateTick(.02f, .18f));
+        ModifyHelper.AddModifierToUnit(unit, AttributeHelper.Pause, pauseSource, ModifyType.Flat, 1);
+        root.Update(new UpdateTick(.02f, .20f));
+        Check.That(CountNativeRequests(store, ControlType.Pause, true) == 4, "pure pause ignores immunity and enters");
+        ModifyHelper.RemoveModifiersFromSource(pauseSource);
+        root.Update(new UpdateTick(.02f, .22f));
+        Check.That(CountNativeRequests(store, ControlType.Pause, false) == 4, "pure pause exits");
+    }
+
+    private static int CountNativeRequests(EntityStore store, ControlType controlType, bool entered)
+    {
+        var count = 0;
+        store.Query<ControlStateNativeRequest>().ForEachEntity((ref ControlStateNativeRequest req, Entity _) =>
+        {
+            if (req.controlType == controlType && req.entered == entered)
+                count++;
+        });
+        return count;
+    }
+
+    private static int CountEvents(EntityStore store, ControlType controlType, bool entered)
+    {
+        var count = 0;
+        store.Query<ControlStateChangedEvent>().ForEachEntity((ref ControlStateChangedEvent evt, Entity _) =>
+        {
+            if (evt.controlType == controlType && evt.entered == entered)
+                count++;
+        });
+        return count;
     }
 
     private static void SpatialSearch()

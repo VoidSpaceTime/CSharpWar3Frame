@@ -2,10 +2,10 @@
 
 ## 元信息
 
-- **状态**：待审核
+- **状态**：已实施（2026-09-17；用户指定落地范围：T0 + T1-2 + T2-2~5，T1-4/T1-5/T4-2 及客户端验证按用户决定暂缓）
 - **等级**：light
 - **变更 ID**：synthesize-pause-from-controls
-- **日期**：2026-09-03
+- **日期**：2026-09-03（实施 2026-09-17）
 - **复盘强度**：R0 Direct（编译验证；native 真实效果需 War3 客户端，列为非阻塞验证项）
 - **前置**：`control-state-superposition`（已实施）建立了控制状态检测体系：控制属性 finalValue（经免疫压制）0↔正跳变 → `ControlStateChangedEvent` + `ControlStateNativeRequest`。
 

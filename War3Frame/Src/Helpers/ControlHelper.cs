@@ -9,6 +9,26 @@ namespace War3Frame;
 public static class ControlHelper
 {
     /// <summary>
+    /// 单个控制属性的映射：属性 ID + 免疫属性 ID + 对应 ControlType。
+    /// 显式关联，不依赖数组下标与枚举序号对齐。
+    /// </summary>
+    public readonly record struct ControlAttrEntry(int AttrId, int ImmunityAttrId, ControlType ControlType);
+
+    /// <summary>
+    /// 控制属性映射表——控制/免疫映射的唯一权威来源（检测系统与免疫查询共用）。
+    /// 新增控制类型时只在本表追加一条。
+    /// Stun / CrackFly 的原生暂停动作由 Pause 合成承担；Pause 不进本表（由合成判定单独消费）。
+    /// </summary>
+    public static readonly ControlAttrEntry[] ControlAttrs =
+    {
+        new(AttributeHelper.Stun, AttributeHelper.StunImmunity, ControlType.Stun),
+        new(AttributeHelper.Silence, AttributeHelper.SilenceImmunity, ControlType.Silence),
+        new(AttributeHelper.NoAttack, AttributeHelper.NoAttackImmunity, ControlType.NoAttack),
+        new(AttributeHelper.Root, AttributeHelper.RootImmunity, ControlType.Root),
+        new(AttributeHelper.CrackFly, AttributeHelper.CrackFlyImmunity, ControlType.CrackFly),
+    };
+
+    /// <summary>
     /// 检查单位是否处于任何禁止行动的控制效果中（眩晕/击飞）
     /// </summary>
     public static bool IsIncapacitated(Entity unit)
@@ -90,15 +110,17 @@ public static class ControlHelper
     }
 
     /// <summary>
-    /// 获取控制效果对应的免疫属性 ID
+    /// 获取控制效果对应的免疫属性 ID；不在控制表内（如纯 Pause）返回 null。
+    /// 查 ControlAttrs 权威表，避免与检测系统双份维护映射。
     /// </summary>
     private static int? GetImmunityAttrId(int controlAttrId)
     {
-        if (controlAttrId == AttributeHelper.Stun) return AttributeHelper.StunImmunity;
-        if (controlAttrId == AttributeHelper.Silence) return AttributeHelper.SilenceImmunity;
-        if (controlAttrId == AttributeHelper.NoAttack) return AttributeHelper.NoAttackImmunity;
-        if (controlAttrId == AttributeHelper.Root) return AttributeHelper.RootImmunity;
-        if (controlAttrId == AttributeHelper.CrackFly) return AttributeHelper.CrackFlyImmunity;
+        foreach (var entry in ControlAttrs)
+        {
+            if (controlAttrId == entry.AttrId)
+                return entry.ImmunityAttrId;
+        }
+
         return null;
     }
 }

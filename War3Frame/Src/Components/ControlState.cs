@@ -7,7 +7,7 @@ namespace War3Frame;
 /// </summary>
 public enum ControlType
 {
-    /// <summary>眩晕：禁止一切行动</summary>
+    /// <summary>眩晕：暂停（由 Pause 合成驱动原生）+ 标记 + 表现（业务监听事件播放特效）</summary>
     Stun,
 
     /// <summary>沉默：禁止施法</summary>
@@ -19,7 +19,7 @@ public enum ControlType
     /// <summary>定身：禁止移动</summary>
     Root,
 
-    /// <summary>击飞/击退：位移类控制</summary>
+    /// <summary>击飞/击退：暂停（由 Pause 合成驱动原生）+ 标记；位移由弹道/位移系统自理</summary>
     CrackFly,
 
     /// <summary>显示单位</summary>
@@ -43,9 +43,7 @@ public enum ControlType
     /// 隐身
     /// </summary>
     Invisible,
-    /// <summary>
-    /// 暂停
-    /// </summary>
+    /// <summary>暂停：最底层硬控制，由 Stun / CrackFly / 纯 Pause 属性合成驱动</summary>
     Pause,
     /// <summary>
     /// 巫术
@@ -59,8 +57,12 @@ public enum ControlType
 /// </summary>
 public struct ControlStateSnapshot : IComponent
 {
-    /// <summary>位 0..4 依次对应 ControlType 各类型是否生效</summary>
-    public byte bits;
+    /// <summary>
+    /// 位 0..11 依次对应 ControlType 各类型是否生效。
+    /// 位宽必须覆盖全部 12 个成员：byte 时 (byte)(1&lt;&lt;10) 会截断为 0，Pause/Invisible/Sorcery 位恒失效。
+    /// 其中 Pause 为合成位（Stun/CrackFly/纯 Pause 合成结果），不是独立控制属性。
+    /// </summary>
+    public ushort bits;
 
     /// <summary>获取某控制类型当前是否生效。</summary>
     public bool IsActive(ControlType controlType)
@@ -75,18 +77,24 @@ public struct ControlStateSnapshot : IComponent
         if (active)
             bits |= bit;
         else
-            bits &= (byte)~bit;
+            bits = (ushort)(bits & ~bit);
     }
 
-    private static byte BitOf(ControlType controlType)
+    /// <summary>
+    /// 控制类型对应的位掩码。位序权威：位下标 = ControlType 枚举序号。
+    /// 快照读写与外部按位比对（如释放路径）共用同一实现，避免多处重复定义。
+    /// </summary>
+    public static ushort BitOf(ControlType controlType)
     {
-        return (byte)(1 << (int)controlType);
+        return (ushort)(1 << (int)controlType);
     }
 }
 
 /// <summary>
 /// 控制状态跳变事件（独立事件实体，只读事实）。
 /// 控制属性有效值（经免疫压制）从 0 变正或正变 0 时产生，供业务系统监听。
+/// Stun / CrackFly 仍广播本事件（特效、位移由业务层响应），但其原生暂停动作由 Pause 合成承担；
+/// Pause 为合成位，不广播本事件。
 /// </summary>
 public struct ControlStateChangedEvent : IComponent
 {
