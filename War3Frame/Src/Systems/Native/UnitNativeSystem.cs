@@ -21,6 +21,54 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
     /// </summary>
     public float Interval => 0.03125f;
 
+    /// <summary>
+    /// 单位原生同步声明：声明某个属性如何投影到原生层。
+    /// 仅供本系统使用，不对外暴露投影规则。
+    /// </summary>
+    private readonly record struct UnitNativeSyncSpec(
+        int AttrTypeId,
+        Action<UnitNative, float, float> Apply);
+
+    // 需要投影到 War3 原生单位状态的属性集中登记，避免业务系统各自调用 JassApi。
+    private static readonly UnitNativeSyncSpec[] SyncSpecs =
+    [
+        new(AttributeHelper.Health, ApplyHealth),
+        new(AttributeHelper.Mana, ApplyMana)
+    ];
+
+    /// <summary>
+    /// 把生命投影为原生单位状态值。
+    /// </summary>
+    private static void ApplyHealth(UnitNative native, float current, float final)
+    {
+        var value = ToNativeStateValue(current, final);
+        JassApi.SetUnitState(native.unit, Blizzard.UNIT_STATE_LIFE, value);
+    }
+
+    /// <summary>
+    /// 把法力投影为原生单位状态值。
+    /// </summary>
+    private static void ApplyMana(UnitNative native, float current, float final)
+    {
+        var value = ToNativeStateValue(current, final);
+        JassApi.SetUnitState(native.unit, Blizzard.UNIT_STATE_MANA, value);
+    }
+
+    /// <summary>
+    /// 把 ECS 的 current/final 归一化映射为原生单位状态值（0..10000）。
+    /// </summary>
+    private static float ToNativeStateValue(float current, float final)
+    {
+        if (final <= 0f)
+        {
+            // 避免除零；final 非法时同步为 0，让 ECS 侧后续计算再修正。
+            return 0f;
+        }
+
+        // 这里沿用现有原生同步比例：ECS current/final 归一化后映射到 0..10000。
+        return (current / final) * 10000f;
+    }
+
     protected override void OnUpdate()
     {
         // Position / 快照写回是 AddComponent（结构变更），不能在 Query 迭代内执行：先收集，循环外写回。
@@ -31,9 +79,9 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
         {
             var hasSnapshot = entity.TryGetComponent<UnitNativeSyncSnapshot>(out var snapshot);
 
-            foreach (var spec in UnitNativeSyncRegistry.Specs)
+            foreach (var spec in SyncSpecs)
             {
-                // 只同步注册表声明的属性，避免业务系统直接散落 native setter。
+                // 只同步登记表声明的属性，避免业务系统直接散落 native setter。
                 if (!AttributeHelper.TryGetAttr(entity, spec.AttrTypeId, out var attr)
                     || !attr.TryGetComponent<AttrValue>(out var attrVal))
                 {
@@ -106,5 +154,4 @@ public class UnitNativeSystem : QuerySystem<UnitNative>, ITimedSystem
 
         return ref snapshot.entry0;
     }
-
 }
