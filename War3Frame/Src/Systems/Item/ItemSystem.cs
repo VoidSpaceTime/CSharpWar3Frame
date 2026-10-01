@@ -1,6 +1,7 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using War3Frame.Components;
+using War3Frame.Components.Item;
 using War3Frame.Helpers;
 using War3Frame.Systems;
 
@@ -123,6 +124,9 @@ public sealed class ItemDestroyRequestSystem : QuerySystem<ItemDestroyRequest>
         if (item.IsNull || !item.TryGetComponent<ItemBase>(out _))
             return;
 
+        if (item.Tags.Has<ItemGroundTag>())
+            ItemHelper.DestroyGroundVisual(item);
+
         item.AddTag<ItemDestroyPendingTag>();
         ItemLifecycleOperations.Detach(item, false, 0f, 0f, 0f);
     }
@@ -166,6 +170,8 @@ public sealed class ItemCompanionDeferredDeleteSystem : QuerySystem<ItemBase>
                 if (ItemCompanionAbilityHelper.IsOwnedCompanion(entry.item, entry.companion))
                     AbilityHelper.RemoveAbility(entry.companion);
             }
+            if (entry.item.Tags.Has<ItemGroundTag>())
+                ItemHelper.DestroyGroundVisual(entry.item);
             ModifyHelper.RemoveModifiersFromSource(entry.item);
             entry.item.DeleteEntity();
         }
@@ -196,6 +202,9 @@ internal static class ItemLifecycleOperations
         var occupied = GetItemAtSlot(owner, slotIndex);
         if (occupied.HasValue && occupied.Value != item)
             throw new InvalidOperationException($"物品槽位 {slotIndex} 已被占用");
+
+        if (item.Tags.Has<ItemGroundTag>())
+            ItemHelper.DestroyGroundVisual(item);
 
         if (item.TryGetComponent<ItemOwner>(out var currentOwner)
             && item.TryGetComponent<ItemSlotIndex>(out var currentSlot))
@@ -271,13 +280,43 @@ internal static class ItemLifecycleOperations
 
         if (dropToGround)
         {
+            var hasOldVisual = item.TryGetComponent<ItemGroundVisual>(out var oldVisual);
+            var model = hasOldVisual ? oldVisual.model : string.Empty;
+            if (item.Tags.Has<ItemGroundTag>() || (hasOldVisual && !oldVisual.effect.IsNull)
+                || item.HasComponent<ItemCreateNativeRequest>())
+                ItemHelper.DestroyGroundVisual(item);
             item.AddTag<ItemGroundTag>();
             item.AddComponent(new Position { x = x, y = y, z = z });
+            item.AddComponent(new ItemGroundVisual { model = model });
+            item.AddComponent(new ItemCreateNativeRequest
+            {
+                item = item,
+                x = x,
+                y = y,
+                z = z,
+                model = model
+            });
         }
         else
         {
             item.RemoveTag<ItemGroundTag>();
         }
+    }
+
+    /// <summary>按现有 Attach 规则验证调用方指定槽位是否可用。</summary>
+    internal static bool CanAttach(Entity owner, Entity item, int slotIndex)
+    {
+        if (owner.IsNull || item.IsNull || !item.TryGetComponent<ItemBase>(out _)
+            || !ReferenceEquals(owner.Store, item.Store)
+            || item.Tags.Has<ItemDestroyPendingTag>()
+            || !owner.TryGetComponent<ItemSlotContainer>(out var container)
+            || slotIndex < 0 || slotIndex >= container.maxSlots)
+        {
+            return false;
+        }
+
+        var occupied = GetItemAtSlot(owner, slotIndex);
+        return !occupied.HasValue || occupied.Value == item;
     }
 
     private static Entity? GetItemAtSlot(Entity owner, int slotIndex)

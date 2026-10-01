@@ -101,8 +101,8 @@ internal static class RuntimeRegression
         Check.That(typeof(SpatialGridSystem).GetCustomAttributes(typeof(Systems.SystemRegisterAttribute), false).Length == 1,
             "grid must be registered");
         var unavailable = typeof(Systems.Native.ItemCreateNativeSystem);
-        Check.That(unavailable.GetCustomAttributes(typeof(Systems.SystemRegisterAttribute), false).Length == 0,
-            "unimplemented native feature must not be active");
+        Check.That(unavailable.GetCustomAttributes(typeof(Systems.SystemRegisterAttribute), false).Length == 1,
+            "ground item native feature must be registered");
         // Empty store: no native handles or requests, so the real generated chain can safely run.
         Game.Root.Update(new UpdateTick(.01f, .01f));
     }

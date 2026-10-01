@@ -53,6 +53,7 @@ internal static class Program
         NativeProjectionRegression.Register(tests);
         BuildRegression.Register(tests);
         IntegrationRegression.Register(tests);
+        ItemGroundRegression.Register(tests);
     }
 
     private static async Task<int> RunChild(string mode)

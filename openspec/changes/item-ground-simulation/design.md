@@ -216,12 +216,12 @@ ItemHelper.RequestPickup(user, item)
 
 **Item 层句柄审查清单（P0 验收强制项）**：
 
-- [ ] `ItemCreateNativeSystem` 是否直接调用 `JassApi.AddSpecialEffect`？**必须为否**。只允许调 `EffectHelper.CreatePosition`。
-- [ ] `ItemHelper` 是否直接调用 `JassApi` / `DzApi` / `YDApi`？**必须为否**。
-- [ ] `ItemPickupWorkflowSystem` 是否直接调用 `JassApi.DestroyEffect`？**必须为否**。只允许调 `EffectHelper.Destroy`。
-- [ ] 拾取成功路径是否遗漏 `EffectHelper.Destroy(visual.effect)` 或同帧边界处理？**必须完整覆盖**。
-- [ ] `BeginDestroy` / `ItemCompanionDeferredDeleteSystem` / `Attach` / `EquipToUnit` 若物品仍为 `ItemGroundTag` 且 `visual.effect` 有效，是否先拆视觉？**必须先拆**。
-- [ ] 是否有第二条 `DestroyEffect` 分散点？**必须只有 EffectNativeSystem 一处**。
+- [x] `ItemCreateNativeSystem` 是否直接调用 `JassApi.AddSpecialEffect`？**必须为否**。只允许调 `EffectHelper.CreatePosition`。
+- [x] `ItemHelper` 是否直接调用 `JassApi` / `DzApi` / `YDApi`？**必须为否**。
+- [x] `ItemPickupWorkflowSystem` 是否直接调用 `JassApi.DestroyEffect`？**必须为否**。只允许调 `EffectHelper.Destroy`。
+- [x] 拾取成功路径是否遗漏 `EffectHelper.Destroy(visual.effect)` 或同帧边界处理？**必须完整覆盖**。
+- [x] `BeginDestroy` / `ItemCompanionDeferredDeleteSystem` / `Attach` / `EquipToUnit` 若物品仍为 `ItemGroundTag` 且 `visual.effect` 有效，是否先拆视觉？**必须先拆**。
+- [x] 是否有第二条 `DestroyEffect` 分散点？**必须只有 EffectNativeSystem 一处**。
 
 违反任一项视为句柄泄漏高风险，阻止验收。
 
