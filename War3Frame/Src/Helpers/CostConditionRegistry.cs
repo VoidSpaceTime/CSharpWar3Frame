@@ -175,8 +175,8 @@ public static class CostConditionRegistry
         if (CountItems(unit, cost.templateName) < cost.count)
             return new CostResult(false, false, cost.count);
 
-        var removed = RemoveItems(unit, cost.templateName, cost.count);
-        return new CostResult(removed >= cost.count, removed > 0, cost.count);
+        var requested = RequestItemDestroy(unit, cost.templateName, cost.count);
+        return new CostResult(requested >= cost.count, requested > 0, cost.count);
     }
 
     /// <summary>统计单位背包内指定模板名物品数量。</summary>
@@ -196,18 +196,17 @@ public static class CostConditionRegistry
     }
 
     /// <summary>
-    /// 移除指定数量物品（简化解除：减槽位计数 + 清归属 + 删实体）。
-    /// 返回实际移除数；不足则移除可用部分（配合 CheckCost 短路，正常路径数量必然充足）。
-    /// 有 companion 的消耗物品建议走 ItemDestroyRequest 受控流程，本路径不处理 companion。
+    /// 对命中的背包物品逐一发起受控销毁请求，由 ItemDestroyRequestSystem 解除归属（含槽位计数）、
+    /// ItemCompanionDeferredDeleteSystem 释放 companion 引用后再删实体。
+    /// 返回已发起请求的物品数；不足时只请求可用部分（配合 CheckCost 短路，正常路径数量必然充足）。
     /// </summary>
-    private static int RemoveItems(Entity unit, string templateName, int count)
+    private static int RequestItemDestroy(Entity unit, string templateName, int count)
     {
-        var removed = 0;
-        var hasContainer = unit.TryGetComponent<ItemSlotContainer>(out var container);
+        var requested = 0;
 
         foreach (var link in unit.GetIncomingLinks<ItemOwner>())
         {
-            if (removed >= count)
+            if (requested >= count)
                 break;
 
             var item = link.Entity;
@@ -216,19 +215,10 @@ public static class CostConditionRegistry
             if (!item.TryGetComponent<ItemBase>(out var itemBase) || itemBase.templateName != templateName)
                 continue;
 
-            if (hasContainer)
-            {
-                container.currentCount = System.Math.Max(0, container.currentCount - 1);
-                unit.AddComponent(container);
-            }
-
-            item.RemoveComponent<ItemOwner>();
-            item.RemoveComponent<ItemSlotIndex>();
-            item.RemoveTag<ItemInventoryTag>();
-            item.DeleteEntity();
-            removed++;
+            ItemHelper.RequestDestroy(item);
+            requested++;
         }
 
-        return removed;
+        return requested;
     }
 }

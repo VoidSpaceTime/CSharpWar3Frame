@@ -1,7 +1,9 @@
 using System;
 using Friflo.Engine.ECS;
+using Friflo.Engine.ECS.Systems;
 using War3Frame.Components;
 using War3Frame.Helpers;
+using War3Frame.Src.Systems;
 
 namespace War3Frame.Scripts.Process;
 
@@ -32,6 +34,11 @@ public static class CostValidationScenario
         var manaAttr = CreateAttr(store, unit, AttributeHelper.Mana, 100f);
         var healthAttr = CreateAttr(store, unit, AttributeHelper.Health, 100f);
 
+        // 受控物品销毁流程：请求系统解除归属，延迟删除系统释放 companion 后删实体。
+        var destroyRoot = new SystemRoot(store);
+        destroyRoot.Add(new ItemDestroyRequestSystem());
+        destroyRoot.Add(new ItemCompanionDeferredDeleteSystem());
+
         // ---- Phase 1：Mana 组件路径（组件化蓝耗）----
         var abilityA = store.CreateEntity(new ManaCost { value = 50f });
         Require(AbilityCostHelper.CheckCost(unit, abilityA), "phase1/check: 蓝量 100 >= 50 应通过");
@@ -48,7 +55,7 @@ public static class CostValidationScenario
         Require(AbilityHelper.GetManaCost(abilityB) <= 0f, "phase2/fallback: 无组件无 Stat 蓝耗应为 0");
         Require(AbilityCostHelper.CheckCost(unit, abilityB), "phase2/check: 蓝耗项不存在应视为满足");
 
-        // ---- Phase 3：ItemCost 正常扣除 ----
+        // ---- Phase 3：ItemCost 正常扣除（受控销毁：先请求，系统执行后解除归属）----
         var abilityC = store.CreateEntity(new ItemCost { templateName = "potion", count = 2 });
         unit.AddComponent(new ItemSlotContainer { maxSlots = 6, currentCount = 0 });
         var potion1 = CreateItem(store, unit, "potion", 0);
@@ -56,7 +63,13 @@ public static class CostValidationScenario
         Require(CountItems(unit, "potion") == 2, "phase3/seed: 背包应有 2 个 potion");
         Require(AbilityCostHelper.CheckCost(unit, abilityC), "phase3/check: 数量 2 >= 2 应通过");
         AbilityCostHelper.ApplyCost(unit, abilityC);
-        Require(CountItems(unit, "potion") == 0, "phase3/apply: 扣除后背包应剩 0");
+        Require(store.Query<ItemDestroyRequest>().Count == 2,
+            "phase3/request: 每个命中物品应各产生一份受控销毁请求");
+        Require(CountItems(unit, "potion") == 2,
+            "phase3/deferred: 请求阶段物品仍归背包所有，解除延后到受控系统");
+        destroyRoot.Update(new UpdateTick(0f, 0f));
+        Require(CountItems(unit, "potion") == 0, "phase3/apply: 受控流程执行后背包应剩 0");
+        Require(potion1.IsNull && potion2.IsNull, "phase3/delete: 受控流程执行后物品实体应删除");
         Require(!AbilityCostHelper.CheckCost(unit, abilityC), "phase3/insufficient: 扣除后数量 0 < 2 应拒绝");
 
         // ---- Phase 4：ItemCost 数量不足不扣（原子）----

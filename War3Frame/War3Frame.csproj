@@ -26,8 +26,4 @@
                           ReferenceOutputAssembly="false" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Compile Remove="Src\Systems\EffectSystem.cs" />
-    </ItemGroup>
-
 </Project>

@@ -54,6 +54,7 @@ internal static class Program
         BuildRegression.Register(tests);
         IntegrationRegression.Register(tests);
         ItemGroundRegression.Register(tests);
+        ItemCostDestroyRegression.Register(tests);
         RangedAttackRegression.Register(tests);
         ProjectileExpireRegression.Register(tests);
         UnitRebornPoolRegression.Register(tests);
