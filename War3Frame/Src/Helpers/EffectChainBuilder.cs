@@ -270,7 +270,8 @@ public sealed class EffectChainBuilder
         EffectValueSpec arrivalThreshold = default, EffectValueSpec maxDistance = default,
         EffectValueSpec hitRadius = default, TargetFilter hitFilter = TargetFilter.None,
         bool canHitSameTarget = false, Entity effectEntity = default,
-        Func<EffectChainBuilder, EffectChainBuilder>? onArrive = null)
+        Func<EffectChainBuilder, EffectChainBuilder>? onArrive = null,
+        EffectValueSpec maxLifetime = default)
     {
         var arriveEffect = onArrive?.Invoke(Chain()).Build();
         // projectile step 只描述投射物规格；运动、命中和特效同步由后续系统推进。
@@ -282,6 +283,7 @@ public sealed class EffectChainBuilder
             effectEntity = effectEntity,
             arrivalThreshold = arrivalThreshold,
             maxDistance = maxDistance,
+            maxLifetime = maxLifetime,
             hitRadius = hitRadius,
             hitFilter = hitFilter,
             canHitSameTarget = canHitSameTarget,
@@ -298,10 +300,12 @@ public sealed class EffectChainBuilder
         AbilityValue arrivalThreshold = default, AbilityValue maxDistance = default,
         AbilityValue hitRadius = default, TargetFilter hitFilter = TargetFilter.None,
         bool canHitSameTarget = false, Entity effectEntity = default,
-        Func<EffectChainBuilder, EffectChainBuilder>? onArrive = null)
+        Func<EffectChainBuilder, EffectChainBuilder>? onArrive = null,
+        AbilityValue maxLifetime = default)
     {
         return Projectile(model, speed.EffectValue, trajectoryType, arrivalThreshold.EffectValue,
-            maxDistance.EffectValue, hitRadius.EffectValue, hitFilter, canHitSameTarget, effectEntity, onArrive);
+            maxDistance.EffectValue, hitRadius.EffectValue, hitFilter, canHitSameTarget, effectEntity, onArrive,
+            maxLifetime.EffectValue);
     }
 
     /// <summary>

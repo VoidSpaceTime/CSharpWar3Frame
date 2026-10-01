@@ -46,12 +46,16 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
             if (!source.ability.IsNull)
                 NormalizeProjectileDefaults(ref projectile, ref source, ref target, effectEntity);
 
+            var startedThisFrame = false;
             if (runtimeState.phase == ProjectileLifecyclePhase.PendingStart)
             {
                 InitializeProjectileRuntime(ref projectile, ref target, ref position, ref runtimeState);
                 runtimeState.phase = ProjectileLifecyclePhase.InFlight;
+                startedThisFrame = true;
             }
 
+            var beforeX = position.x;
+            var beforeY = position.y;
             var arrived = projectile.trajectoryType switch
             {
                 ProjectileTrajectoryType.Linear => UpdateLinear(ref projectile, ref position, ref runtimeState, Tick.deltaTime),
@@ -62,6 +66,11 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
                 _ => UpdateTracking(ref projectile, ref target, ref position, Tick.deltaTime)
             };
 
+            if (projectile.trajectoryType != ProjectileTrajectoryType.Linear)
+                runtimeState.traveled += HorizontalDistance(beforeX, beforeY, position.x, position.y);
+            if (!startedThisFrame)
+                runtimeState.elapsedTime += Tick.deltaTime;
+
             if (!projectile.effectEntity.IsNull)
             {
                 positionUpdates.Add((projectile.effectEntity, position.x, position.y, position.z));
@@ -71,6 +80,10 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
             {
                 runtimeState.phase = ProjectileLifecyclePhase.ArriveRequested;
                 _arriveRequests.Add(effectEntity);
+            }
+            else if (ShouldExpire(effectEntity, projectile, runtimeState))
+            {
+                _expireRequests.Add(effectEntity);
             }
         });
 
@@ -143,6 +156,30 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
         }
     }
 
+    /// <summary>
+    /// 本帧未到达，且超距或超时成立时才收集过期请求。已到达或已过期的实体不再写入。
+    /// </summary>
+    private static bool ShouldExpire(Entity effectEntity, ProjectileData projectile, ProjectileRuntimeState runtimeState)
+    {
+        if (effectEntity.HasComponent<ProjectileArriveRequest>()
+            || effectEntity.Tags.Has<ProjectileArrived>()
+            || effectEntity.Tags.Has<EffectExpired>())
+            return false;
+
+        var outOfRange = projectile.maxDistance > 0f && runtimeState.traveled >= projectile.maxDistance;
+        var timedOut = effectEntity.TryGetComponent<ProjectileLifetime>(out var lifetime)
+            && lifetime.maxLifetime > 0f
+            && runtimeState.elapsedTime >= lifetime.maxLifetime;
+        return outOfRange || timedOut;
+    }
+
+    private static float HorizontalDistance(float fromX, float fromY, float toX, float toY)
+    {
+        var dx = toX - fromX;
+        var dy = toY - fromY;
+        return MathF.Sqrt(dx * dx + dy * dy);
+    }
+
     private static bool UpdateTracking(ref ProjectileData projectile, ref EffectTargetInfo target, ref Position position,
         float deltaTime)
     {
@@ -172,17 +209,21 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
     private static bool UpdateLinear(ref ProjectileData projectile, ref Position position,
         ref ProjectileRuntimeState runtimeState, float deltaTime)
     {
-        var maxDistance = projectile.maxDistance > 0f ? projectile.maxDistance : float.MaxValue;
-        var remaining = MathF.Max(0f, maxDistance - runtimeState.traveled);
-        if (remaining <= 0f)
-            return true;
+        if (projectile.maxDistance <= 0f)
+        {
+            var unlimited = projectile.speed * deltaTime;
+            position.x += runtimeState.dirX * unlimited;
+            position.y += runtimeState.dirY * unlimited;
+            runtimeState.traveled += unlimited;
+            return false;
+        }
 
+        var remaining = MathF.Max(0f, projectile.maxDistance - runtimeState.traveled);
         var move = MathF.Min(projectile.speed * deltaTime, remaining);
         position.x += runtimeState.dirX * move;
         position.y += runtimeState.dirY * move;
         runtimeState.traveled += move;
-
-        return runtimeState.traveled >= maxDistance;
+        return false;
     }
 
     private static bool UpdateBezier(ref ProjectileData projectile, ref EffectTargetInfo target,
@@ -333,6 +374,9 @@ public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState
         // 为后续超距 / 超时能力保留。不是死代码，勿清理。
         foreach (var effectEntity in toExpire)
         {
+            if (effectEntity.Tags.Has<ProjectileArrived>() || toArrive.Contains(effectEntity))
+                continue;
+
             if (effectEntity.TryGetComponent<ProjectileRuntimeState>(out var runtimeState))
             {
                 runtimeState.phase = ProjectileLifecyclePhase.Expired;
@@ -342,7 +386,31 @@ public class ProjectileLifecycleApplySystem : QuerySystem<ProjectileRuntimeState
             effectEntity.RemoveComponent<ProjectileExpireRequest>();
             ProjectileFlowHelper.DestroyProjectileVisual(effectEntity);
             effectEntity.AddTag<EffectExpired>();
+            EmitProjectileExpired(effectEntity);
         }
+    }
+
+    /// <summary>
+    /// 发出独立过期事实。监听者不得删除该实体，由事件清理系统回收。
+    /// </summary>
+    private static void EmitProjectileExpired(Entity effectEntity)
+    {
+        var source = effectEntity.TryGetComponent<EffectSource>(out var effectSource)
+            ? effectSource.caster
+            : default;
+        var target = effectEntity.TryGetComponent<EffectTargetInfo>(out var effectTarget)
+            ? effectTarget.targetUnit
+            : default;
+        var expiredEvent = effectEntity.Store.CreateEntity(new ProjectileExpiredEvent
+        {
+            projectile = effectEntity,
+            source = source,
+            target = target
+        });
+        expiredEvent.AddComponent(new TriggerEventMarker
+        {
+            eventTypeId = EventTypeRegistry.Get<ProjectileExpiredEvent>()
+        });
     }
 }
 

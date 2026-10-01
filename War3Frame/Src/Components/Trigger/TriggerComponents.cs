@@ -50,6 +50,7 @@ public static class EventTypeRegistry
         Register<UnitDiedEvent>();
         Register<UnitLeveledEvent>();
         Register<AbilityUpgradedEvent>();
+        Register<ProjectileExpiredEvent>();
     }
 }
 

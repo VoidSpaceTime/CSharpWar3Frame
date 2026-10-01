@@ -374,3 +374,13 @@ public struct ProjectileLifetime : IComponent
 }
 
 public struct ProjectileArrived : ITag;
+
+/// <summary>
+/// 弹道因超距或超时结束的对外事实。挂独立事件实体，不区分原因。
+/// </summary>
+public struct ProjectileExpiredEvent : IComponent
+{
+    public Entity projectile;
+    public Entity source;
+    public Entity target;
+}

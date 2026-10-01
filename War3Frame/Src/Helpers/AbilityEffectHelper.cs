@@ -300,6 +300,7 @@ public static class AbilityEffectHelper
                     effectEntity.AddComponent(projectile);
                     EnsureProjectilePosition(effectEntity, effectEntity.GetComponent<EffectSource>().caster);
                     EnsureProjectileRuntimeState(effectEntity);
+                    AttachProjectileLifetime(effectEntity, step.projectile.maxLifetime);
                     break;
             }
         }
@@ -322,6 +323,28 @@ public static class AbilityEffectHelper
                 z = casterPos.z
             });
         }
+    }
+
+    /// <summary>
+    /// 解析值大于 0 时挂上最大存活；否则不启用超时。
+    /// </summary>
+    private static void AttachProjectileLifetime(Entity effectEntity, EffectValueSpec maxLifetime)
+    {
+        if (!effectEntity.TryGetComponent<EffectSource>(out var source)
+            || !effectEntity.TryGetComponent<EffectTargetInfo>(out var target))
+            return;
+
+        var lifetime = EffectFormulaRegistry.Resolve(
+            source.caster,
+            source.ability,
+            target.targetUnit,
+            effectEntity,
+            maxLifetime,
+            0f);
+        if (lifetime <= 0f)
+            return;
+
+        effectEntity.AddComponent(new ProjectileLifetime { maxLifetime = lifetime });
     }
 
     /// <summary>

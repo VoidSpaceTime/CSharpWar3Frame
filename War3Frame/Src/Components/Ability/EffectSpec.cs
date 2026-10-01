@@ -310,6 +310,8 @@ public struct ProjectileEffectStepSpec
     /// <summary>到达判定阈值；未配置时使用旧字段或默认值。</summary>
     public EffectValueSpec arrivalThreshold;
     public EffectValueSpec maxDistance;
+    /// <summary>最大存活秒数；未配置或解析值不大于 0 时不启用超时。</summary>
+    public EffectValueSpec maxLifetime;
     public EffectValueSpec hitRadius;
     public TargetFilter hitFilter;
     public bool canHitSameTarget;
