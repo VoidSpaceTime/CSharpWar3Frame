@@ -129,3 +129,5 @@ W5.3 要求回答：War3 声音要不要进入 ECS。绑定层已有 `JSound` �
 - 建议明确为不纳入，同时标为「待用户裁决」，不把建议写成已批准。
 - `openspec validate sound-support-eval` 通过。
 - 不创建实现代码、`tasks.md` 实施清单或 spec delta。
+
+> 裁决（2026-10-01，用户确认）：不纳入；变更归档关闭。
