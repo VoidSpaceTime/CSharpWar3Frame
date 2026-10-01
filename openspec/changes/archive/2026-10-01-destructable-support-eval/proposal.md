@@ -108,3 +108,5 @@ Todo 25（W5.1）要求回答：War3 可破坏物（destructable）要不要进�
 - 建议明确，同时标为「待用户裁决」，不把建议写成已批准。
 - `openspec validate destructable-support-eval` 通过。
 - 不创建实现代码、`tasks.md` 实施清单或 spec delta。
+
+> 裁决（2026-10-01，用户确认）：不纳入；变更归档关闭。
