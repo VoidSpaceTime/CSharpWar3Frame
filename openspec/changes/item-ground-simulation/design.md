@@ -16,7 +16,7 @@ War3 `CreateItem` 会生成可被攻击、可死亡、可被单位默认拾取�
 
 ## 2. 强制结构：独立特效实体，物品实体不挂 EffectBase
 
-`EffectNativeSystem` 在 `EffectDestroyRequest` 后会 `entity.DeleteEntity()`（见 §12 行 113）。若把 `EffectBase` 直接挂在物品上，拾取销毁视觉会删掉物品实体。
+`EffectNativeSystem` 在 `EffectDestroyRequest` 后会 `entity.DeleteEntity()`（见 `EffectNativeSystem.cs` 行 167-170）。若把 `EffectBase` 直接挂在物品上，拾取销毁视觉会删掉物品实体。
 
 **强制要求**：
 
@@ -36,7 +36,7 @@ ItemGroundVisual --------> effect Entity 引用（独立实体）
 
 ### 2.1 ItemCreateNativeRequest 生命周期与挂载
 
-当前 `ItemCreateNativeRequest` 在 `Items.cs` 中定义为 `IComponent`（§9）。若该请求直接挂在物品实体上，删除请求组件（`RemoveComponent<ItemCreateNativeRequest>`）不会删物品；但若请求作为独立实体且用 `DeleteEntity` 删除，则不影响物品。
+当前 `ItemCreateNativeRequest` 在 `Items.cs` 行 8-13 定义为 `IComponent`。若该请求直接挂在物品实体上，删除请求组件（`RemoveComponent<ItemCreateNativeRequest>`）不会删物品；但若请求作为独立实体且用 `DeleteEntity` 删除，则不影响物品。
 
 **推荐实现路径**：
 
@@ -92,7 +92,7 @@ public struct ItemPickupRequest : IComponent
 }
 ```
 
-`ItemCreateNativeRequest` 现有字段（§9：`x, y, facing, itemTypeId`）无生产调用方，实施时直接替换，不做 CreateItem 兼容垫片。
+`ItemCreateNativeRequest` 现有字段（`Items.cs` 行 10-13：`x, y, facing, itemTypeId`）无生产调用方，实施时直接替换，不做 CreateItem 兼容垫片。
 
 ### 3.3 P1（可选，本阶段只设计）
 
@@ -106,21 +106,21 @@ public struct ItemPickupRequest : IComponent
 | 系统 | 职责 |
 |---|---|
 | `ItemHelper.CreateOnGround` | 创建或复用物品实体，打 `ItemGroundTag`，写 `Position` / `ItemGroundVisual` / `ItemGroundPickRange`，创建 `ItemCreateNativeRequest`（独立实体或挂物品，见 2.1） |
-| `ItemPickupWorkflowSystem` | 消费 `ItemPickupRequest`：校验 `ItemGroundTag`、距离、非 `DestroyPending`、背包空槽（复用 Attach 现有逻辑：`container.currentCount < maxSlots` 或空槽扫描，见 §10 行 194-228）；**同帧边界**：若 `visual.effect.IsNull`（Create+Pickup 同帧未完成 Native），跳过特效销毁，**额外删除未消费的 ItemCreateNativeRequest**；成功则 `EffectHelper.Destroy(visual.effect)` + 清 `visual.effect` + `ItemAttachRequest`；失败删请求不改状态 |
-| `ItemLifecycleOperations.Detach` | `dropToGround` 时除现有 Tag+Position 外（§10 行 265-269），补 `ItemGroundVisual` + `ItemCreateNativeRequest` |
-| `ItemLifecycleOperations.Attach` | 若物品仍带 `ItemGroundTag` 且 `visual.effect` 有效，**先销毁视觉**再 Attach（§10 行 183-228 现有 Attach 未处理此路径，需补充） |
-| `BeginDestroy` (§10 行 121-128) | 若物品带 `ItemGroundTag` 且 `visual.effect` 有效，**先销毁视觉**再进入 `DestroyPending` |
-| `ItemCompanionDeferredDeleteSystem` (§10 行 134-173) | 删物品前，若仍带 `ItemGroundTag` 且 `visual.effect` 有效，**先销毁视觉** |
-| `ItemHelper.EquipToUnit` (§11 行 42-52) | 若物品带 `ItemGroundTag` 且 `visual.effect` 有效，**先销毁视觉**再创建 `ItemAttachRequest` |
+| `ItemPickupWorkflowSystem` | 消费 `ItemPickupRequest`：校验 `ItemGroundTag`、距离、非 `DestroyPending`、背包空槽（复用 Attach 现有逻辑：`container.currentCount < maxSlots`（`Item.cs` 行 63-64）或 `GetItemAtSlot` 空槽扫描，见 `ItemSystem.cs` 行 193-198、283-294）；**同帧边界**：若 `visual.effect.IsNull`（Create+Pickup 同帧未完成 Native），跳过特效销毁，**额外删除未消费的 ItemCreateNativeRequest**；成功则 `EffectHelper.Destroy(visual.effect)` + 清 `visual.effect` + `ItemAttachRequest`；失败删请求不改状态 |
+| `ItemLifecycleOperations.Detach` | `dropToGround` 时除现有 Tag+Position 外（`ItemSystem.cs` 行 272-275），补 `ItemGroundVisual` + `ItemCreateNativeRequest` |
+| `ItemLifecycleOperations.Attach` | 若物品仍带 `ItemGroundTag` 且 `visual.effect` 有效，**先销毁视觉**再 Attach（`ItemSystem.cs` 行 183-236 现有 Attach 未处理此路径，需补充） |
+| `BeginDestroy` (`ItemSystem.cs` 行 121-128) | 若物品带 `ItemGroundTag` 且 `visual.effect` 有效，**先销毁视觉**再进入 `DestroyPending` |
+| `ItemCompanionDeferredDeleteSystem` (`ItemSystem.cs` 行 134-173) | 删物品前，若仍带 `ItemGroundTag` 且 `visual.effect` 有效，**先销毁视觉** |
+| `ItemHelper.EquipToUnit` (`ItemHelper.cs` 行 42-52) | 若物品带 `ItemGroundTag` 且 `visual.effect` 有效，**先销毁视觉**再创建 `ItemAttachRequest` |
 | `ItemUseSystem` | **不**处理地面拾取。地面物品无 `ItemOwner`，现有校验已失败 |
 
 ### 4.2 Native
 
 | 系统 | 职责 |
 |---|---|
-| `ItemCreateNativeSystem` | 消费 `ItemCreateNativeRequest`；对有效物品调用 `EffectHelper.CreatePosition(model, x, y, z, -1)`（**duration = -1 表示永久，见 §13 行 19**）；写回物品的 `ItemGroundVisual.effect`；删除请求（独立实体用 `DeleteEntity(requestEntity)`，挂物品用 `item.RemoveComponent<ItemCreateNativeRequest>()`）。**禁止**直接调 `JassApi.AddSpecialEffect` |
-| `EffectNativeSystem`（现有，§12） | 真正 `AddSpecialEffect` + `HandleAdd`（行 118-144）；销毁时 `HandleRemove` + `DestroyEffect` + `DeleteEntity`（行 104-114） |
-| 拾取/销毁时的视觉拆除 | 工作流调用 `EffectHelper.Destroy(visual.effect)`（§13 行 99-102），不在工作流里调 JassApi |
+| `ItemCreateNativeSystem` | 消费 `ItemCreateNativeRequest`；对有效物品调用 `EffectHelper.CreatePosition(model, x, y, z, -1)`（**duration = -1 表示永久，见 `EffectHelper.cs` 行 19-21**）；写回物品的 `ItemGroundVisual.effect`；删除请求（独立实体用 `DeleteEntity(requestEntity)`，挂物品用 `item.RemoveComponent<ItemCreateNativeRequest>()`）。**禁止**直接调 `JassApi.AddSpecialEffect` |
+| `EffectNativeSystem`（现有） | 真正 `AddSpecialEffect` + `HandleAdd`（`EffectNativeSystem.cs` 行 174-197）；销毁时 `HandleRemove` + `DestroyEffect` + `DeleteEntity`（行 135-146、167-170） |
+| 拾取/销毁时的视觉拆除 | 工作流调用 `EffectHelper.Destroy(visual.effect)`（`EffectHelper.cs` 行 98-101），不在工作流里调 JassApi |
 
 拾取/销毁后必须清除 `ItemGroundVisual.effect` 引用（设为 `default` 或 `Entity.Null`），不得保留指向已删实体的悬垂引用。
 
@@ -205,14 +205,14 @@ ItemHelper.RequestPickup(user, item)
 
 距离：`Distance2D(user.Position, item.Position) <= pickRange.radius`。无 `ItemGroundPickRange` 时用设计常量（建议 160），不得无限距离。
 
-空槽判断：复用 `ItemLifecycleOperations.Attach` 现有逻辑（§10 行 194-228）：`container.currentCount < container.maxSlots` 或现有 `GetItemAtSlot` 空槽扫描，不重新发明算法。
+空槽判断：复用 `ItemLifecycleOperations.Attach` 现有逻辑（`ItemSystem.cs` 行 193-198、283-294）：`container.currentCount < container.maxSlots` 或现有 `GetItemAtSlot` 空槽扫描，不重新发明算法。
 
 ## 8. 句柄配对路径（AGENTS.md 强制要求）
 
 唯一允许路径（复用 Effect）：
 
-1. 创建：`EffectNativeSystem.CreateNativeEffect`（§12 行 118-144）→ `AddSpecialEffect` → `HandleAdd`（行 140-142）。
-2. 销毁：`EffectDestroyRequest` → `EffectNativeSystem.OnUpdate`（行 104-114）→ `HandleRemove` + `DestroyEffect` + `DeleteEntity`。
+1. 创建：`EffectNativeSystem.CreateNativeEffect`（`EffectNativeSystem.cs` 行 174-197）→ `AddSpecialEffect` → `HandleAdd`（行 183/188/193）。
+2. 销毁：`EffectDestroyRequest` → `EffectNativeSystem.OnUpdate`（行 135-146）→ `HandleRemove` + `DestroyEffect`，循环外 `DeleteEntity`（行 167-170）。
 
 **Item 层句柄审查清单（P0 验收强制项）**：
 

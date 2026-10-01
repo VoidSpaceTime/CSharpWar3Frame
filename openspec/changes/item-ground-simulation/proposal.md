@@ -33,7 +33,7 @@
 
 ### 0.1 工件矩阵
 
-- 本 change 为 `full`：`proposal.md`、`design.md`、`tasks.md`、`specs/item-ground.md`
+- 本 change 为 `full`：`proposal.md`、`design.md`、`tasks.md`、`specs/item-ground/spec.md`
 
 ### 0.2 总结深度矩阵
 
@@ -99,7 +99,7 @@ War3 原生物品（`CreateItem`）带攻击、死亡、拾取触发、物品栏
 - 拾取：距离内 `RequestPickup` → `ItemPickupWorkflowSystem` 校验 → 成功则销毁特效（`EffectHelper.Destroy`）+ 清引用 + `ItemAttachRequest` 转背包；同帧 Create+Pickup 边界：若 `visual.effect.IsNull`，跳过特效销毁，**额外删除未消费的 ItemCreateNativeRequest**。
 - 丢弃：`Detach(..., dropToGround: true)` 补 `ItemGroundVisual` + `ItemCreateNativeRequest`。
 - 地面物品直接 Attach / EquipToUnit / BeginDestroy / ItemDestroy：若仍带 `ItemGroundTag` 且 `visual.effect` 有效，**先销毁视觉**。
-- 句柄配对：创建后立即 `HandleAdd`（§12 行 140-142），销毁前相邻 `HandleRemove`（§12 行 112），唯一销毁执行点在 `EffectNativeSystem`。
+- 句柄配对：创建后立即 `HandleAdd`（`EffectNativeSystem.cs` 行 183/188/193），销毁前相邻 `HandleRemove`（行 143）与 `DestroyEffect`（行 144），唯一销毁执行点在 `EffectNativeSystem`。
 
 ### 3.2 非目标
 
@@ -137,9 +137,9 @@ War3 原生物品（`CreateItem`）带攻击、死亡、拾取触发、物品栏
 
 强制复用独立特效实体。`ItemGroundVisual.effect` 为独立特效实体引用，物品实体**不挂** `EffectBase`（避免 `EffectDestroyRequest` 删物品）。
 
-`ItemCreateNativeSystem` 消费 `ItemCreateNativeRequest` 后调用 `EffectHelper.CreatePosition(model, x, y, z, duration: -1)`（**-1 表示永久，见 §13 行 19**），将返回的特效实体写回物品的 `ItemGroundVisual.effect`，然后删除请求（独立实体用 `DeleteEntity(requestEntity)`，挂物品用 `RemoveComponent`）。**禁止**直接调 `JassApi.AddSpecialEffect`。
+`ItemCreateNativeSystem` 消费 `ItemCreateNativeRequest` 后调用 `EffectHelper.CreatePosition(model, x, y, z, duration: -1)`（**-1 表示永久，见 `EffectHelper.cs` 行 19-21**），将返回的特效实体写回物品的 `ItemGroundVisual.effect`，然后删除请求（独立实体用 `DeleteEntity(requestEntity)`，挂物品用 `RemoveComponent`）。**禁止**直接调 `JassApi.AddSpecialEffect`。
 
-拾取工作流 `ItemPickupWorkflowSystem` 校验 `ItemGroundTag`、距离（≤ `pickRange.radius`）、背包空槽（复用 Attach 现有逻辑：`container.currentCount < maxSlots` 或 `GetItemAtSlot` 空槽扫描，§10 行 194-228）、非 `DestroyPending`。成功则：
+拾取工作流 `ItemPickupWorkflowSystem` 校验 `ItemGroundTag`、距离（≤ `pickRange.radius`）、背包空槽（复用 Attach 现有逻辑：`container.currentCount < maxSlots`（`Item.cs` 行 63-64）或 `GetItemAtSlot` 空槽扫描，`ItemSystem.cs` 行 193-198、283-294）、非 `DestroyPending`。成功则：
 
 1. **同帧边界检查**：若 `visual.effect.IsNull`（同帧 Create+Pickup，Native 未完成），跳过 `EffectHelper.Destroy`，**额外删除未消费的 ItemCreateNativeRequest**。
 2. 否则 `EffectHelper.Destroy(visual.effect)` + 清 `visual.effect` 引用。
@@ -157,13 +157,13 @@ P0：创建、显示、丢弃、拾取转背包、多路径视觉清理、句柄
 
 ## 6. 风险、兼容性、迁移
 
-- 句柄泄漏：特效创建/销毁必须走现有 `EffectNativeSystem` 配对（§12 行 118-144 创建，104-114 销毁）。`ItemCreateNativeSystem` / `ItemHelper` / 工作流**禁止**直接调 JassApi。审查清单见 design.md 第 8 节。
+- 句柄泄漏：特效创建/销毁必须走现有 `EffectNativeSystem` 配对（`EffectNativeSystem.cs` 行 174-197 创建，行 135-146 销毁）。`ItemCreateNativeSystem` / `ItemHelper` / 工作流**禁止**直接调 JassApi。审查清单见 design.md 第 8 节。
 - 误删物品：强制要求 `ItemGroundVisual.effect` 为独立特效实体引用，禁止物品实体挂 `EffectBase`。`EffectDestroyRequest` 只删特效实体，不删物品。
 - 与 `ItemUseSystem` 混淆：地面物品无 `ItemOwner`，Use 校验失败；拾取用独立 `ItemPickupRequest`。
 - 同帧 Create+Pickup：若 `visual.effect.IsNull`（Native 未完成特效创建），拾取工作流跳过 `EffectHelper.Destroy`，**额外删除未消费的 ItemCreateNativeRequest**，避免后续 Native 消费产生孤儿特效。
 - 多路径视觉清理遗漏：`Attach` / `EquipToUnit` / `BeginDestroy` / `ItemCompanionDeferredDeleteSystem` 若物品仍在地面且 `visual.effect` 有效，必须先拆视觉。审查清单见 tasks.md P0 工作流。
 - `ItemCreateNativeRequest` 挂载方式：实施时二选一（独立请求实体或挂物品组件），确保删除请求不误删物品，并在 summary 中说明实际路径。
-- `ItemCreateNativeRequest` 字段语义废弃：现有 `itemTypeId` / `facing`（§9）无调用方（仅占位系统），可直接替换。
+- `ItemCreateNativeRequest` 字段语义废弃：现有 `itemTypeId` / `facing`（`Items.cs` 行 8-13）无调用方（仅占位系统），可直接替换。
 - 回滚：恢复占位 throw；去掉新组件/系统；Detach 仍只写 Tag+Position；恢复 `ItemCreateNativeRequest` 旧字段（若有外部依赖）。
 
 ---
@@ -172,7 +172,7 @@ P0：创建、显示、丢弃、拾取转背包、多路径视觉清理、句柄
 
 - 文档：四件套字段完整，状态 `待审核`，修订说明已补充。
 - 实施后：`dotnet build War3Frame/War3Frame.csproj` 0 错误。
-- 句柄审查（AGENTS.md 强制清单，design.md 第 8 节）：`ItemCreateNativeSystem` / `ItemHelper` / 工作流无直接 JassApi / DzApi / YDApi；创建 `HandleAdd`（§12 行 140-142）与销毁 `HandleRemove`（§12 行 112）相邻成对；销毁点唯一（只在 `EffectNativeSystem`）。
+- 句柄审查（AGENTS.md 强制清单，design.md 第 8 节）：`ItemCreateNativeSystem` / `ItemHelper` / 工作流无直接 JassApi / DzApi / YDApi；创建 `HandleAdd`（`EffectNativeSystem.cs` 行 183/188/193）与销毁 `HandleRemove`（行 143）相邻成对；销毁点唯一（只在 `EffectNativeSystem`）。
 - 代码审查（静态）：grep 地面路径无 `CreateItem` / `JassApi.AddSpecialEffect`（Item 层）；组件注释禁止物品挂 `EffectBase`；`ItemCreateNativeRequest` 字段为 `item`/`x`/`y`/`z`/`model`，无 `itemTypeId` / `facing`。
 - 逻辑走查或单元测试：创建地面 → `ItemGroundTag` + `ItemCreateNativeRequest` → Native 消费 → `visual.effect` 非空 → 拾取成功 → `ItemInventoryTag`/`ItemEquippedTag` + 特效删除 + 引用清空；超距拾取失败物品状态不变；同帧 Create+Pickup 不崩溃，未消费请求被删除；从地面直接 Attach / EquipToUnit / BeginDestroy 无句柄泄漏。
 - 真实 War3 客户端看模型：默认**非阻塞**（本 proposal 审核即声明为非阻塞）。阻塞项为构建、句柄审查与代码审查。若后续用户要求真实客户端验证，另开验证记录提案。
