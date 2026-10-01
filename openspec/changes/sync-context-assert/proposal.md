@@ -56,3 +56,5 @@ public static class SyncContext
 
 - 若后续决定落地 `batched-sync-send`，`SyncContext` 断言可顺带覆盖"flush 系统不得在异步上下文执行"的检查。
 - 该提案与 `batched-sync-send` 相互独立，可分别实施。
+
+> 裁决（2026-10-01，用户确认）：继续挂起；以 skip_specs: true 保持工件合法（不实施）。
