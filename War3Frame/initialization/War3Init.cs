@@ -15,9 +15,15 @@ public static partial class Game
         PlayerHelper.InitializePlayers(ref players);
         // 注册原生玩家单位事件桥（攻击事件等 → ECS 事件实体）
         NativePlayerEventBridge.Initialize();
+        // 初始化同步接收端：DzSyncData → 全玩家回调 → UISyncRequest（tick 内消费）
+        SyncHelper.Initialize(Store);
+        UIRuntime.NativeReady = true;
+        UIInput.RegisterNative();
         //启动中心计时器
         War3NativeBootstrap.StartMainTimer(TICK_RATE, tick =>
         {
+            UIInput.Pump(tick.time);
+            UISyncBridge.Flush(Store);
             Root.Update(tick);
             TimeSpan += TICK_RATE;
         });

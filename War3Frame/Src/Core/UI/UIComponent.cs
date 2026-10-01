@@ -1,81 +1,356 @@
+using System.Collections.Generic;
+
 namespace War3Frame;
 
 /// <summary>
-/// UI 组件基类 - 封装一个 War3 Frame 句柄
+/// UI 控件基类。结构树、锚点与命中注册的拥有者，不直接承担长期原生语义。
 /// </summary>
 public abstract class UIComponent
 {
-    /// <summary>War3 Frame 句柄</summary>
+    private readonly List<UIComponent> _children = [];
+    private readonly List<UIComponent> _lowNodes = [];
+    private bool _visible = true;
+
+    /// <summary>War3 Frame 句柄。逻辑测试中为 0。</summary>
     public int Handle { get; protected set; }
 
-    /// <summary>父组件句柄</summary>
+    /// <summary>创建时的父 Frame。不是结构父节点。</summary>
     public int ParentHandle { get; protected set; }
 
-    /// <summary>是否已销毁</summary>
+    /// <summary>是否已销毁。</summary>
     public bool IsDestroyed { get; private set; }
 
-    /// <summary>是否可见</summary>
-    public bool Visible { get; private set; } = true;
+    /// <summary>自身显隐。有效可见还要看祖先。</summary>
+    public bool Visible
+    {
+        get => _visible;
+        set
+        {
+            _visible = value;
+            if (UIRuntime.NativeReady && Handle != 0)
+                FrameHelper.SetVisible(Handle, value);
+            SyncInteractive();
+        }
+    }
+
+    /// <summary>中心点，屏幕比例。写入后标脏，下次批算投影。</summary>
+    public UIVec Position
+    {
+        get => new(Anchor.X, Anchor.Y);
+        set
+        {
+            DetachPoint();
+            Anchor = new UIAnchor { X = value.X, Y = value.Y, W = Anchor.W, H = Anchor.H };
+            MarkDirty();
+        }
+    }
+
+    /// <summary>尺寸，屏幕比例。写入后标脏，下次批算投影。</summary>
+    public UIVec Size
+    {
+        get => new(Anchor.W, Anchor.H);
+        set
+        {
+            Anchor = new UIAnchor { X = Anchor.X, Y = Anchor.Y, W = value.X, H = value.Y };
+            MarkDirty();
+            OnSizeChanged();
+            Parent?.OnChildGeometryChanged();
+        }
+    }
+
+    /// <summary>按下。命中胜者收到。</summary>
+    public event Action<UIPointer>? Pressed;
+
+    /// <summary>同一控件在双击窗口内再次按下。</summary>
+    public event Action<UIPointer>? DoublePressed;
+
+    /// <summary>指针进入。</summary>
+    public event Action<UIPointer>? PointerEntered;
+
+    /// <summary>指针离开。</summary>
+    public event Action<UIPointer>? PointerExited;
+
+    /// <summary>拖动开始。</summary>
+    public event Action<UIPointer>? DragStart;
+
+    /// <summary>拖动中。</summary>
+    public event Action<UIPointer>? Drag;
+
+    /// <summary>拖动结束。</summary>
+    public event Action<UIPointer>? DragStop;
+
+    /// <summary>松开。</summary>
+    public event Action<UIPointer>? Released;
+
+    /// <summary>滚轮。参数为滚轮增量。</summary>
+    public event Action<UIPointer, int>? Wheel;
+
+    /// <summary>结构父节点。根控件为空。</summary>
+    public UIComponent? Parent { get; private set; }
+
+    /// <summary>结构子控件。惰性，销毁时先子后父。</summary>
+    public IReadOnlyList<UIComponent> Children => _children;
+
+    /// <summary>依赖本控件锚点的控件。移动时只标脏这条闭包。</summary>
+    public IReadOnlyList<UIComponent> LowNodes => _lowNodes;
+
+    /// <summary>调试名，不参与命中。</summary>
+    public string? Key { get; set; }
+
+    /// <summary>注册号。销毁后不复用。</summary>
+    public int ControlId { get; private set; }
+
+    /// <summary>创建序层级。只经 CompareZ 比较。</summary>
+    public int ZIndex { get; private set; }
+
+    /// <summary>命中过滤。Stop 吞世界点击，Ignore 不参与派发。</summary>
+    public MouseFilter MouseFilter { get; set; } = MouseFilter.Ignore;
+
+    /// <summary>透明度 0-255。写入后在原生环境投影。</summary>
+    public int Alpha
+    {
+        get => _alpha;
+        set
+        {
+            _alpha = value;
+            if (UIRuntime.NativeReady && Handle != 0)
+                FrameHelper.SetAlpha(Handle, value);
+        }
+    }
+
+    private int _alpha = 255;
+
+    /// <summary>是否进入命中注册表。文本与装饰默认 false。</summary>
+    public bool Interactive { get; protected set; }
+
+    /// <summary>最近一次批算矩形。</summary>
+    public UIAnchor Anchor { get; internal set; }
+
+    /// <summary>位置、尺寸或参考变化后为 true。</summary>
+    public bool AnchorDirty { get; internal set; } = true;
+
+    /// <summary>已得到正尺寸矩形。false 不得进命中集。</summary>
+    public bool AnchorResolved { get; internal set; }
+
+    /// <summary>批算深度，仅供排序。</summary>
+    internal int Depth { get; set; }
+
+    /// <summary>相对定位。为空表示矩形已是绝对中心。</summary>
+    internal UIPointSpec? Point { get; private set; }
+
+    /// <summary>祖先都可见时为 true。</summary>
+    public bool IsVisibleEffective => _visible && (Parent?.IsVisibleEffective ?? true) && !IsDestroyed;
 
     protected UIComponent(int parentHandle)
     {
         ParentHandle = parentHandle;
+        (ControlId, ZIndex) = UIHitRegistry.Allocate();
     }
 
-    /// <summary>设置绝对位置</summary>
-    public void SetPos(float x, float y, int point = FramePoint.BottomLeft)
+    /// <summary>挂到结构父节点。子控件创建序必须晚于父节点。</summary>
+    public void AddChild(UIComponent child)
     {
-        FrameHelper.SetAbsPos(Handle, x, y, point);
+        if (child.Parent == this) return;
+        child.Parent?._children.Remove(child);
+        child.Parent = this;
+        _children.Add(child);
+        child.AnchorDirty = true;
+        SyncInteractive();
+        OnChildAdded(child);
     }
 
-    /// <summary>设置相对位置（相对于另一个 Frame）</summary>
+    /// <summary>子节点加入后。容器用来重排。</summary>
+    protected virtual void OnChildAdded(UIComponent child)
+    {
+    }
+
+    /// <summary>自身尺寸变化后。容器用来重排。</summary>
+    protected virtual void OnSizeChanged()
+    {
+    }
+
+    /// <summary>子控件尺寸变化后。容器用来重排。</summary>
+    protected internal virtual void OnChildGeometryChanged()
+    {
+    }
+
+    /// <summary>本控件锚点完成一次批算后。</summary>
+    internal virtual void OnResolved()
+    {
+    }
+
+    /// <summary>记录相对锚点。参考必须是可计算控件，不能是 UINative。</summary>
+    public void SetPoint(int point, UIComponent reference, int referencePoint, float offsetX = 0, float offsetY = 0)
+    {
+        if (reference.IsNativeReference)
+            throw new InvalidOperationException("UINative 不能作为可计算锚点参考。");
+        DetachPoint();
+        Point = new UIPointSpec(point, reference, referencePoint, offsetX, offsetY);
+        reference._lowNodes.Add(this);
+        MarkDirty();
+    }
+
+    /// <summary>保留旧签名。相对句柄定位不再直接写 Frame，测试与新代码使用控件重载。</summary>
     public void SetPoint(int point, int relFrame, int relPoint, float offsetX = 0, float offsetY = 0)
     {
-        FrameHelper.SetPoint(Handle, point, relFrame, relPoint, offsetX, offsetY);
+        _ = (point, relFrame, relPoint, offsetX, offsetY);
+        MarkDirty();
     }
 
-    /// <summary>设置大小</summary>
-    public void SetSize(float w, float h) => FrameHelper.SetSize(Handle, w, h);
+    /// <summary>铺满结构父节点。批算写出矩形，不调用 DzFrameSetAllPoints。</summary>
+    public void FillParent() => ApplyPreset(UIPreset.FullRect);
 
-    /// <summary>显示或隐藏</summary>
-    public void Show(bool visible = true)
+    /// <summary>按比例预设对齐到结构父节点。FullRect 同时铺满尺寸。</summary>
+    public void ApplyPreset(UIPreset preset)
     {
-        Visible = visible;
-        FrameHelper.SetVisible(Handle, visible);
+        if (Parent == null) return;
+        var point = preset switch
+        {
+            UIPreset.TopLeft => FramePoint.TopLeft,
+            UIPreset.Top => FramePoint.Top,
+            UIPreset.TopRight => FramePoint.TopRight,
+            UIPreset.Left => FramePoint.Left,
+            UIPreset.Right => FramePoint.Right,
+            UIPreset.BottomLeft => FramePoint.BottomLeft,
+            UIPreset.Bottom => FramePoint.Bottom,
+            UIPreset.BottomRight => FramePoint.BottomRight,
+            _ => FramePoint.Center
+        };
+        SetPoint(point, Parent, point);
+        if (preset == UIPreset.FullRect)
+            Size = new UIVec(Parent.Anchor.W, Parent.Anchor.H);
     }
 
-    /// <summary>隐藏</summary>
-    public void Hide() => Show(false);
+    /// <summary>投递按下。</summary>
+    internal void RaisePressed(UIPointer pointer) => Pressed?.Invoke(pointer);
 
-    /// <summary>设置透明度 (0-255)</summary>
-    public void SetAlpha(int alpha) => FrameHelper.SetAlpha(Handle, alpha);
+    /// <summary>投递双击。</summary>
+    internal void RaiseDoublePressed(UIPointer pointer) => DoublePressed?.Invoke(pointer);
 
-    /// <summary>销毁 Frame</summary>
-    public virtual void Destroy()
+    /// <summary>投递进入。</summary>
+    internal void RaisePointerEntered(UIPointer pointer) => PointerEntered?.Invoke(pointer);
+
+    /// <summary>投递离开。</summary>
+    internal void RaisePointerExited(UIPointer pointer) => PointerExited?.Invoke(pointer);
+
+    /// <summary>投递拖动开始。</summary>
+    internal void RaiseDragStart(UIPointer pointer) => DragStart?.Invoke(pointer);
+
+    /// <summary>投递拖动。</summary>
+    internal void RaiseDrag(UIPointer pointer) => Drag?.Invoke(pointer);
+
+    /// <summary>投递拖动结束。</summary>
+    internal void RaiseDragStop(UIPointer pointer) => DragStop?.Invoke(pointer);
+
+    /// <summary>投递松开。</summary>
+    internal void RaiseReleased(UIPointer pointer) => Released?.Invoke(pointer);
+
+    /// <summary>投递滚轮。</summary>
+    internal void RaiseWheel(UIPointer pointer, int delta) => Wheel?.Invoke(pointer, delta);
+
+    /// <summary>先子后父销毁，摘掉命中与 LowNodes，再释放自身 Frame 一次。</summary>
+    public void Destroy()
     {
         if (IsDestroyed) return;
         IsDestroyed = true;
-        FrameHelper.Destroy(Handle);
+        for (var i = _children.Count - 1; i >= 0; i--)
+            _children[i].Destroy();
+        _children.Clear();
+        DetachPoint();
+        _lowNodes.Clear();
+        UIHitRegistry.Remove(this);
+        OnDestroy();
+        if (UIRuntime.NativeReady && Handle != 0)
+            FrameHelper.Destroy(Handle);
         Handle = 0;
+        Parent?._children.Remove(this);
+        Parent = null;
+    }
+
+    /// <summary>释放不属于 Children 的裸 Frame。结构子控件不得在这里再销毁。</summary>
+    protected virtual void OnDestroy()
+    {
+    }
+
+    /// <summary>原生 Frame 父节点，没有可回读矩形。</summary>
+    public bool IsNativeReference { get; protected set; }
+
+    /// <summary>命中前批算本控件所在树的脏锚点，并把已解析矩形投影到 Frame。</summary>
+    public void FlushLayout()
+    {
+        var root = this;
+        while (root.Parent != null)
+            root = root.Parent;
+        if (UIInputQueue.ConsumeResize())
+            UILayout.MarkResize(root);
+        UILayout.ResolveDirty(root);
+        if (UIRuntime.NativeReady)
+            Project(root);
+    }
+
+    private void MarkDirty()
+    {
+        AnchorDirty = true;
+        foreach (var node in _lowNodes)
+            node.AnchorDirty = true;
+    }
+
+    private void DetachPoint()
+    {
+        if (Point is not { } spec) return;
+        spec.Reference._lowNodes.Remove(this);
+        Point = null;
+    }
+
+    private void SyncInteractive()
+    {
+        if (IsVisibleEffective && AnchorResolved && Interactive)
+            UIHitRegistry.Add(this);
+        else
+            UIHitRegistry.Remove(this);
+        foreach (var child in _children)
+            child.SyncInteractive();
+    }
+
+    private static void Project(UIComponent control)
+    {
+        if (control.Handle != 0 && control.AnchorResolved)
+        {
+            var left = control.Anchor.X - control.Anchor.W * 0.5f;
+            var bottom = control.Anchor.Y - control.Anchor.H * 0.5f;
+            FrameHelper.ClearPoints(control.Handle);
+            FrameHelper.SetSize(control.Handle, control.Anchor.W, control.Anchor.H);
+            FrameHelper.SetAbsPos(control.Handle, left, bottom);
+        }
+
+        foreach (var child in control.Children)
+            Project(child);
     }
 }
 
 /// <summary>
-/// 背景框 - 用于容器、面板背景
+/// 背景框，用于容器和面板背景。默认吞掉世界点击。
 /// </summary>
 public class UIFrame : UIComponent
 {
     public UIFrame(int parent, string? texture = null) : base(parent)
     {
-        Handle = FrameHelper.CreateBackdrop(parent, texture);
+        MouseFilter = MouseFilter.Stop;
+        Interactive = true;
+        if (UIRuntime.NativeReady)
+            Handle = FrameHelper.CreateBackdrop(parent, texture);
     }
 
-    /// <summary>设置背景贴图</summary>
-    public void SetTexture(string path) => FrameHelper.SetTexture(Handle, path);
+    /// <summary>设置背景贴图。</summary>
+    public void SetTexture(string path)
+    {
+        if (UIRuntime.NativeReady && Handle != 0)
+            FrameHelper.SetTexture(Handle, path);
+    }
 }
 
 /// <summary>
-/// 文字控件
+/// 文字控件。默认不参与命中，也不吞世界点击。
 /// </summary>
 public class UIText : UIComponent
 {
@@ -87,31 +362,37 @@ public class UIText : UIComponent
         set
         {
             _text = value;
-            FrameHelper.SetText(Handle, value);
+            if (UIRuntime.NativeReady && Handle != 0)
+                FrameHelper.SetText(Handle, value);
         }
     }
 
     public UIText(int parent, string text = "") : base(parent)
     {
-        Handle = FrameHelper.CreateText(parent, text);
+        MouseFilter = MouseFilter.Ignore;
+        Interactive = false;
         _text = text;
+        if (UIRuntime.NativeReady)
+            Handle = FrameHelper.CreateText(parent, text);
     }
 
-    /// <summary>设置文字颜色 (0-255)</summary>
+    /// <summary>设置文字颜色 (0-255)。</summary>
     public void SetColor(int a, int r, int g, int b)
     {
-        FrameHelper.SetTextColor(Handle, a, r, g, b);
+        if (UIRuntime.NativeReady && Handle != 0)
+            FrameHelper.SetTextColor(Handle, a, r, g, b);
     }
 
-    /// <summary>设置字体</summary>
+    /// <summary>设置字体。</summary>
     public void SetFont(string fontFile, float height)
     {
-        FrameHelper.SetFont(Handle, fontFile, height);
+        if (UIRuntime.NativeReady && Handle != 0)
+            FrameHelper.SetFont(Handle, fontFile, height);
     }
 }
 
 /// <summary>
-/// 贴图/图标
+/// 贴图。默认为装饰，不参与命中。
 /// </summary>
 public class UITexture : UIComponent
 {
@@ -123,19 +404,23 @@ public class UITexture : UIComponent
         set
         {
             _path = value;
-            FrameHelper.SetTexture(Handle, value);
+            if (UIRuntime.NativeReady && Handle != 0)
+                FrameHelper.SetTexture(Handle, value);
         }
     }
 
     public UITexture(int parent, string texturePath = "") : base(parent)
     {
-        Handle = FrameHelper.CreateBackdrop(parent, texturePath.Length > 0 ? texturePath : null);
+        MouseFilter = MouseFilter.Ignore;
+        Interactive = false;
         _path = texturePath;
+        if (UIRuntime.NativeReady)
+            Handle = FrameHelper.CreateBackdrop(parent, texturePath.Length > 0 ? texturePath : null);
     }
 }
 
 /// <summary>
-/// 进度条（血条/蓝条/经验条）
+/// 进度条。数值写原生，矩形仍走锚点。
 /// </summary>
 public class UIBar : UIComponent
 {
@@ -143,252 +428,237 @@ public class UIBar : UIComponent
     private float _min;
     private float _max = 1f;
 
-    /// <summary>当前值（会自动 clamp 到 min~max）</summary>
+    /// <summary>当前值，自动夹到范围内。</summary>
     public float Value
     {
         get => _value;
         set
         {
             _value = Math.Clamp(value, _min, _max);
-            FrameHelper.SetValue(Handle, _value);
+            if (UIRuntime.NativeReady && Handle != 0)
+                FrameHelper.SetValue(Handle, _value);
         }
     }
 
     public UIBar(int parent, string? texture = null, float min = 0f, float max = 1f) : base(parent)
     {
-        Handle = FrameHelper.CreateStatusBar(parent, texture);
+        MouseFilter = MouseFilter.Ignore;
+        Interactive = false;
         _min = min;
         _max = max;
+        if (!UIRuntime.NativeReady) return;
+        Handle = FrameHelper.CreateStatusBar(parent, texture);
         FrameHelper.SetMinMaxValue(Handle, min, max);
     }
 
-    /// <summary>设置进度条贴图</summary>
-    public void SetTexture(string path) => FrameHelper.SetTexture(Handle, path);
+    /// <summary>设置进度条贴图。</summary>
+    public void SetTexture(string path)
+    {
+        if (UIRuntime.NativeReady && Handle != 0)
+            FrameHelper.SetTexture(Handle, path);
+    }
 
-    /// <summary>设置范围</summary>
+    /// <summary>设置范围。</summary>
     public void SetMinMax(float min, float max)
     {
         _min = min;
         _max = max;
-        FrameHelper.SetMinMaxValue(Handle, min, max);
+        if (UIRuntime.NativeReady && Handle != 0)
+            FrameHelper.SetMinMaxValue(Handle, min, max);
     }
 }
 
 /// <summary>
-/// 可点击按钮
+/// 按钮。图标是子控件，点击走计算命中，不注册逐帧脚本。
 /// </summary>
 public class UIButton : UIComponent
 {
-    /// <summary>是否启用</summary>
+    /// <summary>是否启用。</summary>
     public bool Enabled { get; private set; } = true;
 
-    /// <summary>图标贴图 Frame</summary>
+    /// <summary>图标子控件。</summary>
     public UITexture? Icon { get; private set; }
 
     public UIButton(int parent, string? iconPath = null) : base(parent)
     {
-        // 创建一个 BACKDROP 作为按钮容器（可点击区域）
-        Handle = FrameHelper.CreateBackdrop(parent);
-
-        if (iconPath != null)
-        {
-            Icon = new UITexture(Handle, iconPath);
-            FrameHelper.FillParent(Icon.Handle, Handle);
-        }
+        MouseFilter = MouseFilter.Stop;
+        Interactive = true;
+        if (UIRuntime.NativeReady)
+            Handle = FrameHelper.CreateBackdrop(parent);
+        if (iconPath == null) return;
+        Icon = new UITexture(parent, iconPath);
+        AddChild(Icon);
+        Icon.FillParent();
     }
 
-    /// <summary>注册点击事件</summary>
-    public void OnClick(Action callback)
-    {
-        FrameHelper.OnClick(Handle, callback);
-    }
-
-    /// <summary>启用/禁用按钮</summary>
+    /// <summary>启用或禁用。</summary>
     public void SetEnabled(bool enabled)
     {
         Enabled = enabled;
-        FrameHelper.SetEnable(Handle, enabled);
+        if (UIRuntime.NativeReady && Handle != 0)
+            FrameHelper.SetEnable(Handle, enabled);
     }
 
-    /// <summary>设置图标</summary>
+    /// <summary>替换图标贴图。</summary>
     public void SetIcon(string path)
     {
         if (Icon != null)
             Icon.Path = path;
     }
-
-    public override void Destroy()
-    {
-        Icon?.Destroy();
-        base.Destroy();
-    }
 }
 
 /// <summary>
-/// 格子控件（物品/技能格子）
-/// 包含：图标 + 冷却遮罩 + 数量文字 + 点击事件
+/// 物品或技能格子。图标与数量是子控件，冷却遮罩是裸 Frame。
 /// </summary>
 public class UISlot : UIComponent
 {
-    /// <summary>图标</summary>
+    /// <summary>图标子控件。</summary>
     public UITexture Icon { get; private set; }
 
-    /// <summary>数量文字（右下角）</summary>
+    /// <summary>数量文字子控件。</summary>
     public UIText CountText { get; private set; }
 
-    /// <summary>冷却遮罩 Frame（用于设置动画进度模拟冷却）</summary>
+    /// <summary>冷却遮罩 Frame。不属于 Children，只在 OnDestroy 释放一次。</summary>
     public int CooldownOverlay { get; private set; }
 
-    /// <summary>该格子是否为空</summary>
+    /// <summary>格子是否为空。</summary>
     public bool IsEmpty { get; private set; } = true;
 
-    /// <summary>格子索引</summary>
+    /// <summary>格子索引。</summary>
     public int SlotIndex { get; set; }
 
     public UISlot(int parent, int slotIndex, float size) : base(parent)
     {
+        MouseFilter = MouseFilter.Stop;
+        Interactive = true;
         SlotIndex = slotIndex;
+        Size = new UIVec(size, size);
+        if (UIRuntime.NativeReady)
+            Handle = FrameHelper.CreateBackdrop(parent, "UI\\Widgets\\EscMenu\\Human\\editbox-background.blp");
 
-        // 主容器（背景 + 点击区域）
-        Handle = FrameHelper.CreateBackdrop(parent, "UI\\Widgets\\EscMenu\\Human\\editbox-background.blp");
-        FrameHelper.SetSize(Handle, size, size);
+        Icon = new UITexture(parent);
+        AddChild(Icon);
+        Icon.FillParent();
 
-        // 图标
-        Icon = new UITexture(Handle);
-        FrameHelper.FillParent(Icon.Handle, Handle);
-        FrameHelper.SetVisible(Icon.Handle, false);
+        CountText = new UIText(parent, "");
+        AddChild(CountText);
+        CountText.Size = new UIVec(size * 0.4f, size * 0.3f);
+        CountText.SetPoint(FramePoint.BottomRight, this, FramePoint.BottomRight, -0.001f, 0.001f);
 
-        // 数量文字（右下角）
-        CountText = new UIText(Handle, "");
-        FrameHelper.SetSize(CountText.Handle, size * 0.4f, size * 0.3f);
-        FrameHelper.SetPoint(CountText.Handle, FramePoint.BottomRight,
-            Handle, FramePoint.BottomRight, -0.001f, 0.001f);
-        FrameHelper.SetVisible(CountText.Handle, false);
-
-        // 冷却遮罩（半透明黑色覆盖层）
+        if (!UIRuntime.NativeReady) return;
         CooldownOverlay = FrameHelper.CreateBackdrop(Handle);
-        FrameHelper.FillParent(CooldownOverlay, Handle);
-        FrameHelper.SetVisible(CooldownOverlay, false);
         FrameHelper.SetAlpha(CooldownOverlay, 128);
+        FrameHelper.SetVisible(CooldownOverlay, false);
     }
 
-    /// <summary>设置格子内容</summary>
+    /// <summary>设置格子内容。</summary>
     public void SetContent(string iconPath, int count = 0)
     {
         IsEmpty = false;
         Icon.Path = iconPath;
-        FrameHelper.SetVisible(Icon.Handle, true);
-
-        if (count > 1)
-        {
-            CountText.Text = count.ToString();
-            FrameHelper.SetVisible(CountText.Handle, true);
-        }
-        else
-        {
-            FrameHelper.SetVisible(CountText.Handle, false);
-        }
+        Icon.Visible = true;
+        CountText.Text = count > 1 ? count.ToString() : "";
+        CountText.Visible = count > 1;
     }
 
-    /// <summary>清空格子</summary>
+    /// <summary>清空格子。</summary>
     public void Clear()
     {
         IsEmpty = true;
-        FrameHelper.SetVisible(Icon.Handle, false);
-        FrameHelper.SetVisible(CountText.Handle, false);
+        Icon.Visible = false;
+        CountText.Visible = false;
         SetCooldown(0);
     }
 
-    /// <summary>设置冷却进度 (0 = 无冷却, 0~1 = 冷却中)</summary>
+    /// <summary>设置冷却进度。0 为无冷却。</summary>
     public void SetCooldown(float ratio)
     {
-        if (ratio <= 0)
-        {
-            FrameHelper.SetVisible(CooldownOverlay, false);
-        }
-        else
-        {
-            FrameHelper.SetVisible(CooldownOverlay, true);
-            // 通过调整遮罩大小来模拟冷却效果
-            // ratio=1 完全遮盖, ratio=0 无遮盖
-        }
+        if (!UIRuntime.NativeReady || CooldownOverlay == 0) return;
+        FrameHelper.SetVisible(CooldownOverlay, ratio > 0f);
     }
 
-    /// <summary>注册点击事件</summary>
-    public void OnClick(Action callback)
+    /// <summary>冷却遮罩不属于子控件树。</summary>
+    protected override void OnDestroy()
     {
-        FrameHelper.OnClick(Handle, callback);
-    }
-
-    /// <summary>注册鼠标悬浮事件（用于显示 Tooltip）</summary>
-    public void OnHover(Action? onEnter, Action? onLeave)
-    {
-        if (onEnter != null)
-            FrameHelper.OnMouseEnter(Handle, onEnter);
-        if (onLeave != null)
-            FrameHelper.OnMouseLeave(Handle, onLeave);
-    }
-
-    public override void Destroy()
-    {
-        Icon.Destroy();
-        CountText.Destroy();
-        FrameHelper.Destroy(CooldownOverlay);
-        base.Destroy();
+        if (UIRuntime.NativeReady && CooldownOverlay != 0)
+            FrameHelper.Destroy(CooldownOverlay);
+        CooldownOverlay = 0;
     }
 }
 
 /// <summary>
-/// 全局悬浮提示框（单例使用）
+/// 悬浮提示。标题与描述是子控件，位置由锚点矩形决定。
 /// </summary>
 public class UITooltip : UIComponent
 {
-    /// <summary>标题</summary>
+    /// <summary>标题子控件。</summary>
     public UIText Title { get; private set; }
 
-    /// <summary>描述文字</summary>
+    /// <summary>描述子控件。</summary>
     public UIText Description { get; private set; }
 
     public UITooltip(int parent, float width = 0.15f) : base(parent)
     {
-        // 背景
-        Handle = FrameHelper.CreateBackdrop(parent, "UI\\Widgets\\ToolTips\\Human\\human-tooltip-background.blp");
-        FrameHelper.SetSize(Handle, width, 0.08f);
-        FrameHelper.SetVisible(Handle, false);
+        MouseFilter = MouseFilter.Ignore;
+        Interactive = false;
+        Size = new UIVec(width, 0.08f);
+        if (UIRuntime.NativeReady)
+        {
+            Handle = FrameHelper.CreateBackdrop(parent, "UI\\Widgets\\ToolTips\\Human\\human-tooltip-background.blp");
+            FrameHelper.SetVisible(Handle, false);
+        }
 
-        // 标题
-        Title = new UIText(Handle, "");
-        Title.SetColor(255, 255, 204, 0); // 金色
-        FrameHelper.SetSize(Title.Handle, width - 0.01f, 0.02f);
-        FrameHelper.SetPoint(Title.Handle, FramePoint.TopLeft,
-            Handle, FramePoint.TopLeft, 0.005f, -0.005f);
+        Visible = false;
+        Title = new UIText(parent, "");
+        AddChild(Title);
+        Title.Size = new UIVec(width - 0.01f, 0.02f);
+        Title.SetPoint(FramePoint.TopLeft, this, FramePoint.TopLeft, 0.005f, -0.005f);
 
-        // 描述
-        Description = new UIText(Handle, "");
-        FrameHelper.SetSize(Description.Handle, width - 0.01f, 0.05f);
-        FrameHelper.SetPoint(Description.Handle, FramePoint.TopLeft,
-            Title.Handle, FramePoint.BottomLeft, 0f, -0.003f);
+        Description = new UIText(parent, "");
+        AddChild(Description);
+        Description.Size = new UIVec(width - 0.01f, 0.05f);
+        Description.SetPoint(FramePoint.TopLeft, Title, FramePoint.BottomLeft, 0f, -0.003f);
     }
 
-    /// <summary>显示 Tooltip</summary>
+    /// <summary>用宿主锚点贴边放置并显示。</summary>
+    public void PlaceNear(UIAnchor host, string title, string description)
+    {
+        Title.Text = title;
+        Description.Text = description;
+        var placed = UILayout.PlaceNear(host, Anchor.W, Anchor.H);
+        Position = new UIVec(placed.X, placed.Y);
+        Visible = true;
+    }
+
+    /// <summary>在绝对位置显示。</summary>
     public void ShowAt(float x, float y, string title, string description)
     {
         Title.Text = title;
         Description.Text = description;
-        SetPos(x, y);
-        Show();
+        Position = new UIVec(x + Anchor.W * 0.5f, y + Anchor.H * 0.5f);
+        Visible = true;
     }
+}
 
-    /// <summary>隐藏 Tooltip</summary>
-    public new void Hide()
+/// <summary>
+/// 不可回读位置的原生 Frame。可做创建父节点，不能进命中集，也不能当锚点参考。
+/// </summary>
+public sealed class UINative : UIComponent
+{
+    public UINative(int parent) : base(parent)
     {
-        base.Hide();
+        IsNativeReference = true;
+        Interactive = false;
+        MouseFilter = MouseFilter.Ignore;
+        Handle = parent;
     }
+}
 
-    public override void Destroy()
-    {
-        Title.Destroy();
-        Description.Destroy();
-        base.Destroy();
-    }
+/// <summary>
+/// 原生投影开关。回归与逻辑测试保持关闭，War3 启动后打开。
+/// </summary>
+public static class UIRuntime
+{
+    /// <summary>为 true 时才创建和改写 Frame。</summary>
+    public static bool NativeReady { get; set; }
 }

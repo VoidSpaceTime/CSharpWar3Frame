@@ -29,6 +29,7 @@ public static class SyncHelper
         Store = store;
 
         _syncTrigger = JassApi.CreateTrigger();
+        HandleHelper.HandleAdd(_syncTrigger); // 保活：原生 trigger 需登记句柄引用
         JassApi.TriggerAddAction(_syncTrigger, OnSyncReceived);
     }
 
