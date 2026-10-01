@@ -18,6 +18,8 @@ internal static class DomainRegression
         tests.Add(new("runtime", "equipment-roundtrip", Equipment));
         tests.Add(new("runtime", "ability-level-phases", AbilityLevel));
         tests.Add(new("runtime", "buff-final-ticks", BuffFinalTicks));
+        tests.Add(new("runtime", "buff-partial-final-segment", BuffPartialFinalSegment));
+        tests.Add(new("runtime", "buff-reclaim-ordering", BuffReclaimOrdering));
         tests.Add(new("runtime", "modifier-multiple-removal", Modifiers));
         tests.Add(new("runtime", "sync-identity-and-input", SyncIdentity));
         tests.Add(new("runtime", "spatial-search", SpatialSearch));
@@ -144,6 +146,49 @@ internal static class DomainRegression
         BuffHelper.ApplyDoT(store, target, target, "permanent", 1, .1f, -1);
         root.Update(new UpdateTick(.3f, 1.3f));
         Check.That(store.Query<DamageRequest>().Count == 5, "permanent ticks keep advancing");
+    }
+
+    /// <summary>
+    /// 验证周期 Buff 到期时不足一个 tickInterval 的尾段不补跳：
+    /// 寿命 0.35s、间隔 0.1s 一次推进 1s，结算次数为 floor(存活/间隔)=3，余 0.05s 不产生第 4 次，且实体已回收。
+    /// </summary>
+    private static void BuffPartialFinalSegment()
+    {
+        var store = new EntityStore();
+        var target = store.CreateEntity();
+        var buff = BuffHelper.ApplyDoT(store, target, target, "partial", 1, .1f, .35f);
+        var root = new SystemRoot(store);
+        root.Add(new DurationSystem());
+        root.Add(new BuffTickSystem());
+        root.Add(new BuffDurationSystem());
+        root.Add(new BuffExpireSystem());
+        root.Update(new UpdateTick(1, 1));
+        Check.That(store.Query<DamageRequest>().Count == 3, "tail segment below one interval must not add a fourth tick");
+        Check.That(buff.IsNull, "expired partial buff reclaimed in the same update");
+    }
+
+    /// <summary>
+    /// 验证周期 Buff 回收不得早于尾段观察、无周期行为不延迟回收：
+    /// 周期 DoT 先完成完整间隔 tick 才删除；无 tick 的限时 Buff 同一次更新内直接删除且不产生 tick 行为。
+    /// </summary>
+    private static void BuffReclaimOrdering()
+    {
+        var store = new EntityStore();
+        var target = store.CreateEntity();
+        var dot = BuffHelper.ApplyDoT(store, target, target, "observe", 1, .1f, .25f);
+        var root = new SystemRoot(store);
+        root.Add(new DurationSystem());
+        root.Add(new BuffTickSystem());
+        root.Add(new BuffDurationSystem());
+        root.Add(new BuffExpireSystem());
+        root.Update(new UpdateTick(1, 1));
+        // 若回收早于观察，实体已被删除，两次 tick 不会发生。
+        Check.That(store.Query<DamageRequest>().Count == 2 && dot.IsNull, "periodic buff ticks are observed before reclaim");
+
+        var stunned = BuffHelper.Stun(store, target, target, .25f);
+        root.Update(new UpdateTick(1, 1.3f));
+        Check.That(stunned.IsNull, "non-periodic buff reclaims without a periodic observer");
+        Check.That(store.Query<DamageRequest>().Count == 2, "non-periodic buff produces no tick behavior");
     }
 
     private static void Modifiers()
