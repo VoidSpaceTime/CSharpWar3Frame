@@ -34,7 +34,8 @@ namespace War3FrameBuild.CommandManager
             else if (Directory.Exists(demoDir))
             {
                 Directory.CreateDirectory(projectPath);
-                DirectoryExtensions.CopyDir(demoDir, projectPath);
+                DirectoryExtensions.CopyDir(demoDir, projectPath,
+                    new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "bin", "obj", ".git", ".temp", ".build" });
                 File.Move(Path.Combine(projectPath, "demo.csproj"), Path.Combine(projectPath, $"{ProjectName}.csproj"));
             }
             else

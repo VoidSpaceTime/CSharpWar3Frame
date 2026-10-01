@@ -13,17 +13,22 @@ namespace War3Frame;
 public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
 {
     public float Interval => 0.02f;
+    private readonly List<(Entity entity, EffectNative native)> _toAddNative = new();
+    private readonly List<Entity> _toClearDirty = new();
+    private readonly List<Entity> _toClearAnim = new();
+    private readonly List<Entity> _toDelete = new();
+    private ForEachEntity<EffectBase>? _syncEffect;
 
     protected override void OnUpdate()
     {
         // Friflo 约束：Query 迭代内禁止 AddComponent/RemoveComponent/DeleteEntity。
         // 原生副作用（YDApi/KKApi/JassApi）仍在循环内执行，ECS 结构变更收集到循环外应用。
-        var toAddNative = new List<(Entity entity, EffectNative native)>();
-        var toClearDirty = new List<Entity>();
-        var toClearAnim = new List<Entity>();
-        var toDelete = new List<Entity>();
+        _toAddNative.Clear();
+        _toClearDirty.Clear();
+        _toClearAnim.Clear();
+        _toDelete.Clear();
 
-        Query.ForEachEntity((ref EffectBase effect, Entity entity) =>
+        Query.ForEachEntity(_syncEffect ??= (ref EffectBase effect, Entity entity) =>
         {
             var needsFullSync = false;
             if (!entity.TryGetComponent<EffectNative>(out var native))
@@ -33,16 +38,23 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
                 {
                     effect = CreateNativeEffect(entity, effect)
                 };
-                toAddNative.Add((entity, native));
                 needsFullSync = true;
             }
 
             // 更新位置
             if (entity.TryGetComponent<Position>(out var position))
             {
-                YDApi.EXSetEffectXY(native.effect, position.x, position.y);
-                YDApi.EXSetEffectZ(native.effect, position.z);
+                if (!native.positionSynced || native.syncedPosition.x != position.x || native.syncedPosition.y != position.y)
+                    YDApi.EXSetEffectXY(native.effect, position.x, position.y);
+                if (!native.positionSynced || native.syncedPosition.z != position.z)
+                    YDApi.EXSetEffectZ(native.effect, position.z);
+                native.syncedPosition = position;
+                native.positionSynced = true;
             }
+            else native.positionSynced = false;
+
+            if (needsFullSync) _toAddNative.Add((entity, native));
+            else entity.GetComponent<EffectNative>() = native;
 
             // 同步外观与变换脏标记：首次创建按全字段同步，否则只处理被标记的字段。
             EffectDirtyFlags flags;
@@ -109,7 +121,7 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
 
                 if (entity.HasComponent<EffectDirty>())
                 {
-                    toClearDirty.Add(entity);
+                    _toClearDirty.Add(entity);
                 }
             }
 
@@ -117,7 +129,7 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
             if (entity.TryGetComponent<EffectAnimationRequest>(out var animation))
             {
                 KKApi.DzPlayEffectAnimation(native.effect, animation.animation, animation.link);
-                toClearAnim.Add(entity);
+                _toClearAnim.Add(entity);
             }
 
             if (entity.TryGetComponent<EffectDestroyRequest>(out var destroy))
@@ -130,29 +142,29 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
 
                 HandleHelper.HandleRemove(native.effect);
                 JassApi.DestroyEffect(native.effect);
-                toDelete.Add(entity);
+                _toDelete.Add(entity);
             }
         });
 
-        foreach (var (entity, native) in toAddNative)
+        foreach (var (entity, native) in _toAddNative)
         {
             if (!entity.IsNull && !entity.HasComponent<EffectNative>())
                 entity.AddComponent(native);
         }
 
-        foreach (var entity in toClearDirty)
+        foreach (var entity in _toClearDirty)
         {
             if (!entity.IsNull && entity.HasComponent<EffectDirty>())
                 entity.RemoveComponent<EffectDirty>();
         }
 
-        foreach (var entity in toClearAnim)
+        foreach (var entity in _toClearAnim)
         {
             if (!entity.IsNull && entity.HasComponent<EffectAnimationRequest>())
                 entity.RemoveComponent<EffectAnimationRequest>();
         }
 
-        foreach (var entity in toDelete)
+        foreach (var entity in _toDelete)
         {
             if (!entity.IsNull)
                 entity.DeleteEntity();
@@ -174,7 +186,6 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
         {
             handle = JassApi.AddSpecialEffect(effect.model, position.x, position.y);
             HandleHelper.HandleAdd(handle);
-            YDApi.EXSetEffectZ(handle, position.z);
         }
         else
         {

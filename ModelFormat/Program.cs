@@ -1,80 +1,57 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using System.Text.RegularExpressions;
 using FastMDX;
 
-var sourceFolder = args.Length >= 1 ? args[0] : string.Empty;
-var isRename = false;
-
-sourceFolder = @"D:\Game\war3\xlik\.tmp\_local\demo\resource\war3mapModel";
-if (sourceFolder == string.Empty)
+if (args.Length != 1 || string.IsNullOrWhiteSpace(args[0]) || !Directory.Exists(args[0]))
 {
-    Console.WriteLine("传入文件夹地址为空");
-    return;
+    Console.Error.WriteLine("用法: ModelFormat <现有模型目录>");
+    return 1;
 }
 
-if (!Directory.Exists(sourceFolder))
+var sourceFolder = Path.TrimEndingDirectorySeparator(Path.GetFullPath(args[0]));
+if (Directory.GetParent(sourceFolder) == null)
 {
-    Console.WriteLine("传入文件夹地址不存在");
-    return;
+    Console.Error.WriteLine("模型目录不能是文件系统根目录，需要在其同级创建输出目录。");
+    return 1;
 }
-
 var targetFolder = sourceFolder + "_Format";
-if (!Directory.Exists(targetFolder)) Directory.CreateDirectory(targetFolder);
-var modelsFile = Directory.GetFiles(sourceFolder, "*.mdx", SearchOption.AllDirectories).ToList();
-modelsFile.AddRange(Directory.GetFiles(sourceFolder, "*.mdl", SearchOption.AllDirectories).ToList());
+Directory.CreateDirectory(targetFolder);
+var files = Directory.GetFiles(sourceFolder, "*", SearchOption.AllDirectories)
+    .Where(p => Path.GetExtension(p).Equals(".mdx", StringComparison.OrdinalIgnoreCase) || Path.GetExtension(p).Equals(".mdl", StringComparison.OrdinalIgnoreCase))
+    .OrderBy(p => p, StringComparer.Ordinal).ToArray();
 var count = 0;
-foreach (var modelFile in modelsFile)
+foreach (var file in files)
 {
-    var modelFolder = Path.Combine(targetFolder, Path.GetFileNameWithoutExtension(modelFile));
-    if (!Directory.Exists(modelFolder)) Directory.CreateDirectory(modelFolder);
     try
     {
-        var model = new MDX(modelFile);
-        for (var i = 0; i < model.Textures.Count(); i++)
+        // 保留源相对目录，避免不同子目录的同名模型互相覆盖。
+        var relative = Path.GetRelativePath(sourceFolder, file);
+        var output = Path.Combine(targetFolder, Path.GetDirectoryName(relative)!, Path.GetFileNameWithoutExtension(file));
+        Directory.CreateDirectory(output);
+        var model = new MDX(file);
+        for (var i = 0; i < (model.Textures?.Length ?? 0); i++)
         {
-            var flag = false;
             var texture = model.Textures[i];
-            if (texture.ReplaceableId is 0)
+            if (texture.ReplaceableId != 0 || string.IsNullOrEmpty(texture.Name)) continue;
+            var candidate = Path.Combine(Path.GetDirectoryName(file)!, texture.Name);
+            if (!File.Exists(candidate))
             {
-                var texturePath = texture.Name;
-                var ext = Path.GetExtension(texturePath).ToLower();
-                var textureName = Path.ChangeExtension(texturePath, ext);
-
-                texturePath = Path.Combine(Directory.GetParent(modelFile).FullName, textureName);
-                if (File.Exists(texturePath))
-                {
-                    flag = true;
-                }
-                else
-                {
-                    var folderName = "war3mapModel";
-                    var pattern = $@"^(.*?[/\\]{Regex.Escape(folderName)})(?=[/\\]|$)";
-                    var m = Regex.Match(modelFile, pattern, RegexOptions.IgnoreCase);
-                    var xlikTextureDir = Directory.GetParent(m.Value).FullName;
-                    texturePath = Path.Combine(xlikTextureDir, textureName);
-                    if (File.Exists(texturePath)) flag = true;
-                }
-
-                if (flag)
-                {
-                    if (isRename)
-                        texture.Name = (Path.GetFileNameWithoutExtension(modelFile) + $"_{i}").ToLower();
-                    else
-                        texture.Name = Path.GetFileName(texturePath).ToLower();
-                    File.Copy(texturePath, Path.Combine(modelFolder, texture.Name), true);
-                }
+                // 兼容 war3mapModel 的公共资源根；普通目录无需具备该布局。
+                for (var directory = Directory.GetParent(file); directory != null; directory = directory.Parent)
+                    if (directory.Name.Equals("war3mapModel", StringComparison.OrdinalIgnoreCase) && directory.Parent != null)
+                    { candidate = Path.Combine(directory.Parent.FullName, texture.Name); break; }
             }
+            if (!File.Exists(candidate)) continue; // 游戏内置贴图保持原路径。
+            var name = "texture" + i + Path.GetExtension(candidate).ToLowerInvariant();
+            File.Copy(candidate, Path.Combine(output, name), true);
+            texture.Name = name;
+            model.Textures[i] = texture; // Texture 是值类型，写回数组后模型才引用新路径。
         }
-
-        model.SaveTo(Path.Combine(modelFolder, Path.GetFileName(modelFile)));
+        model.SaveTo(Path.Combine(output, Path.GetFileName(file)));
         count++;
     }
-    catch
+    catch (Exception exception)
     {
-        throw new Exception("模型打开失败:" + modelFile);
+        Console.Error.WriteLine($"模型处理失败 {file}: {exception.Message}");
     }
 }
-
-Console.WriteLine($"完成模型格式化，共处理模型数量：{count},失败:{modelsFile.Count() - count}");
-Console.ReadLine();
+Console.WriteLine($"完成模型格式化，成功: {count}，失败: {files.Length - count}");
+return count == files.Length ? 0 : 1;

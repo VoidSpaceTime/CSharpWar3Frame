@@ -28,6 +28,9 @@ public enum EffectAttachType
 /// </summary>
 public struct EffectNative : IComponent
 {
+    /// <summary>Native 投影快照，只用于 Compare-Sync，不是业务状态。</summary>
+    public Position syncedPosition;
+    public bool positionSynced;
     public JEffect effect;
 }
 

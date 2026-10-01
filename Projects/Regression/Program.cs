@@ -7,6 +7,7 @@ internal static class Program
 {
     private static async Task<int> Main(string[] args)
     {
+        if (args.Length > 0 && args[0] == "--child") return await RunChild(args[1]);
         var selected = args.Length == 0 ? null : args[0];
         var tests = new List<RegressionCase>();
         foreach (var type in typeof(Program).Assembly.GetTypes()
@@ -50,6 +51,22 @@ internal static class Program
         DomainRegression.Register(tests);
         GeneratorRegression.Register(tests);
         NativeProjectionRegression.Register(tests);
+        BuildRegression.Register(tests);
+        IntegrationRegression.Register(tests);
+    }
+
+    private static async Task<int> RunChild(string mode)
+    {
+        if (mode == "wait") { await Task.Delay(Timeout.Infinite); return 0; }
+        if (mode == "failure") { Console.Error.Write("controlled failure"); return 17; }
+        if (mode == "flood")
+        {
+            for (var i = 0; i < 256; i++) Console.Out.Write(new string('o', 4096));
+            for (var i = 0; i < 256; i++) Console.Error.Write(new string('e', 4096));
+            Console.Out.Write("OUT-END"); Console.Error.Write("ERR-END");
+            return 0;
+        }
+        return 2;
     }
 }
 

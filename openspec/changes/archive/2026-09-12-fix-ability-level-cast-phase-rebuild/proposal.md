@@ -4,7 +4,7 @@
 
 - **Change ID**：`fix-ability-level-cast-phase-rebuild`
 - **提案等级**：`light`
-- **状态**：`待审核`
+- **状态**：`已取代`
 - **日期**：2026-09-09
 - **目标一句话**：`AbilityLevelStatRebuildSystem` 在 `LevelStatDirty` 重算时，除 `baseValues` 外同步重算施法阶段 LevelValue（前摇/后摇/引导时长/tick 间隔），修复"技能升级后施法阶段按 1 级卡住"的既有缺陷。
 - **请求来源**：`introduce-ability-skill-point-upgrade` 对抗审查发现的重算缺口（与加点无关，熟练度升级同样受影响），从主 change 拆出独立修复。
@@ -13,6 +13,21 @@
 - **最终实施后审查强度**：`R0 Direct`
 - **Oracle 可用性与 `R1` 回退方式**：不需要 `R1`
 - **完整 `review-work` 授权来源**：无
+
+## 关闭记录（2026-09-12）
+
+本提案由 `repair-audit-findings-on-luomo` 取代。用户已明确授权在 luomo 分支直接修复和提交已发现的代码逻辑问题；后继变更统一了创建与等级重算的 `AbilitySpecBuilder.ApplyLevelValues`，没有采用复制四行参数写入的方案。
+
+后继变更中的 `runtime/ability-level-phases` 验证了等级变化后前摇、后摇、引导时长和 tick 间隔全部重算；test 的 win-x86 JIT publish 与完整 43 项 SDK 回归通过。当前行为规格由后继变更的 `runtime-execution` delta 合并，本提案不重复提供 delta，以 `--skip-specs` 官方归档。
+
+## Why
+
+技能等级重算缺口已在统一审查修复中解决，关闭被取代的提案，避免待审列表继续表示该缺陷尚未修复。
+
+## What Changes
+
+- 仅登记取代关系并归档此历史提案；原方案与验收记录保留如下。
+- 运行时、生成器、构建、CLI、Projects 的实际修改和验证全部归属 `repair-audit-findings-on-luomo`，此次关闭记录不产生额外代码修改。
 
 ---
 

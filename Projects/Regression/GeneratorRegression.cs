@@ -13,6 +13,7 @@ internal static class GeneratorRegression
         tests.Add(new("generator", "empty-consumer", Empty));
         tests.Add(new("generator", "source-diagnostics", Diagnostics));
         tests.Add(new("generator", "real-project-templates", RealTemplates));
+        tests.Add(new("generator", "framework-global-system-order", FrameworkSystems));
     }
 
     private static (Compilation Compilation, GeneratorDriverRunResult Result) Generate(params string[] sources)
@@ -65,6 +66,55 @@ internal static class GeneratorRegression
     }
 
     private static void Empty() => Initialize(Generate("public class Empty {}").Compilation);
+
+    private static void FrameworkSystems()
+    {
+        // Attribute 与 Game 在被编译程序集内，走框架生成路径；实际系统基类来自 Friflo。
+        var sources = new[]
+        {
+            "global using System;",
+            CompilationTest.Read("War3Frame/Src/Systems/SystemRegisterAttribute.cs"),
+            """
+            using Friflo.Engine.ECS.Systems;
+            using War3Frame.Systems;
+            namespace War3Frame {
+                public static partial class Game {
+                    private static readonly RecordingRoot Root = new();
+                    static partial void RegisterGeneratedSystems();
+                    public static string[] Register() { RegisterGeneratedSystems(); return Root.Calls.ToArray(); }
+                }
+                public class RecordingRoot {
+                    public readonly System.Collections.Generic.List<string> Calls = new();
+                    public void Add(BaseSystem system) => Calls.Add(system.GetType().FullName + ":interval");
+                    public void Add(BaseSystem system, float delay) => Calls.Add(system.GetType().FullName + (delay == 0 ? ":immediate" : ":delayed"));
+                }
+            }
+            [SystemRegister(SystemKind.Immediate, 0)]
+            public class GlobalSystem : QuerySystem<War3Frame.Duration> { protected override void OnUpdate() {} }
+            namespace Beta {
+                [SystemRegister(SystemKind.Interval, 4)]
+                public class Same : QuerySystem<War3Frame.Duration> { protected override void OnUpdate() {} }
+            }
+            namespace Alpha {
+                public class Outer {
+                    [SystemRegister(SystemKind.Interval, 4)]
+                    public class Same : QuerySystem<War3Frame.Duration> { protected override void OnUpdate() {} }
+                }
+            }
+            """
+        };
+        var (output, result) = Generate(sources);
+        Check.That(!result.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error), "valid framework systems accepted");
+        var assembly = CompilationTest.Emit(output);
+        var order = (string[])assembly.GetType("War3Frame.Game")!.GetMethod("Register")!.Invoke(null, null)!;
+        Check.That(order.SequenceEqual(new[] { "GlobalSystem:immediate", "Alpha.Outer+Same:interval", "Beta.Same:interval" }),
+            "global/nested systems compile and register by order then ordinal qualified name");
+        var (_, invalid) = Generate(sources.Append("""
+            [War3Frame.Systems.SystemRegister(War3Frame.Systems.SystemKind.Interval)]
+            public class InvalidSystem {}
+            """).ToArray());
+        Check.That(invalid.Diagnostics.Any(d => d.Id == "WFGEN003" && d.Location.IsInSource), "invalid framework system diagnosed at source");
+    }
 
     private static void Diagnostics()
     {

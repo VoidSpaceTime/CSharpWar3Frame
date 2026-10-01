@@ -26,7 +26,7 @@ public static class PlayerHelper
     }
 
     /// <summary>
-    /// 初始化玩家镜像数组：建立默认敌对关系缓存，并为每个玩家实体挂载联盟状态组件。
+    /// 初始化玩家镜像数组：为每个玩家实体挂载默认联盟状态组件。
     /// </summary>
     public static void InitializePlayers(ref PlayerNative[] players)
     {
@@ -69,7 +69,7 @@ public static class PlayerHelper
     }
 
     /// <summary>
-    /// 设置基础同盟（双向关系）：更新阵营缓存，并双向写联盟位 + 打 Alliance Dirty。
+    /// 设置基础同盟（双向关系）：双向写联盟位并打 Alliance Dirty，查询由联盟位派生。
     /// </summary>
     public static void SetAlliance(PlayerNative playerA, PlayerNative playerB, bool allied)
     {
@@ -81,16 +81,16 @@ public static class PlayerHelper
     }
 
     /// <summary>
-    /// 设置共享视野（单向：A 授予 B 视野），不改变阵营缓存。
+    /// 设置共享视野（单向：A 授予 B 视野），不改变阵营关系。
     /// </summary>
     public static void SetVision(PlayerNative playerA, PlayerNative playerB, bool flag)
     {
-        // 视野/控制类关系不改变阵营缓存，只同步联盟位（单向：A 授予 B 视野）。
+        // 视野/控制类关系不改变阵营关系，只同步联盟位（单向：A 授予 B 视野）。
         SetAllianceBit(playerA, playerB, PlayerAllianceState.AllianceBitVision, flag);
     }
 
     /// <summary>
-    /// 设置共享控制权（单向：A 授予 B 控制），不改变阵营缓存。
+    /// 设置共享控制权（单向：A 授予 B 控制），不改变阵营关系。
     /// </summary>
     public static void SetControl(PlayerNative playerA, PlayerNative playerB, bool flag)
     {
@@ -98,7 +98,7 @@ public static class PlayerHelper
     }
 
     /// <summary>
-    /// 设置完全控制权（单向：A 授予 B 完全控制），不改变阵营缓存。
+    /// 设置完全控制权（单向：A 授予 B 完全控制），不改变阵营关系。
     /// </summary>
     public static void SetFullControl(PlayerNative playerA, PlayerNative playerB, bool flag)
     {
@@ -106,7 +106,7 @@ public static class PlayerHelper
     }
 
     /// <summary>
-    /// 设置中立关系（双向）：更新阵营缓存为 Neutral，并双向写联盟位 + 打 Alliance Dirty。
+    /// 设置中立关系（双向）：双向写中立位并打 Alliance Dirty。
     /// </summary>
     public static void SetNeutral(PlayerNative playerA, PlayerNative playerB, bool flag)
     {

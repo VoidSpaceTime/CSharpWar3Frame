@@ -1,11 +1,18 @@
 ## ADDED Requirements
 
+### Requirement: 特效位置按差异同步
+Effect Position SHALL 保持 ECS 真相；Native 组件缓存上次已投影位置，只同步变化的轴组。
+
+#### Scenario: 静止与移动
+- **WHEN** 特效首次创建后连续静止，再只改变 XY 或 Z
+- **THEN** 首次完整同步，静止无重复位置调用，变化仅同步对应轴组
+
 ### Requirement: 玩家关系投影一致
-玩家关系缓存 SHALL 从最终联盟位派生；切换 Basic/Neutral 后 ECS 判断与 Native PASSIVE 投影一致。
+玩家关系查询 SHALL 从 ECS 最终联盟位派生；切换 Basic/Neutral 后 ECS 判断与 Native PASSIVE 投影一致。
 
 #### Scenario: 中立切换
 - **WHEN** 先设置中立再设置敌对，或取消中立
-- **THEN** Neutral 位按请求撤销，关系缓存和 Native 应用读取同一最终状态
+- **THEN** Neutral 位按请求撤销，关系查询和 Native 应用读取同一最终状态
 
 ### Requirement: 累计特效变换投影
 Native 特效矩阵 SHALL 表达 ECS 累计变换，重复同步不得重复应用历史角度；重建保持缩放契约。

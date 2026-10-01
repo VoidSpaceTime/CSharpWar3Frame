@@ -33,11 +33,12 @@ public partial class MDX
 
     private unsafe void LoadFrom(Stream stream, long fileSize)
     {
-        if (fileSize > int.MaxValue)
-            throw new Exception("File is too large!");
+        if (fileSize < sizeof(MDXHeader) || fileSize > int.MaxValue)
+            throw new ParsingException();
 
         var mdxHeader = new MDXHeader();
-        if (stream.Read(new Span<byte>(&mdxHeader, sizeof(MDXHeader))) < sizeof(MDXHeader) || !mdxHeader.Check())
+        stream.ReadExactly(new Span<byte>(&mdxHeader, sizeof(MDXHeader)));
+        if (!mdxHeader.Check())
             throw new Exception("Not a MDX file!");
 
         if (mdxHeader.version != VERSION)
@@ -48,7 +49,7 @@ public partial class MDX
             return;
 
         using var ds = new DataStream((uint)fileSize);
-        stream.Read(new Span<byte>(ds.Pointer, (int)fileSize));
+        stream.ReadExactly(new Span<byte>(ds.Pointer, (int)fileSize));
 
         var unknownBlocks = new List<BinaryBlock>();
 
