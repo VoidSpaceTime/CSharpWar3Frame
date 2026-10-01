@@ -1,7 +1,7 @@
 # control-state Specification
 
 ## Purpose
-TBD - created by archiving change absorb-control-applied-while-immune. Update Purpose after archive.
+定义无敌或免疫期间新施加的控制贡献在施加时刻被吸收、解除后不延迟生效，且此前已存在的控制不被回收的当前行为。
 
 ## Requirements
 
