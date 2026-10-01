@@ -2,7 +2,7 @@
 
 - **变更 ID**：synthesize-pause-from-controls
 - **等级**：light
-- **实施范围**：用户 2026-09-17 指定 T0 + T1-2 + T2-2~5；追加指定 T1-4 / T1-5；其余项标注暂缓原因。
+- **实施范围**：用户 2026-09-17 指定 T0 + T1-2 + T2-2~5；追加指定 T1-4 / T1-5（已实现）；T4-2 与客户端验证按 2026-10-01 用户裁决暂缓/移出（见 summary.md 第 6 节）。
 
 ## T0. 前置：快照位宽修复（Blocker）
 
@@ -13,8 +13,8 @@
 - [x] `AttributeHelper.cs`：属性命名统一已完成（`Disarm`→`NoAttack`、`Knockback`→`CrackFly`，Register 字符串同步）。
 - [x] `AttributeHelper.cs`：注册 `Pause = Register("Pause")`。**不注册 `PauseImmunity`**——暂停是最底层硬控制，不可免疫。
 - [x] 纯 Pause 在合成判定中不经过免疫压制：直接读 `AttrValue.finalValue`（Pause 无免疫条目时 `GetEffectiveValue` 也会原样返回，但语义上用直读更明确）。
-- [x] 明确枚举语义：`ControlType.Pause` 为"最底层硬控制、由合成驱动"；`ControlType.Stun` / `ControlType.CrackFly` 更新为"暂停（由 Pause 合成驱动原生）+ 标记 + 表现"。
-- [x] `ControlHelper.GetImmunityAttrId` if-链改读共享 `ControlAttrs` 映射表（消双份维护）：表提升到 `ControlHelper.ControlAttrs`（`public readonly record struct ControlAttrEntry`），检测系统改为引用同一权威表，不再各持一份。
+- [x] 明确枚举语义：`ControlType.Pause` 为"最底层硬控制、由合成驱动"；`ControlType.Stun` / `ControlType.CrackFly` 更新为"暂停（由 Pause 合成驱动原生）+ 标记 + 表现"。（T1-4，已实现）
+- [x] `ControlHelper.GetImmunityAttrId` if-链改读共享 `ControlAttrs` 映射表（消双份维护）：表提升到 `ControlHelper.ControlAttrs`（`public readonly record struct ControlAttrEntry`），检测系统改为引用同一权威表，不再各持一份。（T1-5，已实现）
 
 ## T2. 检测系统：Pause 合成判定
 
@@ -39,7 +39,7 @@
 ## T4. 验证场景 / 模板
 
 - [x] （可选）验证改用 `Projects/Regression` 的 `runtime/pause-synthesis` 用例覆盖 Stun/CrackFly/纯 Pause → Pause 请求链路（`Projects/test` 场景为 War3 端运行，本地不可执行）。
-- [ ] **暂缓（用户决定）** 眩晕特效示例监听 `ControlStateChangedEvent(Stun, entered=true)` 的路径确认（不属于本 change 实现，仅确认不被破坏）。
+- [x] **暂缓（用户决定）** 眩晕特效示例监听 `ControlStateChangedEvent(Stun, entered=true)` 的路径确认（不属于本 change 实现，仅确认不被破坏）。用户决定暂缓/移出（2026-10-01 用户裁决）
 
 ## T5. 构建与验证
 
@@ -47,4 +47,4 @@
 - [x] `dotnet build Projects/test/test.csproj` 0 error 0 warning。
 - [x] 静态核对：Stun/CrackFly 不再发各自 native 请求；Pause 只在合成跳变时发一次；免疫路径不穿透（均有 `pause-synthesis` 断言）。
 - [x] `Projects/Regression` 回归宿主 31/31 通过（含 11 个既有 Projects/test 场景）。T1-4 / T1-5 追加后重跑仍 31/31。
-- [ ] War3 客户端真实暂停表现验证（非阻塞；缺可自动执行的客户端验证协议，未执行，风险见 summary.md）。
+- [x] War3 客户端真实暂停表现验证。非阻塞：未执行，原因与剩余风险见 summary.md（2026-10-01 用户裁决）
