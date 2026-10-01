@@ -482,8 +482,29 @@ namespace War3Frame
                         var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int, int, int, int, int>)(func);
                         return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11]);
                     }
+                // 13 至 16 槽沿用 0 至 12 的 cdecl 展开，槽按 args 顺序传入；封送规则不变。
+                case 13:
+                    {
+                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int, int, int, int, int, int>)(func);
+                        return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12]);
+                    }
+                case 14:
+                    {
+                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int, int, int, int, int, int, int>)(func);
+                        return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13]);
+                    }
+                case 15:
+                    {
+                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int>)(func);
+                        return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14]);
+                    }
+                case 16:
+                    {
+                        var fn = (delegate* unmanaged[Cdecl]<int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int>)(func);
+                        return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15]);
+                    }
                 default:
-                    throw new NotSupportedException($"暂时不支持 {args.Length} 个参数的调用");
+                    throw new NotSupportedException($"不支持 {args.Length} 个参数的调用，参数上限为 16 个");
             }
         }
     }

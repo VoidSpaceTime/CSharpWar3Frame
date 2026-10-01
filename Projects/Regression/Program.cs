@@ -58,6 +58,7 @@ internal static class Program
         ProjectileExpireRegression.Register(tests);
         UnitRebornPoolRegression.Register(tests);
         DamagePostProcessRegression.Register(tests);
+        JassVmNativeArgsRegression.Register(tests);
     }
 
     private static async Task<int> RunChild(string mode)
