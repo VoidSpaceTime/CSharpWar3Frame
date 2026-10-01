@@ -1,0 +1,3 @@
+schema: spec-driven
+created: 2026-10-01
+goal: 扩展 JassVM cdecl 分发，使 13 至 16 个 int 槽参数可调用，且 0 至 12 槽路径的封送与调用不变。
