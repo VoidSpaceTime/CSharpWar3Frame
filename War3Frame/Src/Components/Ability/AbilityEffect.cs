@@ -365,4 +365,12 @@ public struct ProjectileArriveRequest : IComponent;
 /// </summary>
 public struct ProjectileExpireRequest : IComponent;
 
+/// <summary>
+/// 弹道最大存活。maxLifetime &lt;= 0 表示不启用超时；攻击弹道不挂本组件。
+/// </summary>
+public struct ProjectileLifetime : IComponent
+{
+    public float maxLifetime;
+}
+
 public struct ProjectileArrived : ITag;

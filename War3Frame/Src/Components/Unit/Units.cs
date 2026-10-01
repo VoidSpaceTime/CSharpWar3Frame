@@ -43,6 +43,26 @@ public struct AttackTypeState : IComponent
     public AttackType value;
 }
 
+/// <summary>
+/// 远程攻击弹道的命中结算快照。到达后按快照发伤害，过期则丢弃。
+/// </summary>
+public struct AttackProjectileImpact : IComponent
+{
+    public Entity attacker;
+    public Entity target;
+    public float damage;
+    public int token;
+}
+
+/// <summary>
+/// 闪电链跳数与衰减。缺省 4 跳（含第一跳）、每跳乘 0.85。
+/// </summary>
+public struct AttackChainConfig : IComponent
+{
+    public int maxJumps;
+    public float decay;
+}
+
 public struct UnitBase : IComponent
 {
     public string templateName;

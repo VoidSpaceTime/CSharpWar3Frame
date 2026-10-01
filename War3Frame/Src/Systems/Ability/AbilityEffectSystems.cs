@@ -42,7 +42,9 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
             if (!ProjectileFlowHelper.ShouldProcess(runtimeState))
                 return;
 
-            NormalizeProjectileDefaults(ref projectile, ref source, ref target, effectEntity);
+            // 攻击弹道没有技能。运行时数值已在创建时写好，跳过会读取 ability 属性的归一化。
+            if (!source.ability.IsNull)
+                NormalizeProjectileDefaults(ref projectile, ref source, ref target, effectEntity);
 
             if (runtimeState.phase == ProjectileLifecyclePhase.PendingStart)
             {
@@ -157,6 +159,7 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
         var dx = tx - position.x;
         var dy = ty - position.y;
         var dist = MathF.Sqrt(dx * dx + dy * dy);
+        // 距离被本帧步长夹到阈值上时仍算到达，避免停在目标点却永不命中。
         if (dist <= projectile.arrivalThreshold)
             return true;
 
