@@ -1,0 +1,3 @@
+schema: spec-driven
+created: 2026-10-01
+goal: 在 DamagePostProcessRegistry 注册吸血、反射与伤害护盾吸收，数值来自属性，结算顺序与互斥显式，不把业务特例写进伤害主流程。
