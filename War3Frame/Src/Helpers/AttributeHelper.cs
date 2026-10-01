@@ -61,6 +61,16 @@ public static partial class AttributeHelper
     public static readonly int RootImmunity = Register("RootImmunity");
     public static readonly int CrackFlyImmunity = Register("CrackFlyImmunity");
 
+    // ============================================================================
+    // 伤害后处理属性（内置护盾/吸血/反射的数值来源；由 DamagePostProcessRegistry 消费）
+    // ============================================================================
+    /// <summary>伤害护盾：可消耗资源池，current 为剩余、finalValue 为上限。扣血前吸收待扣伤害。</summary>
+    public static readonly int DamageShield = Register("DamageShield");
+    /// <summary>吸血比例（0..1）：按实际扣血回复攻击者。</summary>
+    public static readonly int Lifesteal = Register("Lifesteal");
+    /// <summary>反射比例（0..1）：按实际扣血向攻击者反射真实伤害。</summary>
+    public static readonly int DamageReflect = Register("DamageReflect");
+
 /// <summary>项目层注册新属性类型</summary>
     // 运行时注册入口：只负责建立可读名称，不做去重，调用方需保证注册顺序稳定。
     public static int Register(string name)

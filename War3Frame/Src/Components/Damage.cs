@@ -36,6 +36,9 @@ public struct DamageRequest : IComponent
     public DamageBase damage;
     public Entity source;
     public Entity target;
+
+    /// <summary>跳过 Event 后处理（吸血/反射及外部钩子）。用于反射伤害，避免互反射与二次吸血。</summary>
+    public bool skipPostProcess;
 }
 
 /// <summary>
@@ -57,10 +60,10 @@ public struct DamageContext
     /// <summary>减免量。</summary>
     public float mitigation;
 
-    /// <summary>实际扣血值（含护盾吸收后剩余）。</summary>
+    /// <summary>实际扣血值：护盾吸收与减免之后的剩余，用于写入生命。</summary>
     public float finalDamage;
 
-    /// <summary>护盾吸收量（本提案恒 0，扩展位）。</summary>
+    /// <summary>护盾吸收量（内置护盾处理器在扣血前写入）。</summary>
     public float absorbed;
 
     /// <summary>本次是否暴击。</summary>
@@ -89,4 +92,7 @@ public struct DamageEvent : IComponent
 
     /// <summary>是否被免疫拦截（无敌）：伤害结算为 0，HP 不变。</summary>
     public bool isImmune;
+
+    /// <summary>护盾吸收量（本次实际被伤害护盾吸收的部分，不并入 mitigatedAmount）。</summary>
+    public float absorbed;
 }

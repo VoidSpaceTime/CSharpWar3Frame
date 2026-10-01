@@ -1051,8 +1051,9 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
 
 /// <summary>
 /// 伤害结算系统（结算管线入口）。
-/// 统一结算点：PreCheck（空目标/无敌免疫拦截）→ 伤害计算器（暴击+减免）→ 扣血 → DamageEvent → 死亡判定 → PostProcess 钩子位。
-/// 分层：除 War3Random（Native 同步随机例外，见 Helpers/War3Random.cs）外不直接调原生 API。
+/// 统一结算点：PreCheck（空目标/无敌免疫拦截）→ 伤害计算器（暴击+减免）→ 护盾吸收 → 扣血 → DamageEvent → PostProcess（吸血/反射）→ 死亡判定。
+/// 分层：除 War3Random（Native 同步随机例外，见 Helpers/War3Random.cs）外不直接调原生 API；
+/// 护盾/吸血/反射均为注册表内置处理器，本系统不内联其业务分支。
 /// Friflo 约束：Query 迭代内禁止结构变更（AddComponent/CreateEntity/DeleteEntity 均会触发 StructuralChangeException），
 /// 故本系统先收集 request 快照，循环结束后统一执行结算与删除。
 /// </summary>
@@ -1115,11 +1116,15 @@ public class DamageResolveSystem : QuerySystem<DamageRequest>
                 }
             }
 
-            // ---------- 3. Apply ----------
+            // ---------- 3. 护盾吸收（Apply 前）：仅非免疫路径；唯一允许改 absorbed / finalDamage 的内置段 ----------
+            if (!ctx.isImmune)
+                DamagePostProcessRegistry.RunAbsorb(ref ctx, request.target.Store);
+
+            // ---------- 4. Apply ----------
             var finalDamage = ctx.isImmune ? 0f : ctx.finalDamage;
             var remaining = AttributeHelper.ModifyCurrent(request.target, AttributeHelper.Health, -finalDamage);
 
-            // ---------- 4. DamageEvent ----------
+            // ---------- 5. DamageEvent ----------
             var damageEvent = request.target.Store.CreateEntity(new DamageEvent
             {
                 source = request.source,
@@ -1130,14 +1135,16 @@ public class DamageResolveSystem : QuerySystem<DamageRequest>
                 isCrit = ctx.isCrit,
                 mitigatedAmount = ctx.isImmune ? ctx.preMitigation : ctx.mitigation,
                 isImmune = ctx.isImmune,
+                absorbed = ctx.absorbed,
             });
             damageEvent.AddComponent(new TriggerEventMarker { eventTypeId = EventTypeRegistry.Get<DamageEvent>() });
 
-            // ---------- 5. PostProcess 钩子位（吸血/反射等扩展位，本提案不注册内置实现） ----------
-            // DamageEvent 创建后调用；语义约束见 Helpers/DamagePostProcessRegistry.cs（只读 ctx / 发新 Request / 禁原生 API）。
-            DamagePostProcessRegistry.Run(ref ctx, request.target.Store);
+            // ---------- 6. PostProcess 钩子位（Event 后、死亡判定前）：吸血/反射及外部扩展 ----------
+            // 语义约束见 Helpers/DamagePostProcessRegistry.cs；反射请求 skipPostProcess 在此被跳过，避免二次吸血/反射。
+            if (!ctx.isImmune && !request.skipPostProcess)
+                DamagePostProcessRegistry.RunPost(ref ctx, request.target.Store);
 
-            // ---------- 6. 死亡判定 ----------
+            // ---------- 7. 死亡判定 ----------
             // 仅致死当次（KillUnit 真正发生 Alive→Death）会广播 UnitDiedEvent，由 KillRewardSystem 等消费方处理；
             // 同帧超杀与死后伤害不再触发。死亡分支自身不再内联任何死后业务。
             if (!ctx.isImmune && remaining <= 0f)
