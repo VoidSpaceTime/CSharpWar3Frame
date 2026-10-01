@@ -1,7 +1,7 @@
 # unit-reborn-and-pool Specification
 
 ## Purpose
-TBD - created by archiving change unit-reborn-and-pool. Update Purpose after archive.
+单位复活等待（`RebornPending` + `rebornTime`）与单位池复用（`Pooled`）语义：定义生命周期阶段与原生移除/销毁系统的互斥边界、句柄保留和复活显隐/回满规则，并排除 JASS 原生池与物品池路径。
 
 ## Requirements
 

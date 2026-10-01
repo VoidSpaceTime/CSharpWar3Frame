@@ -1,7 +1,7 @@
 # item-ground Specification
 
 ## Purpose
-TBD - created by archiving change item-ground-simulation. Update Purpose after archive.
+地面物品的 ECS 模拟：以物品实体（`ItemGroundTag` + `Position` + `ItemGroundVisual`）为运行时真相，由独立特效实体承载世界表现，并定义拾取转背包与丢弃/装备/销毁多路径视觉清理语义。
 
 ## Requirements
 
