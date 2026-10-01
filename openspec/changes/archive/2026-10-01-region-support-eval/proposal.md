@@ -132,3 +132,5 @@ W5.2 要求重新评估 region 域。绑定层已有 `JRegion` 与 `CreateRegion
 - 若用户实际要对接 WE 里已摆好的 region，路线 A 不够，应在裁决里改选路线 C，而不是在本 change 里补实现。
 - `AuraSystem` 的 diff 不是通用事件；「照抄 Aura」只适用于单个、输出已定的系统，不能当成已经存在 Region API。
 - 取消文里的 `fix-spatial-grid-registration` 独立提案目录不存在；注册已直接落在 `SpatialGridSystem.cs:13`，本评估不回头补那个 change。
+
+> 裁决（2026-10-01，用户确认）：不纳入；变更归档关闭。
