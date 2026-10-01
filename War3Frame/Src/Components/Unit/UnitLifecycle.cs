@@ -13,8 +13,8 @@ public enum UnitLifecyclePhase
     ClearCorpse, //清理尸体
     Remove, //删除
     Disposing, // 原生已移除，ECS 待销毁（原生移除与实体删除之间的确认阶段）
-    RebornPending, // 复活等待 — 待实现
-    Pooled         // 单位池   — 待实现
+    RebornPending, // 复活等待：保留实体与句柄，等待 rebornTime 到期
+    Pooled         // 单位池：实体与句柄挂起，等待复用或放弃
 }
 
 /// <summary>
@@ -36,4 +36,13 @@ public struct UnitDiedEvent : IComponent
 {
     public Entity unit;
     public Entity source;
+}
+
+/// <summary>
+/// 单位复活/显隐原生请求。show=true 表示复位生命并显示（复活或出池），show=false 表示仅隐藏（入池）。
+/// 一次性副作用意图，由 Native 层消费后删除，不承载长期状态。
+/// </summary>
+public struct UnitRebornNativeRequest : IComponent
+{
+    public bool show;
 }

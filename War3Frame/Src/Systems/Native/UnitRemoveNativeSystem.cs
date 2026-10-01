@@ -24,6 +24,8 @@ public class UnitRemoveNativeSystem : QuerySystem<UnitLifeState>
 
         Query.ForEachEntity((ref UnitLifeState state, Entity entity) =>
         {
+            // RebornPending 与 Pooled 必须落在 Death/Remove 分支之外：它们保留实体与原生句柄，
+            // 既不能重复 KillUnit，也不能注销句柄或 RemoveUnit；放弃池内单位由 Remove 分支统一销毁。
             if (state.lifePhase == UnitLifecyclePhase.Death)
             {
                 toKill.Add(entity);

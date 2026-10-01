@@ -56,6 +56,7 @@ internal static class Program
         ItemGroundRegression.Register(tests);
         RangedAttackRegression.Register(tests);
         ProjectileExpireRegression.Register(tests);
+        UnitRebornPoolRegression.Register(tests);
     }
 
     private static async Task<int> RunChild(string mode)

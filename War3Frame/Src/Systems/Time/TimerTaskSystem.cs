@@ -23,6 +23,7 @@ public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
         var toMarkBuffExpired = new List<Entity>();
         var toRemoveTimer = new List<Entity>();
         var ownerStateUpdates = new List<(Entity owner, UnitLifeState state)>();
+        var rebornActivations = new List<Entity>();
 
         Query.ForEachEntity((ref TimerTask timer, Entity entity) =>
         {
@@ -62,6 +63,14 @@ public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
                     // Buff 到期用标签表达结果，实际移除逻辑由 Buff 系统消费。
                     toMarkBuffExpired.Add(entity);
                     break;
+                case TimerTaskKind.RebornWait:
+                    // 复活等待到期：只把 owner 从 RebornPending 推回 Alive 并写一次性原生请求，不调用原生 API。
+                    if (!timer.owner.IsNull && timer.owner.TryGetComponent<UnitLifeState>(out UnitLifeState rebornState)
+                        && rebornState.lifePhase == UnitLifecyclePhase.RebornPending)
+                    {
+                        rebornActivations.Add(timer.owner);
+                    }
+                    break;
             }
 
             var reachedMax = timer.maxTriggerCount > 0 && timer.triggerCount >= timer.maxTriggerCount;
@@ -98,6 +107,25 @@ public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
         {
             if (!owner.IsNull)
                 owner.AddComponent(state);
+        }
+
+        foreach (var owner in rebornActivations)
+        {
+            if (owner.IsNull)
+                continue;
+
+            if (owner.TryGetComponent<UnitLifeState>(out var aliveState))
+            {
+                aliveState.isAlive = true;
+                aliveState.lifePhase = UnitLifecyclePhase.Alive;
+                aliveState.rebornTime = 0f;
+                owner.AddComponent(aliveState);
+            }
+
+            // 复活回满与显示由 Native 层消费该请求执行；这里只写意图。
+            owner.AddComponent(new UnitRebornNativeRequest { show = true });
+            // 存活单位不应保留计时过期标记（CorpseCleanup 路径由终态清理移除，复活路径需在此清理）。
+            owner.RemoveTag<TimerExpired>();
         }
 
         foreach (var entity in toRemoveTimer)

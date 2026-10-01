@@ -60,10 +60,16 @@ public static class UnitHelper
 
         if (unit.TryGetComponent<UnitLifeState>(out var state))
         {
-            if (state.lifePhase != UnitLifecyclePhase.Alive && state.lifePhase != UnitLifecyclePhase.Corpse)
+            if (state.lifePhase != UnitLifecyclePhase.Alive
+                && state.lifePhase != UnitLifecyclePhase.Corpse
+                && state.lifePhase != UnitLifecyclePhase.RebornPending)
             {
                 return;
             }
+
+            // 复活等待中的单位被移除时，先取消未到期的复活计时，随后仍走唯一销毁路径。
+            if (state.lifePhase == UnitLifecyclePhase.RebornPending)
+                RemoveRebornWaitTimer(unit);
 
             // 直接移除跳过尸体停留，但仍只修改 ECS 生命周期，不在 helper 中调用 native remove。
             state.isAlive = false;
@@ -109,6 +115,87 @@ public static class UnitHelper
         var diedEvent = unit.Store.CreateEntity(new UnitDiedEvent { unit = unit, source = source });
         diedEvent.AddComponent(new TriggerEventMarker { eventTypeId = EventTypeRegistry.Get<UnitDiedEvent>() });
         return true;
+    }
+
+    #endregion
+
+    #region 单位池
+
+    /// <summary>
+    /// 把仍存活或处于复活等待的单位挂起进单位池以便复用。不广播死亡、不执行原生移除；
+    /// 仅 Alive / RebornPending 可入池，其它阶段返回 false 并保持原阶段。
+    /// </summary>
+    public static bool RequestPool(Entity unit)
+    {
+        if (unit.IsNull)
+            return false;
+
+        if (!unit.TryGetComponent<UnitLifeState>(out var state)
+            || (state.lifePhase != UnitLifecyclePhase.Alive && state.lifePhase != UnitLifecyclePhase.RebornPending))
+        {
+            return false;
+        }
+
+        // 入池即取消复活语义；池内单位由 Native 层隐藏，实体与原生句柄保留。
+        RemoveRebornWaitTimer(unit);
+
+        state.isAlive = false;
+        state.rebornTime = 0f;
+        state.lifePhase = UnitLifecyclePhase.Pooled;
+        unit.AddComponent(state);
+        unit.AddComponent(new UnitRebornNativeRequest { show = false });
+        return true;
+    }
+
+    /// <summary>
+    /// 从单位池取出并复用同一实体与原生句柄，回到存活。rebornTime 保持调用前的值供下次死亡使用；
+    /// 仅 Pooled 可出池，其它阶段返回 false。
+    /// </summary>
+    public static bool AcquirePooled(Entity unit)
+    {
+        if (unit.IsNull)
+            return false;
+
+        if (!unit.TryGetComponent<UnitLifeState>(out var state)
+            || state.lifePhase != UnitLifecyclePhase.Pooled)
+        {
+            return false;
+        }
+
+        state.isAlive = true;
+        state.lifePhase = UnitLifecyclePhase.Alive;
+        unit.AddComponent(state);
+        unit.AddComponent(new UnitRebornNativeRequest { show = true });
+        return true;
+    }
+
+    /// <summary>
+    /// 放弃池内单位，转入唯一原生销毁路径（UnitRemoveNativeSystem）；仅 Pooled 可放弃。
+    /// </summary>
+    public static bool DiscardPooled(Entity unit)
+    {
+        if (unit.IsNull)
+            return false;
+
+        if (!unit.TryGetComponent<UnitLifeState>(out var state)
+            || state.lifePhase != UnitLifecyclePhase.Pooled)
+        {
+            return false;
+        }
+
+        state.isAlive = false;
+        state.lifePhase = UnitLifecyclePhase.Remove;
+        unit.AddComponent(state);
+        return true;
+    }
+
+    /// <summary>
+    /// 移除单位上未到期的复活等待计时；只清理 RebornWait，避免误删其它计时任务。
+    /// </summary>
+    private static void RemoveRebornWaitTimer(Entity unit)
+    {
+        if (unit.TryGetComponent<TimerTask>(out var timer) && timer.kind == TimerTaskKind.RebornWait)
+            unit.RemoveComponent<TimerTask>();
     }
 
     #endregion

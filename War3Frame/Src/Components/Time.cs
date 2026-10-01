@@ -34,6 +34,11 @@ public enum TimerTaskKind
     CorpseCleanup,
 
     /// <summary>
+    /// 单位复活等待。
+    /// </summary>
+    RebornWait,
+
+    /// <summary>
     /// Buff 到期。
     /// </summary>
     BuffExpire,
