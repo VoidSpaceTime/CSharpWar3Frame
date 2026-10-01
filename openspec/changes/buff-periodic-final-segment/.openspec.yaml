@@ -1,0 +1,3 @@
+schema: spec-driven
+created: 2026-10-01
+goal: 规定周期 Buff 到期时不足一个 tickInterval 的尾段不补跳，且领域回收必须等到该尾段已被周期消费者观察。
