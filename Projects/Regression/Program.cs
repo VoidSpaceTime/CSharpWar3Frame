@@ -60,6 +60,7 @@ internal static class Program
         UnitRebornPoolRegression.Register(tests);
         DamagePostProcessRegression.Register(tests);
         JassVmNativeArgsRegression.Register(tests);
+        NativeBridgeCompletionRegression.Register(tests);
     }
 
     private static async Task<int> RunChild(string mode)

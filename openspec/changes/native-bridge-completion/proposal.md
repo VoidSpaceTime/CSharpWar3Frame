@@ -4,7 +4,7 @@
 
 - Change ID: `native-bridge-completion`
 - 提案等级: `full`
-- 状态: `待审核`
+- 状态: `已实施`
 - 日期: 2026-10-01
 - 目标一句话: 把 WE 预置单位与可破坏物登记进 `NativeEntityIndex`，使 `NativePlayerEventBridge` 能反查它们；并按合并后 `ControlType` 与 1.27a 原生表，只为 `Silence` 补上可解析的原生动作，其余无函数的控制保持事件层响应。
 - 请求来源: `.omo/plans/war3frame-unlanded-features.md` Todo 32（W4.9）。

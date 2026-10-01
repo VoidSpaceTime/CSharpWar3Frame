@@ -13,6 +13,8 @@ public static partial class Game
         var players = War3NativeBootstrap.CreatePlayers(Store, 16);
         // 初始化玩家
         PlayerHelper.InitializePlayers(ref players);
+        // 枚举 WE/编辑器预置单位与可破坏物并登记反查（须在攻击桥注册前、主计时器启动前）
+        PresetEntityAdoption.AdoptAll(Store);
         // 注册原生玩家单位事件桥（攻击事件等 → ECS 事件实体）
         NativePlayerEventBridge.Initialize();
         // 初始化同步接收端：DzSyncData → 全玩家回调 → UISyncRequest（tick 内消费）

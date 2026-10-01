@@ -23,6 +23,10 @@ namespace War3Frame.Systems.Native;
 [SystemRegister(SystemKind.Immediate)]
 public class UnitControlNativeSystem : QuerySystem<ControlStateNativeRequest>
 {
+    // 1.27a 原生表没有 DzUnitSilence（GetNativeFunction 未命中返回 0，调用即空指针）。
+    // 改用原版技能 'ACsp'（控制魔法）的开关命令 "spellshield" 锁/解原生施法。
+    private const int AbilitySpellShield = 0x41437370; // 'ACsp'
+
     protected override void OnUpdate()
     {
         Query.ForEachEntity((ref ControlStateNativeRequest request, Entity requestEntity) =>
@@ -49,6 +53,9 @@ public class UnitControlNativeSystem : QuerySystem<ControlStateNativeRequest>
                 case ControlType.Pause:
                     JassApi.PauseUnit(native.unit, request.entered);
                     break;
+                case ControlType.Silence:
+                    ApplySilence(native.unit, request.entered);
+                    break;
                 // Locust / Invulnerable / Invisible / Sorcery 依赖默认地图模板提供对应
                 // ability，模板就绪后再在此实现原生开关；当前不做原生副作用。
                 case ControlType.Locust:
@@ -60,6 +67,34 @@ public class UnitControlNativeSystem : QuerySystem<ControlStateNativeRequest>
 
             requestEntity.DeleteEntity();
         });
+    }
+
+    /// <summary>
+    /// 以原版技能 'ACsp' 的开启/关闭切换原生施法锁。
+    /// 仅当单位尚无该技能（等级 0）时添加并开启；仅当等级为 1（本分支添加的实例）时关闭并移除。
+    /// 已有等级不为 1 的实例（地图自带）不添加也不移除，避免拆掉地图作者的技能。
+    /// </summary>
+    private static void ApplySilence(JUnit unit, bool entered)
+    {
+        var level = JassApi.GetUnitAbilityLevel(unit, AbilitySpellShield);
+        if (entered)
+        {
+            // 新添加的 ACsp 默认关闭，必须 spellshield 一次才锁施法。
+            if (level == 0)
+            {
+                JassApi.UnitAddAbility(unit, AbilitySpellShield);
+                JassApi.IssueImmediateOrder(unit, "spellshield");
+            }
+        }
+        else
+        {
+            // 先关再移除，避免移除瞬间命令落在已删除技能上。
+            if (level == 1)
+            {
+                JassApi.IssueImmediateOrder(unit, "spellshield");
+                JassApi.UnitRemoveAbility(unit, AbilitySpellShield);
+            }
+        }
     }
 }
 
