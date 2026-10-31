@@ -105,13 +105,23 @@ public static class AbilityEffectHelper
     {
         var source = parentEffect.GetComponent<EffectSource>();
 
+        // 子效果目标点取命中目标位置；目标无位置时回退父效果目标点，避免落到地图原点。
+        parentEffect.TryGetComponent<EffectTargetInfo>(out var parentTarget);
+        var targetX = parentTarget.targetX;
+        var targetY = parentTarget.targetY;
+        if (!target.IsNull && target.TryGetComponent<Position>(out var targetPos))
+        {
+            targetX = targetPos.x;
+            targetY = targetPos.y;
+        }
+
         var childEntity = parentEffect.Store.CreateEntity(
             source,
             new EffectTargetInfo
             {
                 targetUnit = target,
-                targetX = 0,
-                targetY = 0
+                targetX = targetX,
+                targetY = targetY
             },
             new AbilityEffectContext
             {
@@ -119,8 +129,8 @@ public static class AbilityEffectHelper
                 ability = source.ability,
                 sourceEffect = parentEffect,
                 targetUnit = target,
-                targetX = 0,
-                targetY = 0,
+                targetX = targetX,
+                targetY = targetY,
                 effectId = _nextEffectId++
             });
         childEntity.AddTag<EffectPendingTag>();

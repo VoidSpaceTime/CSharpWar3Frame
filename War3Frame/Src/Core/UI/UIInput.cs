@@ -61,7 +61,16 @@ public static class UIInput
     /// <summary>消费队列并投递事件。time 由帧循环传入。</summary>
     public static void Pump(float time)
     {
-        if (_root == null || _root.IsDestroyed) return;
+        if (_root == null || _root.IsDestroyed)
+        {
+            // 无派发根时丢弃本轮输入，避免积压的旧按下在之后设置的根上被当成点击或双击。
+            // 窗口缩放仍需要在有根后重算一次，保留为一条待处理的 resize。
+            var dropped = UIInputQueue.Drain();
+            if (dropped.Exists(static input => input.Kind == UIRawKind.Resize))
+                UIInputQueue.Enqueue(new UIRawInput(UIRawKind.Resize, 0, 0, LocalPlayerIndex()));
+            return;
+        }
+
         var batch = UIInputQueue.Drain();
         if (batch.Count == 0) return;
         var local = LocalPlayerIndex();

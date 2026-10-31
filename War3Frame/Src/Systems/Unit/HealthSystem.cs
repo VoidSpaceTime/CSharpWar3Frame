@@ -15,7 +15,7 @@ public class HealthSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
             if (type.typeId != AttributeHelper.Health) return;
 
             var unit = owner.owner;
-            if (unit.IsNull) return;
+            if (unit.IsNull || UnitHelper.IsDead(unit)) return;
 
             // 获取生命恢复属性（固定值 + 最大生命百分比）
             float flatRegen = AttributeHelper.GetFinalValue(unit, AttributeHelper.HealthRegen);

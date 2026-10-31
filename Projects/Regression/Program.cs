@@ -61,6 +61,7 @@ internal static class Program
         DamagePostProcessRegression.Register(tests);
         JassVmNativeArgsRegression.Register(tests);
         NativeBridgeCompletionRegression.Register(tests);
+        RuntimeCorrectnessRegression.Register(tests);
     }
 
     private static async Task<int> RunChild(string mode)

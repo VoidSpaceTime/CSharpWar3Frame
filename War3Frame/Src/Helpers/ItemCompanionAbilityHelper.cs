@@ -212,6 +212,7 @@ public static class ItemCompanionAbilityHelper
 
 /// <summary>
 /// 按 companion identity 清理施法阶段，并提供受控删除所需的引用检查。
+/// 清理逻辑只依赖技能实体身份，与物品无关；技能槽移除路径（AbilitySlotHelper.DetachRuntime）同样复用。
 /// </summary>
 internal static class ItemCompanionCastCleanup
 {

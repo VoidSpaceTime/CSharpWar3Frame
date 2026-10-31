@@ -135,7 +135,7 @@ public class AbilityRemoveWorkflowSystem : QuerySystem<AbilityRemoveRequest>
 
         AbilityEffectHelper.TriggerBehaviorEffect(unit, ability.Value, AbilityBehaviorTrigger.OnRemoved, unit);
 
-        ability.Value.AddComponent(new AbilityAttrRemoveRequest());
+        AbilitySlotHelper.DetachRuntime(ability.Value);
         ability.Value.RemoveComponent<AbilityOwner>();
         ability.Value.RemoveComponent<AbilitySlotIndex>();
         ability.Value.AddComponent(new AbilityMountInfo

@@ -151,7 +151,7 @@ public class AttackSimulationSystem : QuerySystem<UnitAttackedRequest>
     /// <summary>在圆心射程内选取尚未命中、距离最近的敌对单位。</summary>
     private Entity FindNextChainTarget(Entity attacker, float x, float y, float radius)
     {
-        var candidates = GroupHelper.FindInCircle(attacker, x, y, radius, TargetFilter.Enemy);
+        var candidates = GroupHelper.FindInCircle(attacker, x, y, radius, TargetFilter.EnemyAlive);
         Entity nearest = default;
         var nearestDistSq = float.MaxValue;
         foreach (var candidate in candidates)

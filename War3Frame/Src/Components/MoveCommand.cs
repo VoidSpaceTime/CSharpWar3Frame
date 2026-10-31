@@ -119,6 +119,9 @@ public struct MoveContinuation : IComponent
     public Entity targetUnit;
     public float targetX;
     public float targetY;
+
+    /// <summary>发起本后续的移动命令 token；只消费同 token 的 MoveOutcome。0 表示不校验（兼容旧调用方）。</summary>
+    public int commandToken;
 }
 
 /// <summary>

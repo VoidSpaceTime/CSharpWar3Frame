@@ -129,7 +129,7 @@ public static class AbilitySlotHelper
             unit.AddComponent(container);
         }
 
-        ability.Value.AddComponent(new AbilityAttrRemoveRequest());
+        DetachRuntime(ability.Value);
         ability.Value.RemoveComponent<AbilityOwner>();
         ability.Value.RemoveComponent<AbilitySlotIndex>();
         ability.Value.AddComponent(new AbilityMountInfo
@@ -140,6 +140,18 @@ public static class AbilitySlotHelper
         Helpers.AbilityHelper.RemoveAbility(ability.Value);
 
         return true;
+    }
+
+    /// <summary>
+    /// 解除归属前清理技能的运行时痕迹：结束引用它的请求、施法、引导与走位（按技能身份，与物品无关），
+    /// 并直接回收以它为来源的属性修改器。不能依赖 AbilityAttrRemoveRequest：
+    /// 该请求需要 AbilityOwner 才能被消费，而 AbilityOwner 随后就被移除。
+    /// </summary>
+    internal static void DetachRuntime(Entity ability)
+    {
+        ItemCompanionCastCleanup.Cleanup(ability);
+        ability.RemoveComponent<AbilityAttrApplyRequest>();
+        ModifyHelper.RemoveModifiersFromSource(ability);
     }
 
     /// <summary>

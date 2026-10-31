@@ -77,10 +77,13 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
         var unitsInRange = new HashSet<int>();
         var unitsToAdd = new List<Entity>();
         var query = store.Query<Position>();
+        // 死亡 owner 不发光环：本轮目标集为空，下方差异回收会删除其全部贡献；复活后下一轮重建。
+        var ownerActive = !UnitHelper.IsDead(owner);
 
         // 嵌套查询只收集"需要新增 buff"的单位，结构变更留到循环外执行。
         query.ForEachEntity((ref Position position, Entity unitEntity) =>
         {
+            if (!ownerActive) return;
             if (!unitEntity.HasComponent<UnitNative>() && !unitEntity.HasComponent<UnitBase>()
                 && !unitEntity.HasComponent<UnitLifeState>()) return;
             var unitPos = GetUnitPosition(unitEntity);
@@ -146,6 +149,9 @@ public class AuraSystem : QuerySystem<AuraConfig, AuraEffect>, ITimedSystem
 
     private bool ShouldAffectUnit(Entity owner, Entity target, AuraConfig config)
     {
+        if (UnitHelper.IsDead(target))
+            return false;
+
         if (owner == target)
             return config.affectSelf;
 

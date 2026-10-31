@@ -234,9 +234,20 @@ public static class BuffHelper
     /// </summary>
     public static void RemoveBuff(Entity unit, string buffId)
     {
-        var buff = FindBuffByIdOnUnit(unit, buffId);
-        if (!buff.IsNull)
+        // 同名 buff 可作用于多个属性，按 buffId 移除时删除全部实例；先收集再删除。
+        var toDelete = new List<Entity>();
+        foreach (var (_, attrEntity) in AttributeHelper.GetAllAttrs(unit))
         {
+            foreach (var link in attrEntity.GetIncomingLinks<ModifyTarget>())
+            {
+                if (link.Entity.TryGetComponent<Buff>(out var buff) && buff.buffId == buffId)
+                    toDelete.Add(link.Entity);
+            }
+        }
+
+        foreach (var buff in toDelete)
+        {
+            if (buff.IsNull) continue;
             // 标记属性需要刷新
             if (buff.TryGetComponent<ModifyTarget>(out var target) && !target.target.IsNull)
             {
@@ -289,7 +300,24 @@ public static class BuffHelper
     #region 查询
 
     /// <summary>
-    ///     查找单位身上的指定 Buff
+    ///     在单位指定属性上查找同名 Buff 实例（ApplyBuff 查重用）。
+    /// </summary>
+    private static Entity FindBuffOnAttr(Entity unit, string buffId, int attrTypeId)
+    {
+        if (!AttributeHelper.TryGetAttr(unit, attrTypeId, out var attrEntity))
+            return default;
+
+        foreach (var link in attrEntity.GetIncomingLinks<ModifyTarget>())
+        {
+            if (link.Entity.TryGetComponent<Buff>(out var buff) && buff.buffId == buffId)
+                return link.Entity;
+        }
+
+        return default;
+    }
+
+    /// <summary>
+    ///     查找单位身上的指定 Buff（同名多实例时返回首个）
     /// </summary>
     public static Entity FindBuffByIdOnUnit(Entity unit, string buffId)
     {
@@ -359,8 +387,8 @@ public static class BuffHelper
     /// </summary>
     public static Entity ApplyBuff(EntityStore store, Entity unit, Entity source, BuffSpec spec)
     {
-        // 检查是否已有同类 Buff
-        var existing = FindBuffByIdOnUnit(unit, spec.buffId);
+        // 实例身份 = (buffId, 目标属性)：同名 buff 作用于不同属性时各自独立。
+        var existing = FindBuffOnAttr(unit, spec.buffId, spec.attrTypeId);
 
         if (!existing.IsNull)
         {
@@ -388,10 +416,20 @@ public static class BuffHelper
     private static Entity HandleExistingBuff(
         EntityStore store, Entity unit, Entity source, Entity existing, BuffSpec spec)
     {
-        if (spec.duration <= 0f && spec.onDuplicate != BuffRefreshBehavior.Replace)
+        if (spec.duration <= 0f)
         {
-            // 非 Replace 的永久 buff：同 key 唯一，返回既有即可
-            return existing;
+            // 永久 buff 没有时长可刷新：叠层类只叠层；Replace 删旧建新；其余返回既有。
+            switch (spec.onDuplicate)
+            {
+                case BuffRefreshBehavior.AddStack:
+                case BuffRefreshBehavior.RefreshAndStack:
+                    RefreshCore(existing, spec, refresh: false, stack: true);
+                    return existing;
+                case BuffRefreshBehavior.Replace:
+                    break;
+                default:
+                    return existing;
+            }
         }
 
         switch (spec.onDuplicate)

@@ -331,6 +331,12 @@ public struct ProjectileRuntimeState : IComponent
     public float dirX;
     public float dirY;
     public Entity visualEntity;
+
+    /// <summary>曲线轨迹首帧锁定的起点；startInitialized 为 false 时尚未锁定。</summary>
+    public float startX;
+    public float startY;
+    public float startZ;
+    public bool startInitialized;
 }
 
 /// <summary>

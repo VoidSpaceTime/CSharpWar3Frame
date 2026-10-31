@@ -266,10 +266,17 @@ public class ProjectileSystem : QuerySystem<ProjectileData, EffectSource, Effect
         ref Position position, ref ProjectileRuntimeState runtimeState, CurveKind kind, float deltaTime)
     {
         // 曲线类轨迹使用统一进度推进，避免每种曲线重复生命周期逻辑。
-        var start = runtimeState.normalizedProgress <= float.Epsilon
-            ? new Vector3(position.x, position.y, position.z)
-            : new Vector3(position.x, position.y, position.z);
-        var end = new Vector3(targetX, targetY, position.z);
+        // 起点在首帧锁定：进度 t 是相对整段路程的累计值，必须配固定起点插值，否则每帧按剩余距离再插值会越飞越快。
+        if (!runtimeState.startInitialized)
+        {
+            runtimeState.startX = position.x;
+            runtimeState.startY = position.y;
+            runtimeState.startZ = position.z;
+            runtimeState.startInitialized = true;
+        }
+
+        var start = new Vector3(runtimeState.startX, runtimeState.startY, runtimeState.startZ);
+        var end = new Vector3(targetX, targetY, runtimeState.startZ);
         var totalDist = MathF.Max(Vector3.Distance(start, end), 1f);
         runtimeState.normalizedProgress = MathF.Min(1f, runtimeState.normalizedProgress + speed * deltaTime / totalDist);
         var t = runtimeState.normalizedProgress;
@@ -574,12 +581,19 @@ public class EffectVisualSystem : QuerySystem<EffectVisualData, EffectSource, Ef
         if (owner.IsNull || string.IsNullOrEmpty(key))
             return;
 
-        var query = Game.Store.Query<EffectVisualLink>();
-        query.ForEachEntity((ref EffectVisualLink link, Entity visualEntity) =>
+        // Destroy 会 AddComponent（结构变更），不能在查询循环内执行：先收集，循环外销毁。
+        var matched = new List<Entity>();
+        owner.Store.Query<EffectVisualLink>().ForEachEntity((ref EffectVisualLink link, Entity visualEntity) =>
         {
             if (link.owner == owner && link.key == key)
-                EffectHelper.Destroy(visualEntity, hideFirst: true);
+                matched.Add(visualEntity);
         });
+
+        foreach (var visualEntity in matched)
+        {
+            if (!visualEntity.IsNull)
+                EffectHelper.Destroy(visualEntity, hideFirst: true);
+        }
     }
 }
 
@@ -878,7 +892,7 @@ public class DamageEffectSystem : QuerySystem<DamageEffectData, EffectSource, Ef
                 damageData.value,
                 () => AbilityHelper.GetDamageAmount(sourceAbility));
 
-        Game.Store.CreateEntity(new DamageRequest
+        effectEntity.Store.CreateEntity(new DamageRequest
         {
             source = source.caster,
             target = target.targetUnit,
@@ -954,7 +968,7 @@ public class HealEffectSystem : QuerySystem<HealEffectData, EffectSource, Effect
                     ? legacyHealAmount
                     : AbilityHelper.GetHealAmount(sourceAbility));
 
-        Game.Store.CreateEntity(new HealRequest
+        effectEntity.Store.CreateEntity(new HealRequest
         {
             source = source.caster,
             target = target.targetUnit,
@@ -1027,7 +1041,7 @@ public class BuffEffectSystem : QuerySystem<ApplyBuffData, EffectSource, EffectT
             buffData.modifyValue,
             fallbackValue);
 
-        Game.Store.CreateEntity(new BuffApplyRequest
+        effectEntity.Store.CreateEntity(new BuffApplyRequest
         {
             source = source.caster,
             target = target.targetUnit,
@@ -1122,6 +1136,8 @@ public class DamageResolveSystem : QuerySystem<DamageRequest>
 
             // ---------- 4. Apply ----------
             var finalDamage = ctx.isImmune ? 0f : ctx.finalDamage;
+            // ModifyCurrent 对缺失属性返回 0，必须先区分"没有生命属性"与"生命归零"。
+            var hasHealth = AttributeHelper.TryGetAttr(request.target, AttributeHelper.Health, out _);
             var remaining = AttributeHelper.ModifyCurrent(request.target, AttributeHelper.Health, -finalDamage);
 
             // ---------- 5. DamageEvent ----------
@@ -1147,7 +1163,7 @@ public class DamageResolveSystem : QuerySystem<DamageRequest>
             // ---------- 7. 死亡判定 ----------
             // 仅致死当次（KillUnit 真正发生 Alive→Death）会广播 UnitDiedEvent，由 KillRewardSystem 等消费方处理；
             // 同帧超杀与死后伤害不再触发。死亡分支自身不再内联任何死后业务。
-            if (!ctx.isImmune && remaining <= 0f)
+            if (!ctx.isImmune && hasHealth && remaining <= 0f)
                 UnitHelper.KillUnit(request.target, request.source);
 
             requestEntity.DeleteEntity();
@@ -1173,7 +1189,8 @@ public class HealResolveSystem : QuerySystem<HealRequest>
 
         foreach (var (request, requestEntity) in pending)
         {
-            if (request.target.IsNull)
+            // 死亡目标不被治疗，也不广播治疗事实。
+            if (request.target.IsNull || UnitHelper.IsDead(request.target))
             {
                 requestEntity.DeleteEntity();
                 continue;
@@ -1249,13 +1266,15 @@ public class BuffApplyResolveSystem : QuerySystem<BuffApplyRequest>
             tickValue: isDot ? request.tickValue : 0f,
             kind: effectiveKind);
 
+        // Buff 与事件属于目标所在 Store（多 Store/独立测试下不写到全局 Store）。
+        var store = request.target.Store;
         var buff = BuffHelper.ApplyBuff(
-            Game.Store,
+            store,
             request.target,
             request.source,
             spec);
 
-        var buffAppliedEvent = Game.Store.CreateEntity(new BuffAppliedEvent
+        var buffAppliedEvent = store.CreateEntity(new BuffAppliedEvent
         {
             source = request.source,
             target = request.target,
@@ -1348,7 +1367,7 @@ public class GroundAreaBuffSystem : QuerySystem<GroundAreaData, GroundAreaSource
                 buffData.value,
                 buffData.fallbackValue);
             var buff = BuffHelper.AddPermanentBuff(
-                Game.Store,
+                areaEntity.Store,
                 target,
                 areaEntity,
                 buffData.buffId,
@@ -1383,7 +1402,8 @@ public class GroundAreaPeriodicDamageSystem : QuerySystem<GroundAreaData, Ground
             if (damage.timeSinceTick < interval)
                 return;
 
-            damage.timeSinceTick = 0f;
+            // 保留超出间隔的余数，避免每次结算都把周期拉长（每次更新最多结算一跳，节奏不变）。
+            damage.timeSinceTick -= interval;
             var targets = GroupHelper.FindInCircle(
                 source.caster,
                 position.x,
@@ -1401,7 +1421,7 @@ public class GroundAreaPeriodicDamageSystem : QuerySystem<GroundAreaData, Ground
                     areaEntity,
                     damage.damageValue,
                     damage.fallbackDamage);
-                Game.Store.CreateEntity(new DamageRequest
+                areaEntity.Store.CreateEntity(new DamageRequest
                 {
                     source = source.caster,
                     target = target,
@@ -1533,7 +1553,8 @@ internal static class EffectSettlementHelper
         if (ProjectileFlowHelper.HasPendingProjectile(effectEntity))
             return false;
 
-        return !effectEntity.HasComponent<AreaSearchData>();
+        // 区域/线形搜索的父效果只负责生成子效果，payload 由子效果逐目标结算。
+        return !effectEntity.HasComponent<AreaSearchData>() && !effectEntity.HasComponent<LineSearchData>();
     }
 
     /// <summary>
@@ -1576,13 +1597,14 @@ internal static class GroundAreaQueryHelper
     public static void EmitLineContactRequests(Entity source, Entity effectEntity, float startX, float startY,
         float endX, float endY, float width, GroundAreaTag incomingTag)
     {
-        var query = Game.Store.Query<GroundAreaData, Position>();
+        var store = effectEntity.Store;
+        var query = store.Query<GroundAreaData, Position>();
         query.ForEachEntity((ref GroundAreaData area, ref Position position, Entity areaEntity) =>
         {
             if (!LineIntersectsCircle(startX, startY, endX, endY, position.x, position.y, area.radius + width * 0.5f))
                 return;
 
-            Game.Store.CreateEntity(new GroundAreaReactionRequest
+            store.CreateEntity(new GroundAreaReactionRequest
             {
                 source = source,
                 groundArea = areaEntity,

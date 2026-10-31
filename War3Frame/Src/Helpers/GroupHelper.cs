@@ -12,14 +12,11 @@ public static class GroupHelper
     /// <summary>全局空间网格（由 SpatialGridSystem 每帧重建）</summary>
     public static SpatialGrid Grid { get; } = new(256f);
 
-    /// <summary>复用的临时列表（避免每次查询分配新 List）</summary>
-    private static readonly List<Entity> _tempBuffer = new(64);
-
-    private static List<Entity> GetBuffer()
-    {
-        _tempBuffer.Clear();
-        return _tempBuffer;
-    }
+    /// <summary>
+    /// 每次查询独立的结果列表。不使用静态共享缓冲：自定义筛选回调内再次查询会清空正在遍历的缓冲。
+    /// 筛选在该列表上原地压缩，分配次数与旧实现相同（每次查询一个列表）。
+    /// </summary>
+    private static List<Entity> GetBuffer() => new(16);
 
     #region 圆形搜索
 
@@ -180,15 +177,18 @@ public static class GroupHelper
         TargetFilter filter, string? customFilterId,
         int maxTargets)
     {
-        // 无筛选且无限制，直接返回副本
+        // 无筛选且无限制：raw 已是本次查询独占的列表，直接返回。
         if (filter == TargetFilter.None && string.IsNullOrEmpty(customFilterId) && maxTargets <= 0)
         {
-            return new List<Entity>(raw);
+            return raw;
         }
 
-        var results = new List<Entity>();
-        foreach (var entity in raw)
+        // 原地压缩：count 之前保存通过筛选的目标，顺序与遍历顺序一致。
+        var count = 0;
+        for (var i = 0; i < raw.Count; i++)
         {
+            var entity = raw[i];
+
             // 跳过施法者本身（除非 filter 包含 Self）
             if (entity == caster && !filter.HasFlag(TargetFilter.Self))
                 continue;
@@ -200,13 +200,14 @@ public static class GroupHelper
                     continue;
             }
 
-            results.Add(entity);
+            raw[count++] = entity;
 
-            if (maxTargets > 0 && results.Count >= maxTargets)
+            if (maxTargets > 0 && count >= maxTargets)
                 break;
         }
 
-        return results;
+        raw.RemoveRange(count, raw.Count - count);
+        return raw;
     }
 
     #endregion

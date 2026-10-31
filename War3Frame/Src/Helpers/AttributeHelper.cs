@@ -117,6 +117,8 @@ public static partial class AttributeHelper
     // 从关系表里找具体属性实体，避免每次都扫描整个 Store。
     public static Entity? GetAttr(Entity unit, int typeId)
     {
+        // 空实体（如无来源的伤害）没有属性：所有读取入口随之按 0 处理，不抛异常。
+        if (unit.IsNull) return null;
         var relations = unit.GetRelations<HasAttr>();
         foreach (ref var rel in relations)
         {
@@ -215,6 +217,7 @@ public static partial class AttributeHelper
     // 枚举所有属性关系，供清理和调试使用。
     public static IEnumerable<(int typeId, Entity attrEntity)> GetAllAttrs(Entity unit)
     {
+        if (unit.IsNull) yield break;
         var relations = unit.GetRelations<HasAttr>();
         foreach (ref var rel in relations)
         {

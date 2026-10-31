@@ -165,8 +165,22 @@ public static class UnitHelper
         state.isAlive = true;
         state.lifePhase = UnitLifecyclePhase.Alive;
         unit.AddComponent(state);
+        RestoreHealth(unit);
         unit.AddComponent(new UnitRebornNativeRequest { show = true });
         return true;
+    }
+
+    /// <summary>
+    /// 回到存活时把 ECS 生命当前值拉到上限，与 UnitRebornNativeSystem 的原生满血保持一致；无 Health 属性时不处理。
+    /// </summary>
+    internal static void RestoreHealth(Entity unit)
+    {
+        if (AttributeHelper.TryGetAttr(unit, AttributeHelper.Health, out var attr)
+            && attr.TryGetComponent<AttrValue>(out var value)
+            && value.finalValue > 0f)
+        {
+            AttributeHelper.SetCurrent(unit, AttributeHelper.Health, value.finalValue);
+        }
     }
 
     /// <summary>
@@ -212,6 +226,13 @@ public static class UnitHelper
             return state.isAlive;
         return false;
     }
+
+    /// <summary>
+    /// 有生命周期且已不存活（死亡、尸体、复活等待、池内）。没有生命周期的实体不算死亡，
+    /// 供施法、移动、回复等系统排除死者而不误伤无生命周期的实体。
+    /// </summary>
+    internal static bool IsDead(Entity unit)
+        => !unit.IsNull && unit.TryGetComponent<UnitLifeState>(out var state) && !state.isAlive;
 
     /// <summary>
     ///     检查两个单位是否敌对；未知归属不当敌人。
@@ -298,7 +319,8 @@ public static class UnitHelper
             ability = default,
             targetUnit = default,
             targetX = targetX,
-            targetY = targetY
+            targetY = targetY,
+            commandToken = commandToken
         });
     }
 

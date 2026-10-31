@@ -71,12 +71,18 @@ public class AttrCalculationSystem : QuerySystem<AttrValue>
                               * (1 + percentAddSum)
                               * percentMulProduct;
 
+            // 资源池当前值不超过新的最终值（如护盾上限被移除）；只向下夹紧，不因重算提高当前值。
+            // 回收判据使用夹紧前的现值：夹紧本身不让属性在同一轮变成可回收（现值非 0 时保守保留）。
+            var currentBeforeClamp = attr.current;
+            if (attr.current > attr.finalValue)
+                attr.current = MathF.Max(0f, attr.finalValue);
+
             recalculated.Add(attrEntity);
 
             // 4. 孤儿属性判定：重算后 flat/percent 即为最新值，满足"非脏"前提。
             if (!hasIncoming
                 && attr.baseValue == 0f
-                && attr.current == 0f
+                && currentBeforeClamp == 0f
                 && attr.flatBonus == 0f
                 && attr.percentBonus == 0f
                 && CanReclaimByOwner(attrEntity))

@@ -15,7 +15,7 @@ public class ManaSystem : QuerySystem<AttrValue, AttrTypeId, AttrOwner>
             if (type.typeId != AttributeHelper.Mana) return;
 
             var unit = owner.owner;
-            if (unit.IsNull) return;
+            if (unit.IsNull || UnitHelper.IsDead(unit)) return;
 
             // 获取魔法恢复属性（固定值 + 最大魔法百分比）
             float flatRegen = AttributeHelper.GetFinalValue(unit, AttributeHelper.ManaRegen);

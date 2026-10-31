@@ -7,18 +7,24 @@ namespace War3Frame.Regression;
 internal static class NativeProjectionRegression
 {
     internal static void Register(List<RegressionCase> tests)
-        => tests.Add(new("native-projection", "production-source-call-order", Projection));
+    {
+        tests.Add(new("native-projection", "production-source-call-order", Projection));
+        tests.Add(new("native-projection", "deleted-attach-target", DeletedAttachTarget));
+    }
+
+    // 编译原样 Native 系统源文件，仅把原生函数替换为记录器。真实 ECS/Helper 来自框架程序集。
+    private static readonly Lazy<Assembly> Compiled = new(() => CompilationTest.Emit(CompilationTest.Create(
+        "global using System; global using System.Collections.Generic;",
+        CompilationTest.Read("War3Frame/Src/Systems/Native/EffectNativeSystem.cs"),
+        CompilationTest.Read("War3Frame/Src/Systems/Native/PlayerNativeSystem.cs"),
+        Stubs)));
 
     private static void Projection()
     {
-        // 编译原样 Native 系统源文件，仅把原生函数替换为记录器。真实 ECS/Helper 来自框架程序集。
-        var assembly = CompilationTest.Emit(CompilationTest.Create(
-            "global using System; global using System.Collections.Generic;",
-            CompilationTest.Read("War3Frame/Src/Systems/Native/EffectNativeSystem.cs"),
-            CompilationTest.Read("War3Frame/Src/Systems/Native/PlayerNativeSystem.cs"),
-            Stubs));
+        var assembly = Compiled.Value;
         var recording = assembly.GetType("War3Frame.NativeRecording")!;
         var calls = (List<string>)recording.GetField("Calls")!.GetValue(null)!;
+        calls.Clear();
         var store = new EntityStore();
         var effect = store.CreateEntity(new EffectBase { model = "test", sizeScale = 2, visible = true }, new Position());
         EffectHelper.RotateZ(effect, 10);
@@ -68,6 +74,28 @@ internal static class NativeProjectionRegression
             Check.That(calls[1] == "alliance:1:" + (relation == PlayerTeamState.Allie), "native help matches ECS relation");
             Check.That(calls.Count == 7, "each native alliance bit projected once");
         }
+    }
+
+    /// <summary>附着目标在首次原生同步前被删除：不访问已删实体，同轮其他特效照常获得句柄且登记配对。</summary>
+    private static void DeletedAttachTarget()
+    {
+        var assembly = Compiled.Value;
+        var calls = (List<string>)assembly.GetType("War3Frame.NativeRecording")!.GetField("Calls")!.GetValue(null)!;
+        calls.Clear();
+        var store = new EntityStore();
+        var target = store.CreateEntity(new UnitNative());
+        var attached = store.CreateEntity(new EffectBase { model = "attach", effectType = EffectType.Attach, visible = true },
+            new EffectAttachment { target = target, attachType = EffectAttachType.Origin });
+        var plain = store.CreateEntity(new EffectBase { model = "plain", visible = true }, new Position());
+        target.DeleteEntity();
+        var root = new SystemRoot(store);
+        root.Add((BaseSystem)Activator.CreateInstance(assembly.GetType("War3Frame.EffectNativeSystem")!)!);
+        root.Update(new UpdateTick(.02f, .02f));
+
+        Check.That(attached.HasComponent<EffectNative>() && plain.HasComponent<EffectNative>(),
+            "both effects receive a native handle");
+        Check.That(calls.Count(call => call == "create") == calls.Count(call => call == "add"),
+            "every created handle is registered");
     }
 
     private const string Stubs = """

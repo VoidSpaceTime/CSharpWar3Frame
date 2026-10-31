@@ -19,8 +19,9 @@ dotnet Projects/Regression/bin/Release/net10.0/War3Frame.Regression.dll
 | `native-projection` | 编译原样 Native 系统源码，以记录器替换原生函数，检查 ECS 投影和调用顺序 |
 | `build` | 真实受控子进程、构建失败注入、文件同步、资源转换的实际 MSBuild 输入、模型缓冲区 |
 | `integration` | 实际 CLI 退出码、New 脚手架和 test 的 win-x86 JIT publish、ModelFormat 非交互运行 |
+| `correctness` | 运行时缺陷回归（fix-runtime-correctness）：走位施法 token 对齐与顶替、施法替换与打断冷却、死亡单位、伤害/治疗/复活生命、Buff 实例身份与叠层、技能贡献回收、效果管线结算与 Store、曲线弹道、周期计时、查询可重入、输入队列、同批拾取 |
 
-`native-projection` 还测量预热后的静止特效 1,000 次更新，要求无重复原生调用和每轮托管分配。该结果只描述此受控场景，不代表游戏内所有特效路径均无分配。
+`native-projection` 还测量预热后的静止特效 1,000 次更新，要求无重复原生调用和每轮托管分配。该结果只描述此受控场景，不代表游戏内所有特效路径均无分配。另含“附着目标在首次同步前被删除”场景，要求同轮其他特效照常获得句柄且创建与登记配对。
 
 构建测试使用独立的 `War3Frame-regression-<随机值>` 临时目录，并在场景结束后清理。脚手架验证从当前框架和 demo 源码复制，排除 bin/obj 等缓存；test 和 ModelFormat 的集成构建会刷新各自的正常 bin/obj 输出。CLI 配置使用临时夹具，不修改用户的 appsettings.yml。没有启动游戏或编辑器。
 

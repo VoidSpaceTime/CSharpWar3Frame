@@ -20,7 +20,8 @@ internal static class IntegrationRegression
     }
 
     private static async Task<ProcessResult> Dotnet(params string[] args)
-        => await new ProcessRunner().RunAsync(new ProcessRequest(BuildRegression.Dotnet, args, Timeout: TimeSpan.FromMinutes(3)));
+        // 冷启动（首次 NuGet 还原 + win-x86 publish）可能超过 3 分钟，固定短超时会产生假失败。
+        => await new ProcessRunner().RunAsync(new ProcessRequest(BuildRegression.Dotnet, args, Timeout: TimeSpan.FromMinutes(10)));
 
     private static async Task Cli()
     {

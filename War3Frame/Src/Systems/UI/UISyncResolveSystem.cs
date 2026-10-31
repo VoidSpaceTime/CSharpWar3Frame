@@ -26,8 +26,16 @@ public class UISyncResolveSystem : QuerySystem<UISyncRequest>
 
         foreach (var (request, entity) in _pending)
         {
-            UISyncBridge.Dispatch(request.Prefix, request.Data);
-            entity.DeleteEntity();
+            // 处理器抛异常时也要删除请求，否则同一条同步数据会每 tick 重放、重抛。
+            try
+            {
+                UISyncBridge.Dispatch(request.Prefix, request.Data);
+            }
+            finally
+            {
+                if (!entity.IsNull)
+                    entity.DeleteEntity();
+            }
         }
     }
 }

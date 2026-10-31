@@ -13,10 +13,14 @@ public sealed class ItemPickupWorkflowSystem : QuerySystem<ItemPickupRequest>
 {
     private const float DefaultPickRadius = 160f;
     private readonly List<(Entity requestEntity, ItemPickupRequest request)> _pending = new();
+    private readonly HashSet<Entity> _claimedItems = new();
+    private readonly HashSet<(Entity owner, int slot)> _claimedSlots = new();
 
     protected override void OnUpdate()
     {
         _pending.Clear();
+        _claimedItems.Clear();
+        _claimedSlots.Clear();
         Query.ForEachEntity((ref ItemPickupRequest request, Entity requestEntity) =>
         {
             _pending.Add((requestEntity, request));
@@ -26,7 +30,7 @@ public sealed class ItemPickupWorkflowSystem : QuerySystem<ItemPickupRequest>
         {
             try
             {
-                if (CanPickUp(request))
+                if (CanPickUp(request) && TryClaim(request))
                     PickUp(request);
             }
             finally
@@ -64,6 +68,21 @@ public sealed class ItemPickupWorkflowSystem : QuerySystem<ItemPickupRequest>
         var dx = userPosition.x - itemPosition.x;
         var dy = userPosition.y - itemPosition.y;
         return dx * dx + dy * dy <= radius * radius;
+    }
+
+    /// <summary>
+    /// 同批去重：挂载在后续 Attach 工作流才生效，CanAttach 看不到本批已接受的请求，
+    /// 因此每件物品、每个 (单位, 槽位) 只接受第一个有效请求，其余请求不改动物品。
+    /// </summary>
+    private bool TryClaim(ItemPickupRequest request)
+    {
+        var slot = (request.user, request.slotIndex);
+        if (_claimedItems.Contains(request.item) || _claimedSlots.Contains(slot))
+            return false;
+
+        _claimedItems.Add(request.item);
+        _claimedSlots.Add(slot);
+        return true;
     }
 
     /// <summary>先拆视觉，再把指定槽位的挂载意图交给 Attach 工作流。</summary>

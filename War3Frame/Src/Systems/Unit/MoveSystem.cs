@@ -32,19 +32,18 @@ public class MoveSystem : QuerySystem<MoveCommand, Position>, ITimedSystem
 
         Query.ForEachEntity((ref MoveCommand move, ref Position pos, Entity unit) =>
         {
-            // 如果被打断或控制
-            if (ControlHelper.IsIncapacitated(unit))
+            // 受控或死亡：当前命令被打断。
+            if (ControlHelper.IsIncapacitated(unit) || UnitHelper.IsDead(unit))
             {
                 interrupted.Add((unit, move.commandToken));
                 return;
             }
 
-            //  其他移动命令顶替
+            // 执行状态属于更早的命令：旧命令被顶替。只结束旧执行状态，当前（新）命令继续本轮判定。
             if (unit.TryGetComponent<MoveExecutionState>(out var execution)
                 && execution.commandToken != move.commandToken)
             {
-                overridden.Add((unit, move.commandToken));
-                return;
+                overridden.Add((unit, execution.commandToken));
             }
 
             // 计算到目标的距离
@@ -69,11 +68,11 @@ public class MoveSystem : QuerySystem<MoveCommand, Position>, ITimedSystem
             unit.RemoveComponent<MoveExecutionState>();
         }
 
+        // 先于到达/推进应用：同轮新命令的结果会覆盖旧命令的 Overridden。
         foreach (var (unit, token) in overridden)
         {
             if (unit.IsNull) continue;
             EmitOutcome(unit, token, MoveOutcomeType.Overridden);
-            unit.RemoveComponent<MoveCommand>();
             unit.RemoveComponent<MoveExecutionState>();
         }
 
@@ -156,10 +155,19 @@ public class MoveToTaskSystem : QuerySystem<MoveOutcome, MoveContinuation>
         var toComplete = new List<Entity>();
         var toCancel = new List<Entity>();
 
+        var stale = new List<Entity>();
+
         Query.ForEachEntity((ref MoveOutcome outcome, ref MoveContinuation continuation, Entity unit) =>
         {
             if (continuation.kind != MoveContinuationKind.ExecuteTask)
             {
+                return;
+            }
+
+            // 结果属于更早的命令：丢弃，当前任务继续等待自己的结果。
+            if (continuation.commandToken != 0 && outcome.commandToken != continuation.commandToken)
+            {
+                stale.Add(unit);
                 return;
             }
 
@@ -177,6 +185,11 @@ public class MoveToTaskSystem : QuerySystem<MoveOutcome, MoveContinuation>
                 toCancel.Add(unit);
             }
         });
+
+        foreach (var unit in stale)
+        {
+            if (!unit.IsNull) unit.RemoveComponent<MoveOutcome>();
+        }
 
         foreach (var unit in toComplete)
         {

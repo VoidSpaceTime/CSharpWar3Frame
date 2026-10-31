@@ -120,6 +120,8 @@ public class TimerTaskSystem : QuerySystem<TimerTask>, ITimedSystem
                 aliveState.lifePhase = UnitLifecyclePhase.Alive;
                 aliveState.rebornTime = 0f;
                 owner.AddComponent(aliveState);
+                // ECS 生命回满，与原生层复活回满保持一致，避免复活后第一次受击即死。
+                UnitHelper.RestoreHealth(owner);
             }
 
             // 复活回满与显示由 Native 层消费该请求执行；这里只写意图。

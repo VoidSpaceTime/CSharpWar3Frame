@@ -174,8 +174,10 @@ public class EffectNativeSystem : QuerySystem<EffectBase>, ITimedSystem
     private static JEffect CreateNativeEffect(Entity entity, EffectBase effect)
     {
         JEffect handle;
+        // 附着目标可能已在首次同步前被删除：不访问已删实体，按点特效创建。
         if (effect.effectType == EffectType.Attach &&
             entity.TryGetComponent<EffectAttachment>(out var attachment) &&
+            !attachment.target.IsNull &&
             attachment.target.TryGetComponent<UnitNative>(out var unitNative))
         {
             handle = JassApi.AddSpecialEffectTarget(effect.model, unitNative.unit,
