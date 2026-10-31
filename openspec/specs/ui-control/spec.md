@@ -183,3 +183,12 @@ War3 Frame 的创建与销毁 SHALL NOT 调用 `HandleHelper.HandleAdd` 或 `Han
 
 - **WHEN** 检查 interval order 占用
 - **THEN** 不存在 UI 专用的 133/140 事件系统，`UIEvent` 类型不参与命中派发
+
+### Requirement: 无输入根时丢弃积压输入
+
+输入派发根为空或已销毁时，系统 SHALL 仍然取出并丢弃本轮原始输入队列，MUST NOT 把积压输入留到之后设置的输入根上派发。
+
+#### Scenario: 先有输入后有根
+
+- **WHEN** 输入根为空时入队两次按下，随后设置输入根并再推进一次
+- **THEN** 新根上的控件不收到这两次按下，也不触发双击
